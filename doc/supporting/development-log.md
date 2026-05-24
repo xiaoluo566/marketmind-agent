@@ -69,7 +69,7 @@
 | Day 01 | Done | 仓库、文档、后端骨架、Next.js 控制台骨架 | `ff5f943` |
 | Day 02 | Done | 架构冻结、分支策略、模型和数据源决策 | `d8e5ce2`、`c3fff46` |
 | Day 03 | Done | SQLAlchemy 数据模型与 Alembic 初始迁移 | `e258898` |
-| Day 04 | Pending | API 契约与任务创建接口 | 待记录 |
+| Day 04 | Done | API 契约与任务接收层 | `1abe635` |
 | Day 05 | Pending | Celery + Redis 基础任务队列 | 待记录 |
 | Day 06 | Pending | 任务状态流与事件表写入 | 待记录 |
 | Day 07 | Pending | 第一周联调和基础设施验收 | 待记录 |
@@ -301,7 +301,7 @@ Day 4 原计划是继续做 FastAPI 骨架，但 Day 1 已经提前把骨架完�
 
 ### 提交记录
 
-- 本节所在提交即 Day 4 开发提交，具体以 `git log -1 --oneline` 为准。
+- `1abe635 feat: 完成 Day 4 任务接收层与校验统一化`
 
 ### 遗留问题
 
