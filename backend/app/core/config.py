@@ -5,7 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    app_name: str = "MarketMind Agent API"
+    app_name: str = "MarketMind Comment Intelligence API"
     app_version: str = "0.1.0"
     app_env: str = "local"
     api_prefix: str = "/api"

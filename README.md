@@ -1,8 +1,8 @@
 # MarketMind Agent
 
-电商竞品调研与差评洞察 Agent 项目。
+电商评论洞察与证据链报告 Agent。
 
-这个仓库用于开发 FastAPI + Celery + PostgreSQL/pgvector + Playwright + Next.js 的电商竞品调研 Agent 系统。
+这个仓库用于开发 FastAPI + Celery + PostgreSQL/pgvector + Playwright + Next.js 的电商评论洞察 Agent 系统。
 
 ## 当前状态
 
@@ -25,7 +25,9 @@
 
 ## 项目定位
 
-这不是一个单纯的爬虫项目，也不是一个只会聊天的 Agent demo。它要做的是把“采集、分析、决策、报告、回退、复盘”串成一个能持续迭代的工程系统。
+这不是一个单纯的爬虫项目，也不是一个只会聊天的 Agent demo。它要做的是把“采集、分析、证据链、报告、回退、复盘”串成一个能持续迭代的工程系统。
+
+更具体地说，它面向电商运营场景，重点解决评论洞察、证据链报告和长任务可追踪，而不是试图替代成熟卖家工具。
 
 ## 当前阶段
 

@@ -141,7 +141,7 @@ frontend/src/
 | `crawler-worker` | Playwright 并发导致 worker 被浏览器资源占满 | 独立 worker 队列和浏览器池 |
 | `rag-worker` | embedding 或向量写入耗时明显高于采集 | 独立队列和批处理 |
 | `report-service` | 报告生成需要多模型、多模板、多版本管理 | 独立报告 API 或 worker |
-| `scheduler` | 需要周期性复查竞品异动 | 定时任务服务 |
+| `scheduler` | 需要周期性复查评论变化和痛点趋势 | 定时任务服务 |
 | `monitor` | 队列和失败任务需要可视化运营 | Flower 或自研任务监控页 |
 
 ## Day 2 后冻结的非目标

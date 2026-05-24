@@ -26,7 +26,7 @@
 
 - `crawler-worker`：独立 Playwright worker 池
 - `rag-worker`：独立 embedding 和向量写入 worker
-- `scheduler`：周期性竞品复查
+- `scheduler`：周期性评论复查和痛点趋势更新
 - `monitor`：Flower 或自研队列监控
 
 ## 本地启动顺序

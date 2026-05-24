@@ -5,6 +5,7 @@
 ## 建议优先级
 
 - 先看 `project-charter.md`，明确项目目标和非目标
+- 再看 `market-positioning.md`，明确真实市场价值和不替代成熟卖家工具的边界
 - 再看 `dependency-map.md`，知道哪些文档是前置，哪些是后置
 - 再看 `architecture.md`、`data-model.md`、`api-contract.md`
 - 再看 `model-and-data-decisions.md`，确认模型、embedding、数据源和用户边界
@@ -14,6 +15,7 @@
 ## 交付和复盘
 
 - `milestones-and-acceptance.md` 用来判断每周是否真的完成
+- `market-positioning.md` 用来约束项目市场定位、用户价值和简历口径
 - `llmops-metrics.md` 用来收集可写进简历的数据
 - `demo-script.md` 用来准备最终展示
 - `development-log.md` 用来实时记录 Day 1 到 Day 30 的实际开发过程和后续优化

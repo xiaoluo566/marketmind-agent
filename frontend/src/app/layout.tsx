@@ -18,7 +18,7 @@ const jetBrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "MarketMind Agent",
-  description: "E-commerce competitor research and poor-review intelligence cockpit.",
+  description: "E-commerce review intelligence and evidence-backed report cockpit.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
@@ -30,4 +30,3 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
     </html>
   );
 }
-

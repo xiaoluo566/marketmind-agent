@@ -2,11 +2,11 @@
 
 ## 项目描述建议
 
-把项目描述成“电商竞品调研 Agent 平台”，不要写成普通爬虫，也不要写成纯聊天机器人。简历重点要落在工程链路、长任务处理、状态持久化、RAG 证据链和稳定性设计上。
+把项目描述成“面向电商运营的评论洞察 Agent 系统”，不要写成普通爬虫，也不要写成纯聊天机器人，更不要写成成熟卖家工具替代品。简历重点要落在工程链路、长任务处理、状态持久化、RAG 证据链和稳定性设计上。
 
 ## 一句话版本
 
-设计并实现电商竞品调研 Agent 系统，基于 FastAPI、Celery、Redis、PostgreSQL、Playwright 和 pgvector 构建异步采集、Agent 状态持久化、评论语义检索和结构化报告生成闭环。
+设计并实现面向电商运营的评论洞察 Agent 系统，基于 FastAPI、Celery、Redis、PostgreSQL/pgvector、Playwright 和 Next.js 构建异步采集、Agent 状态持久化、评论语义检索和带证据链的结构化报告生成闭环。
 
 ## 可强调的技术点
 
@@ -43,10 +43,11 @@
 - 用数据证明工程化
 - 不写没有统计过的绝对指标
 - 不把爬虫能力夸成“全网稳定采集”
+- 不把项目夸成“替代成熟卖家工具”
 
 ## 与其他文档关系
 
 - 指标来源见 `llmops-metrics.md`
+- 市场定位见 `market-positioning.md`
 - 演示流程见 `demo-script.md`
 - 面试展开见 `interview-story.md`
-

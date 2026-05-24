@@ -36,9 +36,31 @@
 | 日常开发分支 | `dev` |
 | 当前开发阶段 | Day 3 已完成，准备进入 Day 4 |
 | 当前主链路 | 文档基线、Next.js 控制台骨架、FastAPI health、数据库模型、Alembic 初始迁移 |
-| 最新开发提交 | `e258898 feat: 设计初始数据库模型与迁移骨架` |
+| 最新开发提交 | 以 `git log -1 --oneline` 为准 |
 | 当前数据库决策 | PostgreSQL + pgvector，review chunk 使用 `vector(1536)` |
 | 当前模型决策 | 默认 `gpt-5.4-mini`，报告模型 `gpt-5.5`，embedding `text-embedding-3-small` |
+
+## 定位修正记录
+
+### 2026-05-25
+
+用户提出项目实际市场价值和真实需求问题后，项目定位从较宽泛的“电商竞品调研 Agent”收窄为：
+
+> 面向电商运营场景的评论洞察与证据链报告 Agent。
+
+这次修正明确了三条边界：
+
+- 不替代成熟卖家工具。
+- 不做销量预测、广告优化、库存管理等大而全能力。
+- 第一版聚焦评论洞察、差评证据、报告可追溯和长任务可追踪。
+
+相关文档：
+
+- `market-positioning.md`
+- `project-charter.md`
+- `resume-story.md`
+- `interview-story.md`
+- `demo-script.md`
 
 ## Day 1 到 Day 30 总览
 
@@ -61,7 +83,7 @@
 | Day 15 | Pending | `search_reviews_tool` 语义检索 | 待记录 |
 | Day 16 | Pending | 报告 schema 与报告生成 | 待记录 |
 | Day 17 | Pending | 证据链引用和报告可追溯 | 待记录 |
-| Day 18 | Pending | 选品评分与风险分析 | 待记录 |
+| Day 18 | Pending | 评论机会点评分与风险分析 | 待记录 |
 | Day 19 | Pending | Next.js 接真实 API | 待记录 |
 | Day 20 | Pending | 前端任务进度与 Agent step 展示 | 待记录 |
 | Day 21 | Pending | 历史任务和历史报告 | 待记录 |
@@ -319,7 +341,7 @@ Day 3 目标是数据库设计与迁移骨架。实际完成了 SQLAlchemy 2.0 O
 | Day 15 | `search_reviews_tool` 语义检索 | 待记录 | 待记录 | 待记录 |
 | Day 16 | 报告 schema 与报告生成 | 待记录 | 待记录 | 待记录 |
 | Day 17 | 证据链引用和报告可追溯 | 待记录 | 待记录 | 待记录 |
-| Day 18 | 选品评分与风险分析 | 待记录 | 待记录 | 待记录 |
+| Day 18 | 评论机会点评分与风险分析 | 待记录 | 待记录 | 待记录 |
 | Day 19 | Next.js 接真实 API | 待记录 | 待记录 | 待记录 |
 | Day 20 | 前端任务进度与 Agent step 展示 | 待记录 | 待记录 | 待记录 |
 | Day 21 | 历史任务和历史报告 | 待记录 | 待记录 | 待记录 |
@@ -383,4 +405,3 @@ Day 3 目标是数据库设计与迁移骨架。实际完成了 SQLAlchemy 2.0 O
 - 是否有未解决问题进入 `open-questions.md`
 - 是否有高风险变更进入 `change-management.md`
 - 是否需要更新 `README.md` 或 supporting 索引
-

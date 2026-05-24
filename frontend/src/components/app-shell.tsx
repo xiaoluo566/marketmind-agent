@@ -36,7 +36,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div>
               <p className="text-sm font-semibold text-slate-950">MarketMind Agent</p>
               <p className="font-mono text-[11px] uppercase tracking-wide text-slate-500">
-                Research cockpit
+                Evidence cockpit
               </p>
             </div>
           </div>
