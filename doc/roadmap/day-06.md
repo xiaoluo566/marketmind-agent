@@ -1,28 +1,49 @@
 # Day 06 - 任务状态与进度流
 
-## 目标
+## 当天目标
 
-让用户能看到任务在跑，而不是只看到等待。
+让任务不是一个黑盒。用户和开发者都应该知道任务在排队、运行、失败、重试还是完成。
 
-## 当日任务
+## 前置依赖
 
-- 设计任务状态枚举
-- 写任务事件表
-- 设计进度推送方式
-- 预留 WebSocket / SSE
+- `day-05.md` Celery 基础链路可运行
+- 阅读 `../supporting/data-model.md`
+- 阅读 `../supporting/observability.md`
 
-## 关键输出
+## 当天交付物
 
-- 状态机字段
-- 事件流接口
-- 前端进度消费格式
+- `task_events` 写入逻辑
+- 任务状态枚举
+- 事件查询接口
+- 前端进度数据格式
 
-## 验收
+## 实施步骤
 
-- 每个任务有状态变化记录
-- 失败和重试可见
+1. 定义状态：`received`、`queued`、`running`、`completed`、`failed`
+2. 每次状态变化写入 `task_events`
+3. 实现 `GET /api/tasks/{task_id}/events`
+4. 为后续 WebSocket / SSE 预留统一事件格式
+5. 在失败事件里记录 `error_code` 和 `trace_id`
 
-## Git 记录
+## 验收标准
 
-- 建议提交：`feat: expose task progress events`
+- 一个任务至少有 received、queued、running、completed 或 failed
+- 失败能看到失败阶段和错误码
+- 前端不用解析日志也能展示进度
+
+## 风险与回退
+
+- 不要只依赖 Celery result backend
+- 不要把可恢复失败和不可恢复失败混在一起
+
+## 关联文档
+
+- 上一天：`day-05.md`
+- 下一天：`day-07.md`
+- 数据模型：`../supporting/data-model.md`
+- 控制台：`../supporting/ui-console-spec.md`
+
+## 建议提交
+
+`feat: expose task progress events`
 

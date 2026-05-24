@@ -5,9 +5,10 @@
 ## 建议优先级
 
 - 先看 `project-charter.md`，明确项目目标和非目标
+- 再看 `dependency-map.md`，知道哪些文档是前置，哪些是后置
 - 再看 `architecture.md`、`data-model.md`、`api-contract.md`
-- 接着看 `agent-state-machine.md`、`crawler-strategy.md`、`rag-memory.md`
-- 最后参考 `deployment.md`、`testing-strategy.md`、`risk-register.md`
+- 接着看 `agent-state-machine.md`、`prompt-strategy.md`、`crawler-strategy.md`、`rag-memory.md`
+- 最后参考 `deployment.md`、`testing-strategy.md`、`risk-register.md`、`release-checklist.md`
 
 ## 交付和复盘
 
@@ -15,4 +16,5 @@
 - `llmops-metrics.md` 用来收集可写进简历的数据
 - `demo-script.md` 用来准备最终展示
 - `future-iterations.md` 用来管理 30 天之后的增强点
-
+- `dev-environment.md` 用来约束本机开发环境
+- `ui-console-spec.md` 用来约束前端控制台行为

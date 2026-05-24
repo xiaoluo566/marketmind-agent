@@ -1,28 +1,52 @@
 # Day 03 - 数据库设计与迁移骨架
 
-## 目标
+## 当天目标
 
-让状态、任务、报告和原始数据都能落库。
+把任务、Agent 状态、采集数据、评论、向量、报告和错误日志都设计成可持久化的数据结构。后续所有功能都依赖今天的数据模型。
 
-## 当日任务
+## 前置依赖
 
-- 设计核心表
-- 设计主外键关系
-- 定义状态流字段
-- 规划 Alembic 迁移
+- `day-02.md` 架构边界已确定
+- 阅读 `../supporting/data-model.md`
+- 阅读 `../supporting/agent-state-machine.md`
 
-## 关键输出
+## 当天交付物
 
-- 数据模型文档
-- 初始迁移脚本计划
-- 表结构草案
+- 初版数据模型
+- 状态枚举
+- 主外键关系
+- 索引建议
+- Alembic 迁移计划
 
-## 验收
+## 实施步骤
 
-- 所有长任务数据有落点
-- Agent 步骤能追踪
+1. 定义 `tasks`、`task_events`、`agent_runs`、`agent_steps`
+2. 定义 `products`、`reviews`、`review_chunks`、`reports`
+3. 为所有长任务记录 `trace_id`、`status`、`created_at`、`updated_at`
+4. 设计 pgvector 字段和向量索引
+5. 规划 Alembic 初始迁移，不急于写复杂 repository
 
-## Git 记录
+## 验收标准
 
-- 建议提交：`feat: design initial data model`
+- 每个任务能追踪状态变化
+- 每个 Agent 工具调用能追踪输入和输出
+- 每条评论能追踪来源页面
+- 报告能关联回 task 和证据
+
+## 风险与回退
+
+- 不要过早设计复杂用户权限
+- 如果字段不确定，先保留 JSON metadata
+- 数据库变更要写入 `../supporting/change-management.md`
+
+## 关联文档
+
+- 上一天：`day-02.md`
+- 下一天：`day-04.md`
+- 数据模型：`../supporting/data-model.md`
+- API 契约：`../supporting/api-contract.md`
+
+## 建议提交
+
+`feat: design initial data model`
 

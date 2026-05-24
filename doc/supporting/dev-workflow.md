@@ -11,6 +11,15 @@
 7. 提交小步 commit
 8. 更新 bug / research / open questions 文档
 
+## 开工前检查
+
+- 当前分支是否正确
+- 工作区是否干净
+- 前一天的验收项是否完成
+- 当天文档的前置文档是否读过
+- 是否需要新增数据库迁移
+- 是否需要新增测试数据
+
 ## 分支策略
 
 - `main`：稳定版本，只合入可演示状态
@@ -34,3 +43,16 @@
 - 每周打一个里程碑 tag
 - 数据库迁移必须能说明回滚方式
 
+## 文档更新规则
+
+- 改 API 前先改 `api-contract.md`
+- 改数据表前先改 `data-model.md`
+- 改 Agent 流程前先改 `agent-state-machine.md`
+- 改 prompt 前先改 `prompt-strategy.md`
+- 改部署方式前先改 `deployment.md`
+
+## 与其他文档关系
+
+- 里程碑见 `milestones-and-acceptance.md`
+- 发版见 `release-checklist.md`
+- 风险见 `risk-register.md`

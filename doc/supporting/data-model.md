@@ -17,6 +17,74 @@
 - `artifacts`：导出文件、截图、JSON 等附件
 - `error_logs`：结构化错误记录
 
+## 推荐字段
+
+### `tasks`
+
+- `id`
+- `user_id`
+- `project_id`
+- `target`
+- `mode`
+- `status`
+- `priority`
+- `created_at`
+- `started_at`
+- `finished_at`
+- `error_code`
+- `error_message`
+- `trace_id`
+
+### `agent_runs`
+
+- `id`
+- `task_id`
+- `status`
+- `model_name`
+- `prompt_version`
+- `started_at`
+- `finished_at`
+- `total_tokens`
+- `total_cost`
+
+### `agent_steps`
+
+- `id`
+- `agent_run_id`
+- `task_id`
+- `step_index`
+- `step_type`
+- `thought`
+- `tool_name`
+- `tool_input`
+- `tool_output`
+- `status`
+- `error_message`
+- `created_at`
+- `finished_at`
+
+### `reviews`
+
+- `id`
+- `product_id`
+- `task_id`
+- `source_url`
+- `rating`
+- `content`
+- `author_hash`
+- `published_at`
+- `raw_payload`
+
+### `review_chunks`
+
+- `id`
+- `review_id`
+- `task_id`
+- `chunk_index`
+- `content`
+- `embedding`
+- `metadata`
+
 ## 关键关系
 
 - 一个 `task` 对应多条 `task_events`
@@ -41,3 +109,46 @@
 - `prompt_version`
 - `schema_version`
 
+## 状态枚举建议
+
+### 任务状态
+
+- `received`
+- `queued`
+- `running`
+- `waiting_retry`
+- `completed`
+- `failed`
+- `cancelled`
+
+### Agent 步骤状态
+
+- `pending`
+- `running`
+- `success`
+- `failed`
+- `skipped`
+
+## 索引建议
+
+- `tasks(status, created_at)`
+- `task_events(task_id, created_at)`
+- `agent_steps(agent_run_id, step_index)`
+- `reviews(product_id)`
+- `review_chunks(task_id)`
+- `review_chunks.embedding` 使用 pgvector index
+
+## 数据所有权
+
+- API 创建 `tasks`
+- Worker 更新任务状态
+- Agent 创建 `agent_runs` 和 `agent_steps`
+- Crawler 写入 `products`、`reviews`、`artifacts`
+- RAG 写入 `review_chunks` 和向量
+- Report 模块写入 `reports`
+
+## 与其他文档关系
+
+- 状态流转见 `agent-state-machine.md`
+- API 示例见 `data-contract-examples.md`
+- 指标采集见 `llmops-metrics.md`
