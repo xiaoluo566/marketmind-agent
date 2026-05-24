@@ -101,6 +101,10 @@
 - 是否带 mock data
 - 是否已经写死 API URL
 
+## Stitch 提示词
+
+具体生成提示词见 `stitch-generation-prompt.md`。后续如果页面结构或接口字段变化，优先更新那份提示词，再重新生成或局部改造前端。
+
 ## 我接手前端集成时需要检查
 
 - 是否有硬编码假数据
@@ -124,4 +128,3 @@
 - API 字段见 `api-contract.md`
 - 数据样例见 `data-contract-examples.md`
 - 第 19 到 21 天会进入前端集成阶段
-

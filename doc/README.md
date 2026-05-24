@@ -18,6 +18,7 @@
 - `crawler-strategy.md`、`rag-memory.md`、`ui-console-spec.md` 负责说清楚核心功能怎么实现
 - `testing-strategy.md`、`deployment.md`、`release-checklist.md` 负责说清楚怎么验证、怎么发版、怎么回退
 - `stitch-frontend-handoff.md` 负责说清楚 Stitch 前端的交接方式
+- `stitch-generation-prompt.md` 负责保存可直接复制给 Stitch 的详细提示词
 - `roadmap/day-xx.md` 负责把这些内容拆成可执行日程
 
 ## 阅读顺序
@@ -32,7 +33,8 @@
 7. `supporting/crawler-strategy.md`
 8. `supporting/rag-memory.md`
 9. `supporting/stitch-frontend-handoff.md`
-10. `roadmap/day-01.md` 起按天推进
+10. `supporting/stitch-generation-prompt.md`
+11. `roadmap/day-01.md` 起按天推进
 
 ## 横向重点文档
 
@@ -45,6 +47,7 @@
 - `supporting/dependency-map.md`：文档之间的前后依赖
 - `supporting/release-checklist.md`：发版前检查项
 - `supporting/stitch-frontend-handoff.md`：Stitch 前端生成和交接规范
+- `supporting/stitch-generation-prompt.md`：Stitch 生成提示词
 
 ## 使用方式
 
