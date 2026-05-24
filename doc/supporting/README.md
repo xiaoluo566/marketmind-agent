@@ -19,6 +19,7 @@
 - `llmops-metrics.md` 用来收集可写进简历的数据
 - `demo-script.md` 用来准备最终展示
 - `development-log.md` 用来实时记录 Day 1 到 Day 30 的实际开发过程和后续优化
+- `interview-defense-dossier.md` 用来准备面试讲述、技术选择、问题排查和高频追问
 - `future-iterations.md` 用来管理 30 天之后的增强点
 - `dev-environment.md` 用来约束本机开发环境
 - `ui-console-spec.md` 用来约束前端控制台行为

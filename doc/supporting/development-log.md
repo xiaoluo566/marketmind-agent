@@ -6,6 +6,7 @@
 
 - `roadmap/day-xx.md`：写“计划今天做什么”
 - `development-log.md`：写“今天实际做了什么、验证了什么、留下了什么问题”
+- `interview-defense-dossier.md`：写“今天新增了哪些面试可讲的技术选择、开发问题和解决过程”
 - `change-management.md`：写“高风险变更和回退策略”
 - `bug-log-template.md`：写“可复现 bug 的详细根因”
 - `research-log-template.md`：写“外部技术调研结论”
@@ -27,6 +28,8 @@
 - 下一步
 
 如果某一天实际开发内容偏离原计划，必须在当天记录里说明偏离原因，并把影响写入 `open-questions.md`、`future-iterations.md` 或对应设计文档。
+
+`development-log.md` 和 `interview-defense-dossier.md` 必须同步维护：前者记录真实开发事实，后者把这些事实转成面试可讲的项目介绍、技术取舍、问题排查和高频追问回答。每完成一个 Day 或一个可回退提交，都要检查这两份文档是否需要更新。
 
 ## 当前项目状态
 
@@ -328,6 +331,7 @@ Day 5 的目标是把任务接收层升级成真正的异步任务入口。今�
 - 将 `POST /api/tasks` 从 Day 4 的“接收层”升级为“入队层”。
 - 新增 `GET /api/tasks/{task_id}`，从状态存储读取任务快照。
 - 对 Redis 状态缓存不可用和队列不可用做统一错误 envelope。
+- 复查时补充 Worker 单元测试，验证最小任务会把状态推进到 `completed`。
 - 补充 Day 5 运行环境变量和开发约定。
 
 ### 关键文件
@@ -352,9 +356,9 @@ Day 5 的目标是把任务接收层升级成真正的异步任务入口。今�
 
 ### 验证记录
 
-- `uv run pytest tests\\test_tasks_api.py tests\\test_celery_worker.py`：8 passed
+- `uv run pytest tests\\test_tasks_api.py tests\\test_celery_worker.py`：10 passed
 - `uv run ruff check backend tests migrations`：通过
-- `uv run pytest`：23 passed
+- `uv run pytest`：25 passed
 
 ### 提交记录
 

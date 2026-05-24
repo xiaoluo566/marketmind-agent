@@ -1,4 +1,8 @@
+from app.api.schemas.tasks import TaskStatusData
 from app.core.config import get_settings
+from app.storage.statuses import TaskStatus
+from app.tasks.status_store import InMemoryTaskStatusStore, utc_now
+from app.worker import tasks as worker_tasks
 from app.worker.celery_app import celery_app
 from app.worker.tasks import process_research_task
 
@@ -14,3 +18,43 @@ def test_celery_uses_redis_configuration_from_settings() -> None:
 def test_minimal_research_task_is_registered() -> None:
     assert process_research_task.name == "marketmind.tasks.process_research_task"
     assert "marketmind.tasks.process_research_task" in celery_app.tasks
+
+
+def test_minimal_research_task_advances_status_to_completed(monkeypatch) -> None:
+    store = InMemoryTaskStatusStore()
+    created_at = utc_now()
+    task_id = "tsk_worker_unit"
+    store.create(
+        TaskStatusData(
+            task_id=task_id,
+            status=TaskStatus.QUEUED.value,
+            trace_id="trc_worker_unit",
+            target="demo://portable-espresso-maker-negative-reviews",
+            mode="competitive_research",
+            priority="normal",
+            source_type="demo_dataset",
+            options={},
+            queue_task_id="celery_worker_unit",
+            created_at=created_at,
+            updated_at=created_at,
+        )
+    )
+    monkeypatch.setattr(worker_tasks, "_status_store", lambda: store)
+
+    result = process_research_task(
+        task_id=task_id,
+        payload={
+            "target": "demo://portable-espresso-maker-negative-reviews",
+            "mode": "competitive_research",
+            "priority": "normal",
+            "source_type": "demo_dataset",
+            "options": {},
+        },
+        trace_id="trc_worker_unit",
+    )
+
+    stored_task = store.get(task_id)
+    assert stored_task is not None
+    assert stored_task.status == TaskStatus.COMPLETED.value
+    assert result["status"] == TaskStatus.COMPLETED.value
+    assert result["task_id"] == task_id
