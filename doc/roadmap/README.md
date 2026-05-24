@@ -30,7 +30,8 @@
 2. 再读当天文档里列出的 `前置依赖`
 3. 按 `实施步骤` 执行
 4. 用 `验收标准` 判断是否完成
-5. 把超出范围的问题写入 `../supporting/open-questions.md`
+5. 把实际完成内容写入 `../supporting/development-log.md`
+6. 把超出范围的问题写入 `../supporting/open-questions.md`
 
 ## 不允许跳过的主线
 

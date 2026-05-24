@@ -20,6 +20,7 @@
 - `stitch-frontend-handoff.md` 负责说清楚 Stitch 前端的交接方式
 - `stitch-generation-prompt.md` 负责保存可直接复制给 Stitch 的详细提示词
 - `stitch-export-review.md` 负责记录 Stitch 导出内容的评审和 Next.js 重构方向
+- `development-log.md` 负责记录 Day 1 到 Day 30 以及后续优化的真实开发过程
 - `roadmap/day-xx.md` 负责把这些内容拆成可执行日程
 
 ## 阅读顺序
@@ -47,6 +48,7 @@
 - `supporting/llmops-metrics.md`：模型调用、成本、失败率和自愈统计
 - `supporting/security-compliance.md`：安全、隐私和采集合规边界
 - `supporting/demo-script.md`：最终演示脚本
+- `supporting/development-log.md`：开发过程实时记录和后续优化日志
 - `supporting/future-iterations.md`：30 天之后的迭代方向
 - `supporting/dependency-map.md`：文档之间的前后依赖
 - `supporting/release-checklist.md`：发版前检查项

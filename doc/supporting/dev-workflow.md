@@ -9,7 +9,8 @@
 5. 实现最小功能
 6. 本地验证
 7. 提交小步 commit
-8. 更新 bug / research / open questions 文档
+8. 更新 `development-log.md`
+9. 按需更新 bug / research / open questions 文档
 
 ## 开工前检查
 
@@ -50,9 +51,11 @@
 - 改 Agent 流程前先改 `agent-state-machine.md`
 - 改 prompt 前先改 `prompt-strategy.md`
 - 改部署方式前先改 `deployment.md`
+- 每天收尾前更新 `development-log.md`
 
 ## 与其他文档关系
 
 - 里程碑见 `milestones-and-acceptance.md`
+- 开发记录见 `development-log.md`
 - 发版见 `release-checklist.md`
 - 风险见 `risk-register.md`
