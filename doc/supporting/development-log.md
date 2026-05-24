@@ -34,8 +34,8 @@
 | --- | --- |
 | 稳定分支 | `main` |
 | 日常开发分支 | `dev` |
-| 当前开发阶段 | Day 3 已完成，准备进入 Day 4 |
-| 当前主链路 | 文档基线、Next.js 控制台骨架、FastAPI health、数据库模型、Alembic 初始迁移 |
+| 当前开发阶段 | Day 4 已完成，准备进入 Day 5 |
+| 当前主链路 | 文档基线、Next.js 控制台骨架、FastAPI health、任务创建 API 契约、数据库模型、Alembic 初始迁移 |
 | 最新开发提交 | 以 `git log -1 --oneline` 为准 |
 | 当前数据库决策 | PostgreSQL + pgvector，review chunk 使用 `vector(1536)` |
 | 当前模型决策 | 默认 `gpt-5.4-mini`，报告模型 `gpt-5.5`，embedding `text-embedding-3-small` |
@@ -256,25 +256,62 @@ Day 3 目标是数据库设计与迁移骨架。实际完成了 SQLAlchemy 2.0 O
 
 - 还没有真实 PostgreSQL 容器和迁移执行环境。
 - 还没有 repository 层和 seed 脚本。
-- 还没有任务创建 API 写入数据库。
+- 任务创建 API 还没有写入数据库，Day 4 只做契约和接收层。
 
 ### 下一步
 
-进入 Day 4，实现 API 契约和任务创建接口。任务创建接口应只负责校验、写入 `tasks`、返回 `task_id`，不直接执行爬虫或模型调用。
+进入 Day 4，先做 API 契约和任务接收层，再在 Day 5 接真实数据库与 Celery。
 
-## Day 04 记录模板
+## Day 04 记录
 
-计划主题：API 契约与任务创建接口。
+### 实际完成
 
-实际完成：待记录。
+Day 4 原计划是继续做 FastAPI 骨架，但 Day 1 已经提前把骨架完成了，所以今天实际转为“API 契约与任务接收层”开发。
 
-验证记录：待记录。
+完成内容：
 
-提交记录：待记录。
+- 新增 `POST /api/tasks`。
+- 新增 `TaskCreateRequest`、`TaskAcceptedData` 请求/响应 schema。
+- 为任务输入补上 `mode`、`priority`、`source_type` 和 `options` 的约束。
+- 保留 `options` 扩展字段，方便后续接 CSV/JSON 导入和更多前端能力。
+- 新增统一 validation error envelope，避免 FastAPI 默认校验错误直接暴露。
+- Day 3 再检查时补齐了 `agent_steps.updated_at`，让 Agent step 的状态更新也能回看。
 
-遗留问题：待记录。
+### 关键文件
 
-下一步：待记录。
+- `backend/app/api/routes/tasks.py`
+- `backend/app/api/schemas/tasks.py`
+- `backend/app/core/exceptions.py`
+- `backend/app/core/ids.py`
+- `backend/app/main.py`
+- `backend/app/tasks/service.py`
+- `backend/app/storage/models.py`
+- `migrations/versions/0001_initial_schema.py`
+- `tests/test_tasks_api.py`
+- `tests/test_database_models.py`
+
+### 验证记录
+
+- `uv run pytest tests\\test_tasks_api.py`：3 passed
+- `uv run ruff check backend tests migrations`：通过
+- `uv run pytest`：17 passed
+- `uv run alembic heads`：`0001_initial_schema (head)`
+- `uv run alembic upgrade head --sql`：通过
+- `npm run build`：通过
+
+### 提交记录
+
+- 本节所在提交即 Day 4 开发提交，具体以 `git log -1 --oneline` 为准。
+
+### 遗留问题
+
+- 任务创建接口目前只返回接收结果，还没有写入 `tasks` 表。
+- 还没有接 Celery / Redis。
+- 还没有任务状态查询接口。
+
+### 下一步
+
+进入 Day 5，把 `POST /api/tasks` 从“接收层”升级为“任务入队层”，让 API 真正把长任务交给后台执行。
 
 ## Day 05 记录模板
 

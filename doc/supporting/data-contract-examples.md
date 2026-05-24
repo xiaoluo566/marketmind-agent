@@ -47,7 +47,8 @@ CSV 表头或 JSON 对象字段第一版按下面约定：
   "success": true,
   "data": {
     "task_id": "tsk_01HXYZ",
-    "status": "received"
+    "status": "received",
+    "trace_id": "trc_01HABC"
   },
   "message": "accepted",
   "trace_id": "trc_01HABC"

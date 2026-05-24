@@ -1,18 +1,18 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from uuid import uuid4
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import JSON, DateTime, Float, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.core.ids import new_prefixed_id
 from app.storage.base import Base
 from app.storage.statuses import AgentRunStatus, AgentStepStatus, TaskStatus
 
 
 def new_id(prefix: str) -> str:
-    return f"{prefix}_{uuid4().hex}"
+    return new_prefixed_id(prefix)
 
 
 def utc_now() -> datetime:
@@ -143,6 +143,11 @@ class AgentStep(Base):
     status: Mapped[str] = mapped_column(String(32), default=AgentStepStatus.PENDING.value)
     error_message: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=utc_now,
+        onupdate=utc_now,
+    )
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 

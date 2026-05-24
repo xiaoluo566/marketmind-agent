@@ -38,6 +38,12 @@ def test_task_and_agent_status_defaults_match_state_machine() -> None:
     assert AgentStep.status.default.arg == AgentStepStatus.PENDING.value
 
 
+def test_agent_step_keeps_update_timestamp_for_resume_tracking() -> None:
+    assert AgentStep.__table__.c.created_at.nullable is False
+    assert AgentStep.__table__.c.updated_at.nullable is False
+    assert AgentStep.__table__.c.updated_at.onupdate is not None
+
+
 def test_day3_required_foreign_keys_are_present() -> None:
     foreign_keys = {
         fk.target_fullname

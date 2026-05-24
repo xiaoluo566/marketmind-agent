@@ -24,11 +24,14 @@
 
 职责：只创建任务和投递异步队列，不直接执行爬虫或模型调用。
 
+Day 4 的实现范围是“契约先行”：只完成参数校验、生成 `task_id` 和返回统一 envelope。真实数据库写入与 Celery 投递从 Day 5 开始接入。
+
 输入：
 
 - `target`
 - `mode`
 - `priority`
+- `source_type`
 - `options`
 
 输出：
