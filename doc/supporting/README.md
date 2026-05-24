@@ -20,3 +20,4 @@
 - `ui-console-spec.md` 用来约束前端控制台行为
 - `stitch-frontend-handoff.md` 用来约束 Stitch 生成前端的交接方式
 - `stitch-generation-prompt.md` 用来保存可直接复制给 Stitch 的详细提示词
+- `stitch-export-review.md` 用来记录 Stitch 导出内容的评审和 Next.js 重构方向

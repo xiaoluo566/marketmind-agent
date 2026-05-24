@@ -2,11 +2,14 @@
 
 电商竞品调研与差评洞察 Agent 项目。
 
-这个仓库先用于文档基线、开发规划和版本记录，后续再逐步落地 FastAPI、Celery、Playwright、PostgreSQL、pgvector、Streamlit/Next.js 等实现。
+这个仓库用于开发 FastAPI + Celery + PostgreSQL/pgvector + Playwright + Next.js 的电商竞品调研 Agent 系统。
 
 ## 当前状态
 
 - `doc/`：30 天开发计划 + 横向设计文档
+- `backend/`：FastAPI 后端骨架
+- `frontend/`：Next.js 控制台骨架
+- `stitch_marketmind_control_center/`：Stitch 原始设计导出，作为视觉参考
 - 本地 Git：已初始化
 - GitHub：私有仓库已创建并已推送初始版本
 

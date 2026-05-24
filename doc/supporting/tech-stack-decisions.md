@@ -11,7 +11,7 @@
 - 结构化校验：Pydantic
 - 重试：Tenacity
 - 向量检索：pgvector
-- 前端：Stitch 生成 UI，后端负责 API 和接入
+- 前端：Next.js + TypeScript + Tailwind；Stitch 导出作为视觉参考
 - 容器化：Docker Compose
 - 测试：pytest
 
@@ -33,7 +33,7 @@
 | 队列缓存 | Redis | RabbitMQ | Redis 同时能做缓存和队列 broker |
 | 数据库 | PostgreSQL | MySQL、SQLite | pgvector 和复杂查询更适合 PostgreSQL |
 | 向量库 | pgvector | Milvus、Qdrant | 第一版少一个外部系统，部署更稳 |
-| 前端 | Stitch 生成 UI | Streamlit、Next.js 手写 | 让主要开发时间集中在后端工程、Agent 状态机和 RAG |
+| 前端 | Next.js + TypeScript + Tailwind | Streamlit、纯 HTML、只保留 Stitch 导出 | Next.js 更适合后续接真实 API、路由、状态和可维护组件 |
 | 爬虫 | Playwright | Selenium、requests | Playwright 对动态页面更稳定 |
 
 ## 暂不优先的技术
@@ -53,5 +53,5 @@
 
 - 如果任务吞吐超过单机 Celery 能力，再考虑队列拆分
 - 如果评论规模超过 pgvector 查询舒适区，再考虑 Milvus 或 Qdrant
-- 如果 Stitch 生成代码难以维护，再评估改为手写 Next.js 或简化控制台
+- Stitch 导出只作为设计参考，不作为正式生产前端的长期代码形态
 - 如果 prompt 版本太多，再引入专门的 prompt registry

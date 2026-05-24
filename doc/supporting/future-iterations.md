@@ -28,7 +28,7 @@
 
 ## 可选增强
 
-- 从 Stitch 生成 UI 逐步重构为手写 Next.js
+- 把 Next.js mock 数据替换为真实 API client 和轮询状态流
 - 把爬虫 worker 拆成独立服务
 - 把向量检索迁到 Milvus
 - 加入多 Agent 分工

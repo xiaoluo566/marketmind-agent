@@ -2,13 +2,14 @@
 
 ## 决策
 
-前端 UI 由 Stitch 生成。后端、API、数据库、任务系统、Agent 状态机、爬虫、RAG、报告生成、部署和测试由本仓库继续实现。
+前端正式实现使用 Next.js。Stitch 导出作为视觉参考和页面结构参考。后端、API、数据库、任务系统、Agent 状态机、爬虫、RAG、报告生成、部署和测试由本仓库继续实现。
 
-这个决策会替代早期文档里“第一版优先 Streamlit”的默认方案。后续除非开发成本明显失控，否则优先走 Stitch 生成前端 + FastAPI 后端接口集成的路线。
+这个决策会替代早期文档里“第一版优先 Streamlit”的默认方案。后续优先走 Next.js 控制台 + FastAPI 后端接口集成的路线，Stitch 只保留为设计来源。
 
 ## 为什么这样分工
 
-- Stitch 更适合快速生成一个视觉上完整的控制台
+- Stitch 更适合快速生成视觉参考和页面结构
+- Next.js 更适合作为可维护的正式前端工程
 - 本项目的简历含金量主要在后端工程、异步任务、Agent 状态持久化和 RAG
 - 前端不应占用过多时间，但必须能演示完整流程
 - 前后端通过 API 契约解耦，避免 UI 生成工具影响后端架构
@@ -116,11 +117,12 @@
 
 ## 第一阶段集成策略
 
-1. 先保留 Stitch 生成的 UI 和 mock data
-2. 后端 API 完成后，把 mock data 替换成 API client
-3. 先用轮询实现任务进度
-4. 后续再升级到 SSE 或 WebSocket
-5. 前端只展示 Agent step 摘要，不展示敏感 prompt 或完整模型输入
+1. 保留 Stitch 导出作为设计参考
+2. 在 `frontend/` 中用 Next.js 重建可维护组件和路由
+3. 后端 API 完成后，把 mock data 替换成 API client
+4. 先用轮询实现任务进度
+5. 后续再升级到 SSE 或 WebSocket
+6. 前端只展示 Agent step 摘要，不展示敏感 prompt 或完整模型输入
 
 ## 与其他文档关系
 

@@ -30,8 +30,9 @@ build/
 !.env.example
 data/
 tmp/
+.playwright-mcp/
+stitch_marketmind_control_center/
 
 # IDE
 .vscode/
 .idea/
-

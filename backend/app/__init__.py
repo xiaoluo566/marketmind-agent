@@ -1,0 +1,2 @@
+"""MarketMind Agent backend package."""
+
