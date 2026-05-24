@@ -153,6 +153,24 @@
 - 第一版保留 `projects` 表并初始化默认项目，前端先不展示复杂项目管理。
 - CSV/JSON 导入的原始行数据必须进入 `reviews.raw_payload` 或 `artifacts`，方便回放和排错。
 
+## Alembic 迁移计划
+
+Day 3 初始迁移为 `0001_initial_schema`：
+
+- 启用 PostgreSQL `vector` extension
+- 创建 `users`、`projects`、`tasks`、`task_events`
+- 创建 `agent_runs`、`agent_steps`
+- 创建 `products`、`crawled_pages`、`reviews`、`review_chunks`
+- 创建 `reports`、`artifacts`、`error_logs`
+- 创建状态流、Agent step、评论归属和 pgvector HNSW 索引
+
+迁移原则：
+
+- 迁移脚本必须可 downgrade。
+- 不在 Day 3 写复杂 repository。
+- 不在迁移中写真实业务数据。
+- 默认本地用户和默认项目后续通过 seed 脚本或应用初始化创建。
+
 ## 数据所有权
 
 - API 创建 `tasks`

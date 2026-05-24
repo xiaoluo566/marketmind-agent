@@ -67,7 +67,7 @@
 2. 读取最后一条 `agent_steps`
 3. 如果最后一步是 `success`，从下一步继续
 4. 如果最后一步是 `pending` 或 `running`，检查工具是否幂等
-5. 如果工具幂等，标记旧步骤为 `failed_recovered` 后重试
+5. 如果工具幂等，标记旧步骤为 `failed`，并在 `tool_output` 或错误 payload 里记录 recovery 原因后重试
 6. 如果工具不幂等，创建人工确认事件
 
 ## 不要做的事

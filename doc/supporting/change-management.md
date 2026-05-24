@@ -48,9 +48,16 @@
 - 明确回退方式
 - 合并前检查 `release-checklist.md`
 
+## 数据库变更记录
+
+| 日期 | 分支 | 变更 | 风险等级 | 回退方式 |
+| --- | --- | --- | --- | --- |
+| 2026-05-25 | `dev` | Day 3 新增 SQLAlchemy 数据模型与 Alembic 初始迁移 `0001_initial_schema` | 中风险 | `uv run alembic downgrade -1`，或回退到提交前版本 |
+
+Day 3 的迁移只创建初始 schema，不迁移已有生产数据。当前没有真实业务数据，因此回退成本低；后续一旦有真实任务和报告数据，所有破坏性迁移都必须单独写风险说明。
+
 ## 与其他文档关系
 
 - 日常流程见 `dev-workflow.md`
 - 发版见 `release-checklist.md`
 - 风险见 `risk-register.md`
-
