@@ -28,6 +28,10 @@
 
 - `DATABASE_URL`
 - `REDIS_URL`
+- `CELERY_BROKER_URL`
+- `CELERY_RESULT_BACKEND`
+- `TASK_STATUS_REDIS_URL`
+- `TASK_STATUS_TTL_SECONDS`
 - `MODEL_PROVIDER`
 - `MODEL_NAME`
 - `REPORT_MODEL_NAME`
@@ -42,6 +46,18 @@
 - `REPORT_MODEL_NAME=gpt-5.5`
 - `EMBEDDING_MODEL=text-embedding-3-small`
 - `EMBEDDING_DIMENSIONS=1536`
+- `CELERY_BROKER_URL=redis://localhost:6379/1`
+- `CELERY_RESULT_BACKEND=redis://localhost:6379/2`
+- `TASK_STATUS_REDIS_URL=redis://localhost:6379/3`
+
+## 本地启动约定
+
+Day 5 开始后端依赖 Redis 才能投递真实后台任务。Windows 本机开发时，Celery worker 建议使用 `solo` pool，避免默认 prefork 在 Windows 下不稳定。
+
+```powershell
+uv run uvicorn app.main:app --app-dir backend --reload
+uv run celery -A app.worker.celery_app.celery_app worker -Q marketmind --loglevel=INFO --pool=solo
+```
 
 ## 依赖关系
 

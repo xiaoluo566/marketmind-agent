@@ -13,6 +13,10 @@ class Settings(BaseSettings):
     backend_cors_origins: list[str] = Field(default_factory=list)
     database_url: str = "postgresql+psycopg://marketmind:marketmind@localhost:5432/marketmind"
     redis_url: str = "redis://localhost:6379/0"
+    celery_broker_url: str = "redis://localhost:6379/1"
+    celery_result_backend: str = "redis://localhost:6379/2"
+    task_status_redis_url: str = "redis://localhost:6379/3"
+    task_status_ttl_seconds: int = 86_400
     model_provider: str = "openai-compatible"
     model_name: str = "gpt-5.4-mini"
     report_model_name: str = "gpt-5.5"

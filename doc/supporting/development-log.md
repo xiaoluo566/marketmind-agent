@@ -34,8 +34,8 @@
 | --- | --- |
 | 稳定分支 | `main` |
 | 日常开发分支 | `dev` |
-| 当前开发阶段 | Day 4 已完成，准备进入 Day 5 |
-| 当前主链路 | 文档基线、Next.js 控制台骨架、FastAPI health、任务创建 API 契约、数据库模型、Alembic 初始迁移 |
+| 当前开发阶段 | Day 5 已完成，准备进入 Day 6 |
+| 当前主链路 | 文档基线、Next.js 控制台骨架、FastAPI health、任务创建 API、Celery 入队、Redis 状态快照、数据库模型、Alembic 初始迁移 |
 | 最新开发提交 | 以 `git log -1 --oneline` 为准 |
 | 当前数据库决策 | PostgreSQL + pgvector，review chunk 使用 `vector(1536)` |
 | 当前模型决策 | 默认 `gpt-5.4-mini`，报告模型 `gpt-5.5`，embedding `text-embedding-3-small` |
@@ -70,7 +70,7 @@
 | Day 02 | Done | 架构冻结、分支策略、模型和数据源决策 | `d8e5ce2`、`c3fff46` |
 | Day 03 | Done | SQLAlchemy 数据模型与 Alembic 初始迁移 | `e258898` |
 | Day 04 | Done | API 契约与任务接收层 | `1abe635` |
-| Day 05 | Pending | Celery + Redis 基础任务队列 | 待记录 |
+| Day 05 | Done | Celery + Redis 基础任务队列 | 本节所在提交 |
 | Day 06 | Pending | 任务状态流与事件表写入 | 待记录 |
 | Day 07 | Pending | 第一周联调和基础设施验收 | 待记录 |
 | Day 08 | Pending | Playwright 采集策略与数据导入兜底 | 待记录 |
@@ -313,19 +313,62 @@ Day 4 原计划是继续做 FastAPI 骨架，但 Day 1 已经提前把骨架完�
 
 进入 Day 5，把 `POST /api/tasks` 从“接收层”升级为“任务入队层”，让 API 真正把长任务交给后台执行。
 
-## Day 05 记录模板
+## Day 05 记录
 
-计划主题：Celery + Redis 基础任务队列。
+### 实际完成
 
-实际完成：待记录。
+Day 5 的目标是把任务接收层升级成真正的异步任务入口。今天完成了 Celery + Redis 的基础接入，并把任务状态推进拆成“接收态 -> 排队态 -> 运行态 -> 完成态”的最小闭环。
 
-验证记录：待记录。
+完成内容：
 
-提交记录：待记录。
+- 新增 Celery app 配置，使用 Redis 作为 broker 和 result backend。
+- 新增任务状态存储抽象，并提供 Redis 实现和内存实现。
+- 新增 Celery 任务 `process_research_task`，作为最小后台执行单元。
+- 新增任务分发器抽象，把 API 和 Celery 投递解耦。
+- 将 `POST /api/tasks` 从 Day 4 的“接收层”升级为“入队层”。
+- 新增 `GET /api/tasks/{task_id}`，从状态存储读取任务快照。
+- 对 Redis 状态缓存不可用和队列不可用做统一错误 envelope。
+- 补充 Day 5 运行环境变量和开发约定。
 
-遗留问题：待记录。
+### 关键文件
 
-下一步：待记录。
+- `backend/app/core/config.py`
+- `backend/app/core/exceptions.py`
+- `backend/app/api/routes/tasks.py`
+- `backend/app/api/schemas/tasks.py`
+- `backend/app/tasks/dependencies.py`
+- `backend/app/tasks/dispatcher.py`
+- `backend/app/tasks/service.py`
+- `backend/app/tasks/status_store.py`
+- `backend/app/worker/celery_app.py`
+- `backend/app/worker/tasks.py`
+- `.env.example`
+- `doc/supporting/api-contract.md`
+- `doc/supporting/data-contract-examples.md`
+- `doc/supporting/dev-environment.md`
+- `backend/README.md`
+- `tests/test_tasks_api.py`
+- `tests/test_celery_worker.py`
+
+### 验证记录
+
+- `uv run pytest tests\\test_tasks_api.py tests\\test_celery_worker.py`：8 passed
+- `uv run ruff check backend tests migrations`：通过
+- `uv run pytest`：23 passed
+
+### 提交记录
+
+- 本节所在提交即 Day 5 开发提交，具体以 `git log -1 --oneline` 为准。
+
+### 遗留问题
+
+- 现在的“状态查询”仍然是 Redis 快照，不是数据库持久化。
+- Worker 只做了最小的状态推进，还没有真实爬虫或模型调用。
+- 还没有事件表写入和时间线查询。
+
+### 下一步
+
+进入 Day 6，把任务状态流和事件表写入补全，让 API 能看到更细的进度和失败原因。
 
 ## Day 06 记录模板
 

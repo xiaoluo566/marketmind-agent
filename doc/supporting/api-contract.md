@@ -24,7 +24,9 @@
 
 职责：只创建任务和投递异步队列，不直接执行爬虫或模型调用。
 
-Day 4 的实现范围是“契约先行”：只完成参数校验、生成 `task_id` 和返回统一 envelope。真实数据库写入与 Celery 投递从 Day 5 开始接入。
+Day 4 的实现范围是“契约先行”：只完成参数校验、生成 `task_id` 和返回统一 envelope。
+
+Day 5 开始接入 Celery + Redis：API 创建任务状态快照，投递 Celery 后返回 `queued`，Worker 负责把状态推进到 `running` / `completed`。
 
 输入：
 
@@ -39,6 +41,11 @@ Day 4 的实现范围是“契约先行”：只完成参数校验、生成 `tas
 - `task_id`
 - `status`
 - `trace_id`
+- `queue_task_id`
+
+失败：
+
+- 队列或 Redis 状态缓存不可用时返回 `QUEUE_UNAVAILABLE`
 
 ### `GET /api/tasks/{task_id}/events`
 
@@ -72,6 +79,7 @@ Day 4 的实现范围是“契约先行”：只完成参数校验、生成 `tas
 - API 不直接执行重任务
 - API 不写业务判断
 - API 只做参数接入、调度和查询
+- `GET /api/tasks/{task_id}` 在 Day 5 只读取 Redis 状态快照，Day 6 再扩展事件流
 
 ## 错误码建议
 

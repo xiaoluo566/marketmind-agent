@@ -15,22 +15,23 @@
 - Celery app
 - Redis broker 配置
 - 最小后台任务
-- `POST /api/tasks`
-- `GET /api/tasks/{task_id}` 原型
+- `POST /api/tasks` 入队实现
+- `GET /api/tasks/{task_id}` 状态快照原型
 
 ## 实施步骤
 
 1. 配置 Celery broker 和 result backend
 2. 写一个最小任务，例如打印或记录 URL
-3. API 接收到请求后创建任务记录
+3. API 接收到请求后创建 Redis 状态快照
 4. API 投递 Celery 后立即返回 `task_id`
 5. Worker 更新任务状态
+6. 队列或 Redis 不可用时返回统一错误 envelope
 
 ## 验收标准
 
 - API 请求不会等待 Worker 完成
 - Worker 能消费任务
-- 数据库或缓存能查到任务状态
+- Redis 缓存能查到任务状态快照
 - Worker 未启动时 API 能明确报错或保留 queued 状态
 
 ## 风险与回退
@@ -48,4 +49,3 @@
 ## 建议提交
 
 `feat: add celery task pipeline`
-

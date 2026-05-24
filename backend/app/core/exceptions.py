@@ -8,6 +8,21 @@ from fastapi.responses import JSONResponse
 from app.core.responses import error_response
 
 
+class AppError(Exception):
+    def __init__(
+        self,
+        code: str,
+        message: str,
+        status_code: int = 400,
+        details: dict[str, Any] | None = None,
+    ) -> None:
+        self.code = code
+        self.message = message
+        self.status_code = status_code
+        self.details = details or {}
+        super().__init__(message)
+
+
 def _sanitize(value: Any) -> Any:
     if isinstance(value, dict):
         return {str(key): _sanitize(item) for key, item in value.items()}
@@ -38,6 +53,19 @@ async def request_validation_exception_handler(
             message="request validation failed",
             trace_id=trace_id,
             details=_validation_details(exc.errors()),
+        ),
+    )
+
+
+async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
+    trace_id = getattr(request.state, "trace_id", None)
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=error_response(
+            code=exc.code,
+            message=exc.message,
+            trace_id=trace_id,
+            details=_sanitize(exc.details),
         ),
     )
 

@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import StrEnum
 from typing import Any
 
@@ -45,3 +46,20 @@ class TaskAcceptedData(BaseModel):
     task_id: str
     status: str
     trace_id: str
+    queue_task_id: str | None = None
+
+
+class TaskStatusData(BaseModel):
+    task_id: str
+    status: str
+    trace_id: str
+    target: str
+    mode: str
+    priority: str
+    source_type: str
+    options: dict[str, Any] = Field(default_factory=dict)
+    queue_task_id: str | None = None
+    error_code: str | None = None
+    error_message: str | None = None
+    created_at: datetime
+    updated_at: datetime

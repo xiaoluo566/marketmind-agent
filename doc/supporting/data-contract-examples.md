@@ -47,10 +47,39 @@ CSV 表头或 JSON 对象字段第一版按下面约定：
   "success": true,
   "data": {
     "task_id": "tsk_01HXYZ",
-    "status": "received",
-    "trace_id": "trc_01HABC"
+    "status": "queued",
+    "trace_id": "trc_01HABC",
+    "queue_task_id": "celery_01HQUEUE"
   },
   "message": "accepted",
+  "trace_id": "trc_01HABC"
+}
+```
+
+## 查询任务状态响应
+
+```json
+{
+  "success": true,
+  "data": {
+    "task_id": "tsk_01HXYZ",
+    "status": "queued",
+    "trace_id": "trc_01HABC",
+    "target": "https://example.com/product/123",
+    "mode": "competitive_research",
+    "priority": "normal",
+    "source_type": "public_url",
+    "options": {
+      "use_rag": true,
+      "export_format": "markdown"
+    },
+    "queue_task_id": "celery_01HQUEUE",
+    "error_code": null,
+    "error_message": null,
+    "created_at": "2026-05-25T10:00:00Z",
+    "updated_at": "2026-05-25T10:00:01Z"
+  },
+  "message": "ok",
   "trace_id": "trc_01HABC"
 }
 ```

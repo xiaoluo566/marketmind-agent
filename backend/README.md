@@ -7,7 +7,7 @@ FastAPI backend for MarketMind Agent.
 - Accept task requests from the frontend
 - Return stable API envelopes
 - Own request validation and trace IDs
-- Dispatch long-running work to background workers in later milestones
+- Dispatch long-running work to background workers
 - Expose task, event, Agent step, report, and evidence APIs
 
 ## Current status
@@ -28,3 +28,22 @@ Day 3 storage baseline:
 - Status enums for tasks, Agent runs, and Agent steps
 - pgvector review chunk field fixed at 1536 dimensions
 - Alembic scaffold and initial schema migration
+
+Day 5 async task baseline:
+
+- `POST /api/tasks` creates a task status snapshot and dispatches Celery work
+- `GET /api/tasks/{task_id}` reads the current task status snapshot
+- Redis-backed task status store
+- Celery app configured with Redis broker and result backend
+- Minimal worker task that advances queued tasks to running and completed
+
+## Local worker
+
+Redis must be running before using the real queue path.
+
+```powershell
+uv run uvicorn app.main:app --app-dir backend --reload
+uv run celery -A app.worker.celery_app.celery_app worker -Q marketmind --loglevel=INFO --pool=solo
+```
+
+Use `--pool=solo` on Windows.
