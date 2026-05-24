@@ -30,8 +30,18 @@
 - `REDIS_URL`
 - `MODEL_PROVIDER`
 - `MODEL_NAME`
+- `REPORT_MODEL_NAME`
+- `EMBEDDING_MODEL`
+- `EMBEDDING_DIMENSIONS`
 - `APP_ENV`
 - `LOG_LEVEL`
+
+默认开发配置：
+
+- `MODEL_NAME=gpt-5.4-mini`
+- `REPORT_MODEL_NAME=gpt-5.5`
+- `EMBEDDING_MODEL=text-embedding-3-small`
+- `EMBEDDING_DIMENSIONS=1536`
 
 ## 依赖关系
 
@@ -42,4 +52,3 @@
 - 环境配置先文档化再写代码
 - 任何新依赖都要说明用途和可替代方案
 - 本机可以跑通后再考虑容器化
-

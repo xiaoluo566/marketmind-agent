@@ -19,6 +19,16 @@
 5. 按语义检索召回
 6. 再做摘要和归纳
 
+## Embedding 冻结
+
+第一版使用：
+
+- 模型：`text-embedding-3-small`
+- 维度：1536
+- pgvector 字段：`vector(1536)`
+
+不要在同一张向量表里混写不同模型或不同维度的向量。后续如果升级到 `text-embedding-3-large`，需要通过 `embedding_model`、`embedding_dimensions` 或新的索引版本区分。
+
 ## 清洗规则
 
 - 去除 HTML 标签、脚本和无意义空白
@@ -66,4 +76,5 @@
 
 - 评论来源见 `crawler-strategy.md`
 - 向量字段见 `data-model.md`
+- 模型和数据源决策见 `model-and-data-decisions.md`
 - 报告引用见 `demo-script.md` 和 `resume-story.md`

@@ -2,17 +2,15 @@
 
 ## 当前待定
 
-- 首发站点是哪一个
-- 是否需要用户登录体系
-- 是否需要多项目隔离
-- CSV / JSON 兜底导入的第一版字段格式
+- 首个定制站点适配器选哪一个
+- 是否加入代理池
+- 是否把 report model 和 planner model 做成前端可配置
 
 ## 建议优先决策
 
-1. 首发站点和兜底数据格式
-2. 模型提供方和 embedding 模型
-3. 是否保留用户系统
-4. 是否需要多项目隔离
+1. Day 8 前决定首个定制站点适配器
+2. Day 8 前决定是否需要代理池
+3. Day 16 前决定最终报告是否开放模型切换
 
 ## 已决策
 
@@ -23,6 +21,13 @@
 - 第一版允许 CSV / JSON 作为爬虫失败时的兜底数据源
 - 第一版采用“模块化单体 + Celery worker”，暂不拆复杂微服务
 - Day 2 以后日常开发使用 `dev` 分支，`main` 保持稳定可演示版本
+- 默认推理模型使用 `gpt-5.4-mini`
+- 高质量报告模型预留 `gpt-5.5`
+- embedding 使用 `text-embedding-3-small`，维度固定为 1536
+- 第一版主数据源使用 Demo Dataset + CSV/JSON Upload
+- URL 爬虫第一版使用 generic public page crawler，不绑定高风险电商站
+- 第一版不做真实登录，使用默认本地用户
+- 第一版数据库保留 `projects`，前端只使用默认项目
 
 ## 决策原则
 
@@ -39,5 +44,6 @@
 ## 与其他文档关系
 
 - 技术决策进入 `tech-stack-decisions.md`
+- 模型和数据源决策进入 `model-and-data-decisions.md`
 - 风险进入 `risk-register.md`
 - 后续增强进入 `future-iterations.md`

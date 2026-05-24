@@ -13,7 +13,7 @@
 这套文档不是平铺的说明书，而是“先定义能力，再拆任务，再按天执行，再做复盘”的链式结构：
 
 - `project-charter.md` 负责说清楚为什么做、做给谁、做到什么程度
-- `architecture.md` 和 `data-model.md` 负责说清楚系统怎么分层、数据怎么流转
+- `architecture.md`、`model-and-data-decisions.md` 和 `data-model.md` 负责说清楚系统怎么分层、模型和数据源怎么选、数据怎么流转
 - `api-contract.md`、`agent-state-machine.md`、`prompt-strategy.md` 负责说清楚代码层怎么对接
 - `crawler-strategy.md`、`rag-memory.md`、`ui-console-spec.md` 负责说清楚核心功能怎么实现
 - `testing-strategy.md`、`deployment.md`、`release-checklist.md` 负责说清楚怎么验证、怎么发版、怎么回退
@@ -27,20 +27,22 @@
 1. `supporting/project-charter.md`
 2. `supporting/dependency-map.md`
 2. `supporting/architecture.md`
-3. `supporting/data-model.md`
-4. `supporting/api-contract.md`
-5. `supporting/agent-state-machine.md`
-6. `supporting/prompt-strategy.md`
-7. `supporting/crawler-strategy.md`
-8. `supporting/rag-memory.md`
-9. `supporting/stitch-frontend-handoff.md`
-10. `supporting/stitch-generation-prompt.md`
-11. `supporting/stitch-export-review.md`
-12. `roadmap/day-01.md` 起按天推进
+3. `supporting/model-and-data-decisions.md`
+4. `supporting/data-model.md`
+5. `supporting/api-contract.md`
+6. `supporting/agent-state-machine.md`
+7. `supporting/prompt-strategy.md`
+8. `supporting/crawler-strategy.md`
+9. `supporting/rag-memory.md`
+10. `supporting/stitch-frontend-handoff.md`
+11. `supporting/stitch-generation-prompt.md`
+12. `supporting/stitch-export-review.md`
+13. `roadmap/day-01.md` 起按天推进
 
 ## 横向重点文档
 
 - `supporting/milestones-and-acceptance.md`：每周交付物和验收门槛
+- `supporting/model-and-data-decisions.md`：模型、embedding、数据源、CSV/JSON、用户和项目隔离决策
 - `supporting/dev-workflow.md`：日常开发、分支、提交、回退流程
 - `supporting/llmops-metrics.md`：模型调用、成本、失败率和自愈统计
 - `supporting/security-compliance.md`：安全、隐私和采集合规边界

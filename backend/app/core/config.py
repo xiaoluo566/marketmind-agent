@@ -14,8 +14,10 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg://marketmind:marketmind@localhost:5432/marketmind"
     redis_url: str = "redis://localhost:6379/0"
     model_provider: str = "openai-compatible"
-    model_name: str = "gpt-5.4"
+    model_name: str = "gpt-5.4-mini"
+    report_model_name: str = "gpt-5.5"
     embedding_model: str = "text-embedding-3-small"
+    embedding_dimensions: int = 1536
 
     model_config = SettingsConfigDict(
         env_file=".env",

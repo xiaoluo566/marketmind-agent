@@ -7,6 +7,8 @@
 ## 必收集指标
 
 - 模型名称
+- 报告模型名称
+- embedding 模型和维度
 - prompt 版本
 - 单任务 token 消耗
 - 单任务模型调用次数
@@ -22,6 +24,9 @@
 可以先放在 `agent_runs` 和 `agent_steps`，后续再拆出专门指标表。
 
 - `model_name`
+- `report_model_name`
+- `embedding_model`
+- `embedding_dimensions`
 - `prompt_version`
 - `input_tokens`
 - `output_tokens`

@@ -23,6 +23,17 @@
 - 运行层面：至少拆成 `frontend`、`api`、`worker`、`postgres`、`redis` 五个运行单元。
 - 演进层面：只有当 Playwright、embedding 或报告生成成为真实瓶颈时，才拆独立 worker 池。
 
+## 模型与数据源选择
+
+- 默认推理模型：`gpt-5.4-mini`
+- 高质量报告模型：`gpt-5.5`
+- embedding 模型：`text-embedding-3-small`
+- embedding 维度：1536
+- 第一版主数据源：Demo Dataset + CSV/JSON Upload
+- 第一版 URL 采集：Generic public page crawler
+
+详细理由和后续升级规则见 `model-and-data-decisions.md`。
+
 ## 选型理由
 
 - FastAPI 适合做 API 网关和文档输出

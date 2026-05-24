@@ -13,6 +13,12 @@ Agent 项目最后最容易失控的地方，不是 API，而是 prompt：版本
 - `report prompt`：定义如何生成报告
 - `self-heal prompt`：定义 JSON 修复和格式恢复
 
+## 模型分层
+
+第一版默认用 `gpt-5.4-mini` 执行高频、结构化、可重试的 Agent 步骤，例如工具参数生成、普通总结和 JSON self-heal。
+
+最终报告生成可以切到 `gpt-5.5`，但必须通过 `REPORT_MODEL_NAME` 配置控制，不能在 prompt 或业务代码里写死。
+
 ## 每个 prompt 必须带的元信息
 
 - 名称
@@ -33,5 +39,5 @@ Agent 项目最后最容易失控的地方，不是 API，而是 prompt：版本
 
 - `agent-state-machine.md` 决定 prompt 在什么时候被调用
 - `data-model.md` 决定 prompt 产出的数据怎么存
+- `model-and-data-decisions.md` 决定默认模型和报告模型
 - `testing-strategy.md` 决定 prompt 是否回归
-

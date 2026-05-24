@@ -41,6 +41,7 @@
 - `task_id`
 - `status`
 - `model_name`
+- `report_model_name`
 - `prompt_version`
 - `started_at`
 - `finished_at`
@@ -83,6 +84,8 @@
 - `chunk_index`
 - `content`
 - `embedding`
+- `embedding_model`
+- `embedding_dimensions`
 - `metadata`
 
 ## 关键关系
@@ -106,8 +109,11 @@
 - `source_url`
 - `source_type`
 - `model_name`
+- `report_model_name`
 - `prompt_version`
 - `schema_version`
+- `embedding_model`
+- `embedding_dimensions`
 
 ## 状态枚举建议
 
@@ -136,7 +142,16 @@
 - `agent_steps(agent_run_id, step_index)`
 - `reviews(product_id)`
 - `review_chunks(task_id)`
-- `review_chunks.embedding` 使用 pgvector index
+- `review_chunks.embedding` 使用 pgvector index，第一版按 `vector(1536)` 设计
+
+## Day 3 建模约束
+
+- 第一版 embedding 固定为 `text-embedding-3-small`。
+- 第一版 embedding 维度固定为 1536。
+- `review_chunks` 必须记录 `embedding_model` 和 `embedding_dimensions`，避免未来升级模型后混写不同维度向量。
+- 第一版不做真实登录，但保留 `users` 表并初始化默认本地用户。
+- 第一版保留 `projects` 表并初始化默认项目，前端先不展示复杂项目管理。
+- CSV/JSON 导入的原始行数据必须进入 `reviews.raw_payload` 或 `artifacts`，方便回放和排错。
 
 ## 数据所有权
 
