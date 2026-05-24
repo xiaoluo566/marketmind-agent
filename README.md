@@ -9,9 +9,10 @@
 - `doc/`：30 天开发计划 + 横向设计文档
 - `backend/`：FastAPI 后端骨架
 - `frontend/`：Next.js 控制台骨架
-- `stitch_marketmind_control_center/`：Stitch 原始设计导出，作为视觉参考
+- `stitch_marketmind_control_center/`：本地 Stitch 原始设计导出，已被 `.gitignore` 忽略，只作为可选视觉参考
 - 本地 Git：已初始化
 - GitHub：私有仓库已创建并已推送初始版本
+- 分支策略：`main` 保持稳定演示版本，`dev` 用于 Day 2 以后日常开发
 
 ## 阅读顺序
 
@@ -28,7 +29,7 @@
 
 ## 当前阶段
 
-现在处于“文档先行”阶段。代码开发前必须先把接口边界、数据模型、任务流、失败恢复和测试策略写清楚。
+现在处于“架构冻结 + 基础骨架”阶段。Day 1 已完成仓库、文档、FastAPI health 和 Next.js 控制台骨架；Day 2 开始在 `dev` 分支上冻结架构边界，再继续接数据库、任务队列和真实任务流。
 
 ## 开发原则
 

@@ -15,6 +15,14 @@
 - 容器化：Docker Compose
 - 测试：pytest
 
+## Day 2 冻结口径
+
+第一版不是传统微服务，也不是一个单体脚本。正式口径是“模块化单体 + Celery 异步 worker + PostgreSQL/Redis 基础设施”。
+
+- 代码层面：一个后端应用内按 `api`、`storage`、`tasks`、`agent`、`crawler`、`rag`、`reports` 拆模块。
+- 运行层面：至少拆成 `frontend`、`api`、`worker`、`postgres`、`redis` 五个运行单元。
+- 演进层面：只有当 Playwright、embedding 或报告生成成为真实瓶颈时，才拆独立 worker 池。
+
 ## 选型理由
 
 - FastAPI 适合做 API 网关和文档输出
@@ -42,6 +50,7 @@
 - Milvus：除非数据规模上来
 - Kubernetes：除非部署复杂度明显增长
 - 复杂微服务拆分：第一版不需要
+- Temporal：适合更复杂的工作流编排，但第一版 Celery 更易落地和讲清楚
 
 ## 选型原则
 
@@ -55,3 +64,4 @@
 - 如果评论规模超过 pgvector 查询舒适区，再考虑 Milvus 或 Qdrant
 - Stitch 导出只作为设计参考，不作为正式生产前端的长期代码形态
 - 如果 prompt 版本太多，再引入专门的 prompt registry
+- 如果 Agent 状态恢复逻辑明显复杂到 Celery 难以表达，再评估 Temporal
