@@ -4,7 +4,6 @@
 
 - 首发站点是哪一个
 - 是否允许 CSV / JSON 手工导入
-- 前端第一版用 Streamlit 还是 Next.js
 - 是否需要用户登录体系
 - 是否需要多项目隔离
 
@@ -12,8 +11,14 @@
 
 1. 首发站点和兜底数据格式
 2. 模型提供方和 embedding 模型
-3. 前端第一版 Streamlit 还是 Next.js
-4. 是否保留用户系统
+3. 是否保留用户系统
+4. 是否需要多项目隔离
+
+## 已决策
+
+- 前端 UI 由 Stitch 生成
+- 后端、任务系统、数据库、Agent、RAG 和部署由本仓库实现
+- 第一版前端通过 FastAPI API 契约接入，不直接访问数据库或模型
 
 ## 决策原则
 
@@ -32,4 +37,3 @@
 - 技术决策进入 `tech-stack-decisions.md`
 - 风险进入 `risk-register.md`
 - 后续增强进入 `future-iterations.md`
-

@@ -17,6 +17,7 @@
 - `api-contract.md`、`agent-state-machine.md`、`prompt-strategy.md` 负责说清楚代码层怎么对接
 - `crawler-strategy.md`、`rag-memory.md`、`ui-console-spec.md` 负责说清楚核心功能怎么实现
 - `testing-strategy.md`、`deployment.md`、`release-checklist.md` 负责说清楚怎么验证、怎么发版、怎么回退
+- `stitch-frontend-handoff.md` 负责说清楚 Stitch 前端的交接方式
 - `roadmap/day-xx.md` 负责把这些内容拆成可执行日程
 
 ## 阅读顺序
@@ -30,7 +31,8 @@
 6. `supporting/prompt-strategy.md`
 7. `supporting/crawler-strategy.md`
 8. `supporting/rag-memory.md`
-9. `roadmap/day-01.md` 起按天推进
+9. `supporting/stitch-frontend-handoff.md`
+10. `roadmap/day-01.md` 起按天推进
 
 ## 横向重点文档
 
@@ -42,6 +44,7 @@
 - `supporting/future-iterations.md`：30 天之后的迭代方向
 - `supporting/dependency-map.md`：文档之间的前后依赖
 - `supporting/release-checklist.md`：发版前检查项
+- `supporting/stitch-frontend-handoff.md`：Stitch 前端生成和交接规范
 
 ## 使用方式
 

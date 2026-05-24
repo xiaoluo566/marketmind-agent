@@ -6,6 +6,8 @@
 
 ## 第一版页面
 
+前端 UI 由 Stitch 生成，本仓库负责接口契约、后端实现和前端接入。页面视觉与组件结构可以由 Stitch 决定，但页面职责必须符合本文件。
+
 - 任务提交页
 - 任务详情页
 - 实时进度页
@@ -44,3 +46,6 @@
 
 这个页面依赖 `api-contract.md`、`observability.md` 和 `agent-state-machine.md`。
 
+## Stitch 交接
+
+Stitch 相关前端生成和交接要求见 `stitch-frontend-handoff.md`。

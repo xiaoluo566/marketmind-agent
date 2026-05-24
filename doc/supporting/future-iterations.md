@@ -28,7 +28,7 @@
 
 ## 可选增强
 
-- 从 Streamlit 切到 Next.js
+- 从 Stitch 生成 UI 逐步重构为手写 Next.js
 - 把爬虫 worker 拆成独立服务
 - 把向量检索迁到 Milvus
 - 加入多 Agent 分工
@@ -54,4 +54,3 @@
 - 当前版本边界见 `project-charter.md`
 - 里程碑见 `milestones-and-acceptance.md`
 - 风险评估见 `risk-register.md`
-
