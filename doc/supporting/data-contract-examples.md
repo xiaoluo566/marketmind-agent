@@ -246,13 +246,61 @@ CSV 表头或 JSON 对象字段第一版按下面约定：
 
 ```json
 {
+  "agent_run_id": "run_01HXYZ",
   "task_id": "tsk_01HXYZ",
+  "step_index": 2,
   "step_type": "action",
   "tool_name": "crawl_product_tool",
   "status": "pending",
-  "input": {
-    "url": "https://example.com/product/123"
-  }
+  "thought": null,
+  "tool_input": {
+    "url": "https://example.com/product/123",
+    "source_type": "html_fixture"
+  },
+  "tool_output": {},
+  "observation": null,
+  "error_message": null,
+  "started_at": null,
+  "finished_at": null
+}
+```
+
+## Agent run 记录示例
+
+```json
+{
+  "run_id": "run_01HXYZ",
+  "task_id": "tsk_01HXYZ",
+  "status": "running",
+  "model_provider": "openai-compatible",
+  "model_name": "gpt-5.4-mini",
+  "report_model_name": "gpt-5.5",
+  "prompt_version": "v1",
+  "started_at": "2026-05-25T10:00:02Z",
+  "finished_at": null
+}
+```
+
+## Agent Thought / Observation 示例
+
+```json
+{
+  "agent_run_id": "run_01HXYZ",
+  "task_id": "tsk_01HXYZ",
+  "step_index": 3,
+  "step_type": "observation",
+  "status": "success",
+  "thought": null,
+  "tool_name": "crawl_product_tool",
+  "tool_input": {},
+  "tool_output": {
+    "success": true,
+    "data": {
+      "title": "Portable Espresso Maker"
+    }
+  },
+  "observation": "采集完成：Portable Espresso Maker，共提取 1 条评论证据。",
+  "error_message": null
 }
 ```
 

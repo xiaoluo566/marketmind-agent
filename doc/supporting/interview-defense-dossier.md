@@ -84,6 +84,12 @@ Day 10 做工具 schema 和工具注册机制，是因为 ReAct loop 不是凭�
 
 > Day 10 我没有急着写 Agent loop，而是先把工具层打稳。因为 Agent 最容易失控的地方不是循环本身，而是模型生成的工具参数不可靠、工具失败不可分类、结果格式不统一。我通过 Pydantic schema、ToolRegistry 和 ToolExecutor 先把工具调用变成一个可验证的后端契约。
 
+Day 11 做 ReAct 状态机和 `agent_steps` 落库，是因为 Day 10 已经把工具契约固定住了，但 Agent 还没有真正进入“可回放的执行链路”。如果只停留在工具注册和执行器层，Agent 仍然只是静态能力清单；只有把 Thought、Action、Observation 记录到数据库里，Agent 才具备调试、恢复和面试展示的价值。今天我选择先做最小单步 ReAct，而不是直接做多轮规划，是为了先验证状态机与数据库落库边界，再逐步接大模型规划器、guardrails 和记忆。
+
+面试时可以这样讲：
+
+> Day 11 我把 Agent 从“工具层”推进到“执行层”。我没有一上来做完整的多轮规划，而是先把 Thought / Action / Observation 三层记录打通，因为这一步决定了这个 Agent 是不是能回放、能恢复、能解释。
+
 ### Day 8 之后追加模板
 
 ```markdown
@@ -277,11 +283,11 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 
 ### 7. 我对“不要夸大进度”的思考
 
-这个项目目前还在 Day 10，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
+这个项目目前推进到 Day 11，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
 
-- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、工具 schema、工具注册机制、错误 envelope、测试。
-- 正在做：ReAct 状态机。
-- 后续做：Agent、RAG、报告、前端真实接入、部署。
+- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、工具 schema、工具注册机制、最小 ReAct 状态机、Agent step 落库、错误 envelope、测试。
+- 正在做：结构化输出 guardrails 和 self-heal。
+- 后续做：多轮 LLM planner、RAG、报告、前端真实接入、部署。
 
 我认为这反而是加分项。因为真实开发中，清楚知道自己完成了什么、没完成什么，比把项目包装得过满更可信。
 
@@ -323,7 +329,7 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 
 ## 当前开发进度怎么讲
 
-截至 Day 10，项目已经完成：
+截至 Day 11，项目已经完成：
 
 - 文档体系、30 天 roadmap、开发日志。
 - Next.js 控制台骨架。
@@ -350,6 +356,10 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 - 采集结果幂等写入策略，避免同一任务重复运行造成不可控重复数据。
 - Agent 工具 schema、工具注册机制和统一工具执行 envelope。
 - 第一版 `crawl_product_tool`，可通过 ToolExecutor 调用采集能力。
+- `SQLAlchemyAgentRunStore`，用于持久化 `agent_runs` 和 `agent_steps`。
+- 最小 `AgentStateMachine`，可以记录 Thought、Action、Observation。
+- 工具调用前后状态落库，Action step 能从 pending/running 更新为 success/failed。
+- Agent 工具失败时，错误码和失败 observation 会写入数据库，不覆盖旧 step。
 - 队列不可用、状态缓存不可用、参数校验失败的统一错误响应。
 - pytest + ruff + Next.js build 验证。
 
@@ -357,14 +367,14 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 
 - 具体电商站点 adapter。
 - 失败截图 artifact。
-- Agent ReAct 状态机。
-- Agent step 持久化接入工具执行结果。
+- 多轮 LLM planner。
+- Agent step 前端展示。
 - 评论 embedding 写入和语义检索。
 - 报告生成。
 - 前端接真实 API。
 - Docker Compose 全链路一键启动。
 
-面试时可以诚实讲：这个项目正在按 30 天里程碑推进，目前已经完成底层任务入口、异步管线、任务事件流、PostgreSQL 持久化、Playwright 最小采集、采集结果入库和 Agent 工具契约，下一阶段会接 ReAct 状态机。重点是展示工程化思路和持续推进能力，而不是假装已经做完所有功能。
+面试时可以诚实讲：这个项目正在按 30 天里程碑推进，目前已经完成底层任务入口、异步管线、任务事件流、PostgreSQL 持久化、Playwright 最小采集、采集结果入库、Agent 工具契约和最小 ReAct 状态机。下一阶段会补结构化输出 guardrails、短期记忆、评论 embedding 和报告链路。重点是展示工程化思路和持续推进能力，而不是假装已经做完所有功能。
 
 ## 2 分钟项目介绍话术
 
@@ -883,6 +893,28 @@ Day 6 已经有 `task_events` 数据表，也已经有 `GET /api/tasks/{task_id}
 
 > 我把事件系统拆成两步：Day 6 先把事件格式和写入时机稳定下来，Day 7 再接 PostgreSQL 持久化。这样 Redis 负责实时进度，PostgreSQL 负责长期审计和恢复，边界更清楚。
 
+### 问题 12：Day 11 为什么先做最小 ReAct 状态机，而不是完整多轮规划
+
+现象：
+
+Day 10 已经有工具契约和执行器，下一步很容易直接上完整 LLM planner。但如果这样做，状态机、工具调用、落库和异常处理会一起变复杂。
+
+思考：
+
+完整 planner 不是最先要验证的点。真正先要确认的是：Agent 每一步是不是都能被持久化，失败时旧 step 会不会被覆盖，观察结果能不能回放。只要这层不稳，后面再聪明的 planner 也只是黑盒。
+
+解决：
+
+- 先实现单步最小 ReAct。
+- 把 Thought、Action、Observation 拆成独立 step。
+- 用 `SQLAlchemyAgentRunStore` 管 run 和 step。
+- 工具调用结果直接写入 `tool_output` 和 `observation`。
+- 用 `max_tool_calls` 先封住无界循环风险。
+
+面试表达：
+
+> Day 11 我没有急着做完整多轮 Agent，而是先把状态机做成可回放、可恢复的最小版本。因为在工程上，先证明“能记录清楚每一步”比先证明“模型能想很多步”更重要。
+
 ## 高频面试问题与回答
 
 ### Q1：你这个项目和普通“调用大模型生成报告”的项目有什么区别？
@@ -1056,12 +1088,15 @@ API 只负责投递任务。只要 Redis broker 可用，任务会处于 queued�
 - `GET /api/tasks/{task_id}` 成功和 404。
 - 队列不可用、状态存储不可用。
 - Celery 配置和 worker 任务状态推进。
+- 任务状态和任务事件 PostgreSQL 持久化。
+- Playwright / HTML fixture 采集成功、失败和 artifact 保存。
+- 采集结果写入 product、page、review、artifact。
+- Agent 工具注册、参数校验和统一执行 envelope。
+- Agent 状态机的 step 顺序、成功链路、失败链路和最大工具调用限制。
 
 后续会加：
 
-- repository 集成测试。
-- crawler 固定页面测试。
-- Agent 工具 schema 测试。
+- 真实 Redis + Celery worker 联调测试。
 - RAG 检索召回测试。
 - Playwright E2E。
 
@@ -1277,7 +1312,7 @@ Agent step 状态：
 
 ## 目前最适合展示的代码点
 
-截至 Day 10，最适合展示：
+截至 Day 11，最适合展示：
 
 - `backend/app/api/routes/tasks.py`：API 如何接收任务、投递队列、统一错误。
 - `backend/app/tasks/service.py`：任务状态创建和入队流程。
@@ -1293,6 +1328,8 @@ Agent step 状态：
 - `backend/app/agent/tools/registry.py`：工具注册和发现机制。
 - `backend/app/agent/tools/executor.py`：统一工具执行 envelope 和错误分类。
 - `backend/app/agent/tools/builtin.py`：`crawl_product_tool` 内置工具。
+- `backend/app/storage/agent_stores.py`：Agent run / step 持久化 store。
+- `backend/app/agent/state_machine.py`：最小 ReAct 状态机，记录 Thought / Action / Observation。
 - `backend/app/storage/models.py`：数据库模型设计。
 - `migrations/versions/0002_task_queue_id.py`：任务队列 ID 持久化迁移。
 - `tests/test_task_persistence.py`：任务和事件持久化测试。
@@ -1301,6 +1338,7 @@ Agent step 状态：
 - `tests/test_crawler_service.py`：采集成功、拦截、空 DOM 和 artifact 保存测试。
 - `tests/test_crawl_persistence.py`：采集结果入库和幂等测试。
 - `tests/test_agent_tools.py`：工具注册、参数校验、统一执行结果和分类错误测试。
+- `tests/test_agent_state_machine.py`：Agent step 顺序、成功链路、失败链路和最大工具调用限制测试。
 
 ## 如果被问“你在项目中学到了什么”
 
@@ -1322,7 +1360,7 @@ Agent step 状态：
 短期：
 
 - Day 10：Agent 工具 schema 和工具注册机制已完成。
-- Day 11：ReAct 状态机和 Agent step 持久化。
+- Day 11：ReAct 状态机和 Agent step 持久化已完成。
 - Day 12：Pydantic guardrails 和 self-heal。
 
 中期：
@@ -1351,4 +1389,4 @@ Agent step 状态：
 
 如果让你说下一步：
 
-> 下一步我会把 ToolExecutor 接到 ReAct 状态机里，并把每次 Action / Observation 写入 `agent_steps`，这样 Agent 的每一步工具调用都能被回放和恢复。
+> 下一步我会在现有 ReAct 状态机上补 Pydantic guardrails 和 self-heal，让模型结构化输出失败时可以被拦截、纠正和重试。

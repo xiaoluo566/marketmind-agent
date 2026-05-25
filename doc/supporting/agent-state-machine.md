@@ -84,6 +84,39 @@ Day 10 起工具契约由 `backend/app/agent/tools/` 维护：
 
 Agent 后续只能通过 registry 和 executor 调用工具，不允许直接绕过 schema 调用具体业务函数。
 
+## Day 11 最小实现
+
+Day 11 已经把状态机从文档推进到代码。当前实现位置：
+
+- `backend/app/storage/agent_stores.py`
+- `backend/app/agent/state_machine.py`
+- `tests/test_agent_state_machine.py`
+
+当前不是完整多轮 LLM planner，而是最小可运行 ReAct 状态机。它的目标是先把“每一步可追踪”打通：
+
+1. 创建 `agent_runs`，初始状态为 `pending`。
+2. 将 run 标记为 `running`。
+3. 写入 `thought` step，说明为什么下一步要调用工具。
+4. 写入 `action` step，记录工具名和工具参数，初始状态为 `pending`。
+5. 工具执行前把 action step 标记为 `running`。
+6. 通过 `ToolExecutor` 调用 `crawl_product_tool`。
+7. 工具成功时，写入完整 `tool_output`，把 action step 标记为 `success`。
+8. 工具失败时，写入结构化错误，把 action step 标记为 `failed`。
+9. 追加 `observation` step，保存可读观察结果。
+10. 根据工具结果把 run 标记为 `completed` 或 `failed`。
+
+当前 step 粒度：
+
+| step_type | 记录内容 | 说明 |
+| --- | --- | --- |
+| `thought` | `thought` | 记录本轮为什么选择某个动作 |
+| `action` | `tool_name`、`tool_input`、`tool_output`、`status` | 记录具体工具调用和执行结果 |
+| `observation` | `observation`、`tool_output` | 记录工具结果对 Agent 来说意味着什么 |
+
+这里故意把 Thought、Action、Observation 拆成多条 step，而不是压进一条日志，是为了方便前端后续展示时间线，也方便失败后定位卡在“决策、执行、观察”的哪一层。
+
+当前没有把 worker 主流程替换为 Agent 状态机。原因是 Day 9 的采集结果入库已经稳定，如果 Day 11 同时替换 worker 和引入 Agent step，会扩大回归范围。后续更合理的做法是先让 state machine 独立稳定，再把 worker route 中的 public URL 任务逐步切到 Agent runner。
+
 ## 断点续跑算法
 
 1. 从 `agent_runs` 找到最近一次未完成 run

@@ -47,8 +47,8 @@
 | --- | --- |
 | 稳定分支 | `main` |
 | 日常开发分支 | `dev` |
-| 当前开发阶段 | Day 10 已完成，准备进入 Day 11 |
-| 当前主链路 | 文档基线、Next.js 控制台骨架、FastAPI health、任务创建 API、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、数据库模型、Alembic 迁移 |
+| 当前开发阶段 | Day 11 已完成，准备进入 Day 12 |
+| 当前主链路 | 文档基线、Next.js 控制台骨架、FastAPI health、任务创建 API、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、最小 ReAct 状态机、数据库模型、Alembic 迁移 |
 | 最新开发提交 | 以 `git log -1 --oneline` 为准 |
 | 当前数据库决策 | PostgreSQL + pgvector，review chunk 使用 `vector(1536)` |
 | 当前模型决策 | 默认 `gpt-5.4-mini`，报告模型 `gpt-5.5`，embedding `text-embedding-3-small` |
@@ -89,7 +89,7 @@
 | Day 08 | Done | Playwright 最小采集、字段抽取、失败分类与 HTML 证据 artifact | `f9d43ca` |
 | Day 09 | Done | 采集结果入库、artifact 入库、评论入库和幂等策略 | `978d425` |
 | Day 10 | Done | Agent 工具 schema、工具注册机制、统一执行 envelope | `cad1671` |
-| Day 11 | Pending | Agent ReAct 循环 | 待记录 |
+| Day 11 | Done | Agent ReAct 循环与状态落库 | `待提交` |
 | Day 12 | Pending | Pydantic Guardrails 与 self-heal | 待记录 |
 | Day 13 | Pending | 短期记忆与上下文压缩 | 待记录 |
 | Day 14 | Pending | 评论切片与 embedding 写入 | 待记录 |
@@ -705,6 +705,69 @@ Day 10 的目标是把后续 Agent 能调用的能力先包装成稳定工具契
 
 进入 Day 11，实现最小 ReAct 状态机，让 Agent 能基于任务目标选择工具、校验参数、执行工具，并把 Action / Observation 写入数据库。
 
+## Day 11 记录
+
+### 实际完成
+
+Day 11 的目标是把 Day 10 的工具契约接到真正可持久化的 Agent 执行链路里。今天没有追求完整多轮大模型规划，而是先把最小 ReAct 状态机跑通，让一次 Agent 执行至少能留下 Thought、Action、Observation 三个层次的数据库记录。
+
+完成内容：
+
+- 新增 `backend/app/storage/agent_stores.py`，封装 `agent_runs` 与 `agent_steps` 的 SQLAlchemy 持久化。
+- 新增 `SQLAlchemyAgentRunStore`，支持创建 run、标记 running/completed/failed、追加 step、查询最新 step。
+- 新增 `AgentStateMachine`，把任务输入映射为最小 ReAct 执行链路。
+- 新增 `AgentTaskInput` / `AgentRunResult`，把运行输入与结果从实现细节中抽出来。
+- 在状态机中把 Thought、Action、Observation 拆成三条明确的 step 记录，而不是只保留一条模糊日志。
+- Tool 调用前后都写入数据库，Action step 先 pending，再 running，结束后再更新为 success / failed。
+- 失败时保留旧 step，不覆盖历史记录，并在 observation 中写入结构化失败原因。
+- 加入 `max_tool_calls` 限制，避免状态机进入无界循环。
+- 新增 Day 11 针对性测试，覆盖 step 顺序、成功链路、失败链路和最大工具调用限制。
+
+### 当天选择思考
+
+今天优先做 ReAct 状态机和 `agent_steps` 持久化，而不是继续扩展工具集合，是因为 Day 10 已经把“工具长什么样、怎么校验、怎么统一返回”固定住了，但 Agent 还没有真正的执行回路。没有执行回路，工具只是静态契约；只有把 Thought / Action / Observation 记下来，Agent 才算进入可回放、可恢复、可面试展示的阶段。
+
+我选择先做“最小单步 ReAct”，而不是直接做完整多轮规划，原因有三个：
+
+- 先验证数据库写入和恢复边界，比先追求大模型聪明更重要。
+- 一次完整循环能把状态机、工具执行和结果落库的链路打通，便于后续扩展。
+- 这样能把 Day 12 的 guardrails、Day 13 的记忆、Day 15 的检索自然接上，不会在接口上打架。
+
+我没有在今天把 Agent 直接接到 worker 主流程里替代原有采集逻辑，是因为采集结果入库链路已经在 Day 9 验证过，贸然替换会让“任务状态、采集持久化、Agent 持久化”三条线同时变化，排查成本过高。今天更适合把 Agent 自身的状态底座先做扎实。
+
+### 关键文件
+
+- `backend/app/agent/state_machine.py`
+- `backend/app/storage/agent_stores.py`
+- `backend/app/agent/__init__.py`
+- `tests/test_agent_state_machine.py`
+- `doc/roadmap/day-11.md`
+- `doc/supporting/agent-state-machine.md`
+- `doc/supporting/data-contract-examples.md`
+- `doc/supporting/interview-defense-dossier.md`
+
+### 验证记录
+
+- `uv run pytest tests\\test_agent_state_machine.py`：4 passed
+- `uv run pytest`：57 passed
+- `uv run ruff check backend tests migrations`：通过
+- `uv run alembic heads`：`0002_task_queue_id (head)`
+- `npm run build`：通过
+
+### 提交记录
+
+- `待提交`
+
+### 遗留问题
+
+- 现在的状态机还是单步最小版本，还没有接大模型规划器。
+- 还没有把 Agent step 的执行结果写到前端控制台。
+- 还没有把工具执行结果和未来的 report 生成串起来。
+
+### 下一步
+
+进入 Day 12，给 Agent 输出加 Pydantic guardrails 和 self-heal，让结构化输出失败时能自动重试或纠正。
+
 ## Day 08 到 Day 14 记录模板
 
 第二周重点从数据采集进入 Agent 工具和状态机。每天开发后按下面格式补充。
@@ -714,7 +777,7 @@ Day 10 的目标是把后续 Agent 能调用的能力先包装成稳定工具契
 | Day 08 | Playwright 最小采集与失败兜底 | crawler service、字段抽取、失败分类、HTML artifact、Worker crawl 事件 | crawler/service + worker 测试通过，ruff 通过 | `f9d43ca` |
 | Day 09 | 爬虫结果入库和证据保存 | 采集结果入库、artifact 入库、评论入库和幂等策略 | pytest + ruff 通过 | `978d425` |
 | Day 10 | 工具 schema 与工具注册机制 | Agent 工具 schema、ToolRegistry、ToolExecutor、`crawl_product_tool` | pytest + ruff 通过 | `cad1671` |
-| Day 11 | Agent ReAct 循环 | 待记录 | 待记录 | 待记录 |
+| Day 11 | Agent ReAct 循环 | Agent Run / Step 持久化、最小 ReAct 状态机 | pytest + ruff + build 通过 | `待提交` |
 | Day 12 | Pydantic Guardrails 与 self-heal | 待记录 | 待记录 | 待记录 |
 | Day 13 | 短期记忆与上下文压缩 | 待记录 | 待记录 | 待记录 |
 | Day 14 | 评论切片与 embedding 写入 | 待记录 | 待记录 | 待记录 |
