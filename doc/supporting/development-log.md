@@ -87,7 +87,7 @@
 | Day 06 | Done | 任务状态流与事件流 | `e7d361c` |
 | Day 07 | Done | 第一周联调、任务事件持久化和基础设施验收 | `a70787a` |
 | Day 08 | Done | Playwright 最小采集、字段抽取、失败分类与 HTML 证据 artifact | `f9d43ca` |
-| Day 09 | Done | 采集结果入库、artifact 入库、评论入库和幂等策略 | 待提交 |
+| Day 09 | Done | 采集结果入库、artifact 入库、评论入库和幂等策略 | `978d425` |
 | Day 10 | Pending | 工具 schema 与工具注册机制 | 待记录 |
 | Day 11 | Pending | Agent ReAct 循环 | 待记录 |
 | Day 12 | Pending | Pydantic Guardrails 与 self-heal | 待记录 |
@@ -634,7 +634,7 @@ Day 8 先做采集、Day 9 再做入库，是为了把“拿到证据”和“�
 
 ### 提交记录
 
-- `待提交`
+- `978d425 feat: 持久化 Day 9 采集结果`
 
 ### 遗留问题
 
@@ -653,7 +653,7 @@ Day 8 先做采集、Day 9 再做入库，是为了把“拿到证据”和“�
 | Day | 计划主题 | 实际完成 | 验证 | 提交 |
 | --- | --- | --- | --- | --- |
 | Day 08 | Playwright 最小采集与失败兜底 | crawler service、字段抽取、失败分类、HTML artifact、Worker crawl 事件 | crawler/service + worker 测试通过，ruff 通过 | `f9d43ca` |
-| Day 09 | 爬虫结果入库和证据保存 | 采集结果入库、artifact 入库、评论入库和幂等策略 | pytest + ruff 通过 | 待提交 |
+| Day 09 | 爬虫结果入库和证据保存 | 采集结果入库、artifact 入库、评论入库和幂等策略 | pytest + ruff 通过 | `978d425` |
 | Day 10 | 工具 schema 与工具注册机制 | 待记录 | 待记录 | 待记录 |
 | Day 11 | Agent ReAct 循环 | 待记录 | 待记录 | 待记录 |
 | Day 12 | Pydantic Guardrails 与 self-heal | 待记录 | 待记录 | 待记录 |
