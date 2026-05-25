@@ -97,6 +97,7 @@ raw_model_output
 - `uv run pytest`：63 passed
 - `uv run ruff check backend tests migrations`：通过
 - `uv run alembic heads`：`0002_task_queue_id (head)`
+- `npm run build`：通过
 
 ## 关联文档
 
