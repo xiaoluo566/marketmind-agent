@@ -360,6 +360,30 @@ CSV 表头或 JSON 对象字段第一版按下面约定：
 }
 ```
 
+## 结构化输出修复提示词示例
+
+```text
+Prompt name: planner.tool_decision
+Schema: AgentToolDecision
+Error: Expecting value: line 1 column 1 (char 0)
+Please return only valid JSON that matches the schema.
+Raw output:
+tool_name=crawl_product_tool url=https://example.com/product/espresso
+```
+
+## 结构化输出解析结果示例
+
+```json
+{
+  "prompt_name": "planner.tool_decision",
+  "raw_output": "tool_name=crawl_product_tool url=https://example.com/product/espresso",
+  "repaired_output": "{\n  \"thought\": \"需要先采集商品页。\",\n  \"action\": \"call_tool\",\n  \"tool_name\": \"crawl_product_tool\",\n  \"tool_input\": {\n    \"url\": \"https://example.com/product/espresso\"\n  }\n}",
+  "validation_error_count": 1,
+  "self_heal_count": 1,
+  "self_healed": true
+}
+```
+
 ## 作用
 
 这些示例是给 `api-contract.md`、`data-model.md`、`agent-state-machine.md`、`model-and-data-decisions.md` 和 `testing-strategy.md` 共用的参考样例。

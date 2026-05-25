@@ -117,6 +117,27 @@ Day 11 已经把状态机从文档推进到代码。当前实现位置：
 
 当前没有把 worker 主流程替换为 Agent 状态机。原因是 Day 9 的采集结果入库已经稳定，如果 Day 11 同时替换 worker 和引入 Agent step，会扩大回归范围。后续更合理的做法是先让 state machine 独立稳定，再把 worker route 中的 public URL 任务逐步切到 Agent runner。
 
+## Day 12 结构化输出守门
+
+Day 12 新增 `backend/app/agent/guardrails.py`，用于拦截模型输出：
+
+- `AgentToolDecision`：工具选择输出 schema。
+- `ReportStructure`：报告结构输出 schema。
+- `StructuredOutputGuardrail`：统一做 JSON parse、Pydantic 校验、self-heal 和失败封装。
+- `StructuredOutputGuardrailError`：保留原始输出、错误详情和 attempts。
+
+状态机后续接大模型 planner 时，模型输出必须先经过 guardrail：
+
+```text
+LLM raw output
+  -> StructuredOutputGuardrail.parse
+  -> AgentToolDecision
+  -> ToolExecutor
+  -> agent_steps
+```
+
+不允许把 raw LLM output 直接当作工具参数进入 `ToolExecutor`。如果 guardrail 修复成功，需要累计 `agent_runs.self_heal_count`；如果解析或 schema 校验失败，需要累计 `agent_runs.validation_error_count`。
+
 ## 断点续跑算法
 
 1. 从 `agent_runs` 找到最近一次未完成 run

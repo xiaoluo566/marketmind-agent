@@ -47,8 +47,8 @@
 | --- | --- |
 | 稳定分支 | `main` |
 | 日常开发分支 | `dev` |
-| 当前开发阶段 | Day 11 已完成，准备进入 Day 12 |
-| 当前主链路 | 文档基线、Next.js 控制台骨架、FastAPI health、任务创建 API、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、最小 ReAct 状态机、数据库模型、Alembic 迁移 |
+| 当前开发阶段 | Day 12 已完成，准备进入 Day 13 |
+| 当前主链路 | 文档基线、Next.js 控制台骨架、FastAPI health、任务创建 API、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、数据库模型、Alembic 迁移 |
 | 最新开发提交 | 以 `git log -1 --oneline` 为准 |
 | 当前数据库决策 | PostgreSQL + pgvector，review chunk 使用 `vector(1536)` |
 | 当前模型决策 | 默认 `gpt-5.4-mini`，报告模型 `gpt-5.5`，embedding `text-embedding-3-small` |
@@ -90,7 +90,7 @@
 | Day 09 | Done | 采集结果入库、artifact 入库、评论入库和幂等策略 | `978d425` |
 | Day 10 | Done | Agent 工具 schema、工具注册机制、统一执行 envelope | `cad1671` |
 | Day 11 | Done | Agent ReAct 循环与状态落库 | `8e47731` |
-| Day 12 | Pending | Pydantic Guardrails 与 self-heal | 待记录 |
+| Day 12 | Done | Pydantic Guardrails 与 self-heal | `待提交` |
 | Day 13 | Pending | 短期记忆与上下文压缩 | 待记录 |
 | Day 14 | Pending | 评论切片与 embedding 写入 | 待记录 |
 | Day 15 | Pending | `search_reviews_tool` 语义检索 | 待记录 |
@@ -768,6 +768,70 @@ Day 11 的目标是把 Day 10 的工具契约接到真正可持久化的 Agent �
 
 进入 Day 12，给 Agent 输出加 Pydantic guardrails 和 self-heal，让结构化输出失败时能自动重试或纠正。
 
+## Day 12 记录
+
+### 实际完成
+
+Day 12 的目标是把模型输出从“看起来像 JSON”推进到“先校验再进业务”。今天实现的是一个可复用的结构化输出守门层，后续可以给工具选择、报告生成、摘要抽取复用，而不是只给某一处 prompt 写临时修补。
+
+完成内容：
+
+- 新增 `backend/app/agent/guardrails.py`。
+- 新增 `AgentToolDecision`，作为工具选择输出 schema。
+- 新增 `ReportStructure`，作为报告结构 schema。
+- 新增 `StructuredOutputGuardrail`，负责 JSON 解析、Pydantic 校验、self-heal 触发和失败封装。
+- 新增 `StructuredOutputParseResult`，记录原始输出、修复后输出、失败次数和自愈次数。
+- 新增 `StructuredOutputGuardrailError`，统一携带原始输出、错误详情和统计信息。
+- 新增 `build_json_repair_prompt`，把 schema 名称、错误信息和原始输出组织成可修复提示词。
+- `AgentRun` 现在可以累计 `validation_error_count` 和 `self_heal_count`，为后续 LLMOps 指标落表留接口。
+- 新增 Day 12 针对性测试，覆盖干净 JSON、坏 JSON self-heal、修复调用重试、修复失败和 run 指标累计。
+
+### 当天选择思考
+
+今天优先做 guardrails，而不是继续接新的工具或前端，是因为 Day 11 已经把 Agent 的执行底座打通了，但模型输出本身仍然是不稳定输入。只要输出格式不稳，后面的 planner、报告和证据链都会不断被脏数据扰乱。
+
+我选择把“解析、校验、修复、失败”做成独立模块，而不是散落在各个调用点，原因是：
+
+- 工具选择和报告生成都会遇到结构化输出问题，统一守门更省维护成本。
+- `validation_error_count` 和 `self_heal_count` 可以直接沉淀成 LLMOps 指标。
+- self-heal prompt 以后可以版本化，便于做回归样例。
+
+我没有在今天接真正的大模型调用，是因为 Day 12 的核心不是模型能力，而是结构化输出边界。先把 JSON 解析、schema 校验、修复提示词和失败封装打牢，后续接任何 LLM provider 都能复用。
+
+### 关键文件
+
+- `backend/app/agent/guardrails.py`
+- `backend/app/storage/agent_stores.py`
+- `backend/app/agent/__init__.py`
+- `tests/test_structured_output_guardrails.py`
+- `doc/roadmap/day-12.md`
+- `doc/supporting/prompt-strategy.md`
+- `doc/supporting/llmops-metrics.md`
+- `doc/supporting/data-contract-examples.md`
+- `doc/supporting/interview-defense-dossier.md`
+
+### 验证记录
+
+- `uv run pytest tests\\test_structured_output_guardrails.py`：6 passed
+- `uv run pytest tests\\test_agent_state_machine.py`：4 passed
+- `uv run pytest`：63 passed
+- `uv run ruff check backend tests migrations`：通过
+- `uv run alembic heads`：`0002_task_queue_id (head)`
+
+### 提交记录
+
+- `待提交`
+
+### 遗留问题
+
+- 现在的 guardrails 还没有接真实 LLM client，只是通用解析和 self-heal 基座。
+- 还没有把 guardrails 接到 worker 或 planner 主路径。
+- 还没有开始评论切片和 embedding 写入。
+
+### 下一步
+
+进入 Day 13，继续做短期记忆与上下文压缩，把结构化输出和状态机结果接进可复用的记忆层。
+
 ## Day 08 到 Day 14 记录模板
 
 第二周重点从数据采集进入 Agent 工具和状态机。每天开发后按下面格式补充。
@@ -778,7 +842,7 @@ Day 11 的目标是把 Day 10 的工具契约接到真正可持久化的 Agent �
 | Day 09 | 爬虫结果入库和证据保存 | 采集结果入库、artifact 入库、评论入库和幂等策略 | pytest + ruff 通过 | `978d425` |
 | Day 10 | 工具 schema 与工具注册机制 | Agent 工具 schema、ToolRegistry、ToolExecutor、`crawl_product_tool` | pytest + ruff 通过 | `cad1671` |
 | Day 11 | Agent ReAct 循环 | Agent Run / Step 持久化、最小 ReAct 状态机 | pytest + ruff + build 通过 | `8e47731` |
-| Day 12 | Pydantic Guardrails 与 self-heal | 待记录 | 待记录 | 待记录 |
+| Day 12 | Pydantic Guardrails 与 self-heal | 结构化输出守门、JSON repair prompt、run 指标累计 | pytest + ruff 通过 | `待提交` |
 | Day 13 | 短期记忆与上下文压缩 | 待记录 | 待记录 | 待记录 |
 | Day 14 | 评论切片与 embedding 写入 | 待记录 | 待记录 | 待记录 |
 

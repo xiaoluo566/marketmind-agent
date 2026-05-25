@@ -45,6 +45,20 @@
 - 自修复成功率
 - 爬虫失败分类占比
 
+## Day 12 已落地指标
+
+Day 12 已经在 `agent_runs` 层补齐可累计指标入口：
+
+- `validation_error_count`
+- `self_heal_count`
+
+当前统计语义：
+
+- `validation_error_count`：JSON parse 或 Pydantic schema 校验失败次数。
+- `self_heal_count`：通过 self-heal 修复后最终成功进入 schema 的次数。
+
+注意：self-heal 调用失败或修复后仍不符合 schema，不计入 `self_heal_count`，但会保留在 guardrail error attempts 里，便于后续复盘。
+
 ## 简历可用数据
 
 - 平均任务耗时

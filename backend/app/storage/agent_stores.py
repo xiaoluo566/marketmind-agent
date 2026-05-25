@@ -24,6 +24,8 @@ class AgentRunData:
     prompt_version: str
     started_at: datetime | None
     finished_at: datetime | None
+    validation_error_count: int
+    self_heal_count: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -96,6 +98,21 @@ class SQLAlchemyAgentRunStore:
                 run = self._get_run(session, run_id)
                 run.status = AgentRunStatus.FAILED.value
                 run.finished_at = finished_at
+                session.flush()
+                return self._to_run_data(run)
+
+    def record_guardrail_metrics(
+        self,
+        run_id: str,
+        *,
+        validation_error_count: int,
+        self_heal_count: int,
+    ) -> AgentRunData:
+        with self._session_scope() as session:
+            with session.begin():
+                run = self._get_run(session, run_id)
+                run.validation_error_count += max(0, validation_error_count)
+                run.self_heal_count += max(0, self_heal_count)
                 session.flush()
                 return self._to_run_data(run)
 
@@ -257,6 +274,8 @@ class SQLAlchemyAgentRunStore:
             prompt_version=run.prompt_version,
             started_at=run.started_at,
             finished_at=run.finished_at,
+            validation_error_count=run.validation_error_count,
+            self_heal_count=run.self_heal_count,
         )
 
     def _to_step_data(self, step: AgentStep) -> AgentStepData:

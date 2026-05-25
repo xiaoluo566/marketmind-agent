@@ -29,6 +29,25 @@ Agent 项目最后最容易失控的地方，不是 API，而是 prompt：版本
 - 失败案例
 - 回归样例
 
+## Day 12 self-heal prompt 规则
+
+Day 12 起，结构化输出修复由 `backend/app/agent/guardrails.py` 统一处理。修复 prompt 至少包含：
+
+- prompt 名称
+- 目标 schema 名称
+- Pydantic 或 JSON parse 错误信息
+- 原始模型输出
+- “只返回合法 JSON”的约束
+
+当前实现先使用 `build_json_repair_prompt` 生成第一版修复提示词。后续如果 prompt 变复杂，应当把模板迁移到单独 prompt 文件，并记录版本号。
+
+自愈边界：
+
+- self-heal 只能修复格式，不应该改变业务含义。
+- 修复失败不能继续进入业务逻辑。
+- 修复成功要记录 `self_heal_count`。
+- 解析或校验失败要记录 `validation_error_count`。
+
 ## 版本管理建议
 
 - prompt 不要直接散落在代码里

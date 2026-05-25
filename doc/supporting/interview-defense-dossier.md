@@ -90,6 +90,12 @@ Day 11 做 ReAct 状态机和 `agent_steps` 落库，是因为 Day 10 已经把�
 
 > Day 11 我把 Agent 从“工具层”推进到“执行层”。我没有一上来做完整的多轮规划，而是先把 Thought / Action / Observation 三层记录打通，因为这一步决定了这个 Agent 是不是能回放、能恢复、能解释。
 
+Day 12 做结构化输出 guardrails 和 self-heal，是因为 Day 11 只是把执行链路打通，但模型输出仍然可能是坏 JSON、半成品字段或者 schema 不匹配。真正工程化的 Agent 不能让原始模型输出直接进入业务逻辑，必须先过 JSON parse、Pydantic 校验和有限次自愈。当天我把工具选择输出和报告结构输出都抽成了统一守门层，并把 `validation_error_count` 和 `self_heal_count` 纳入 `agent_runs`，这样后续可以直接统计模型失败率和修复率。
+
+面试时可以这样讲：
+
+> Day 12 我没有继续加新功能，而是先把模型输出的边界钉住。因为再聪明的 Agent，只要输出格式不稳定，后面的工具调用和报告生成都会被脏数据拖垮。
+
 ### Day 8 之后追加模板
 
 ```markdown
@@ -283,10 +289,10 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 
 ### 7. 我对“不要夸大进度”的思考
 
-这个项目目前推进到 Day 11，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
+这个项目目前推进到 Day 12，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
 
-- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、工具 schema、工具注册机制、最小 ReAct 状态机、Agent step 落库、错误 envelope、测试。
-- 正在做：结构化输出 guardrails 和 self-heal。
+- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、工具 schema、工具注册机制、最小 ReAct 状态机、Agent step 落库、结构化输出 guardrails、错误 envelope、测试。
+- 正在做：短期记忆和上下文压缩。
 - 后续做：多轮 LLM planner、RAG、报告、前端真实接入、部署。
 
 我认为这反而是加分项。因为真实开发中，清楚知道自己完成了什么、没完成什么，比把项目包装得过满更可信。
@@ -329,7 +335,7 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 
 ## 当前开发进度怎么讲
 
-截至 Day 11，项目已经完成：
+截至 Day 12，项目已经完成：
 
 - 文档体系、30 天 roadmap、开发日志。
 - Next.js 控制台骨架。
@@ -358,6 +364,10 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 - 第一版 `crawl_product_tool`，可通过 ToolExecutor 调用采集能力。
 - `SQLAlchemyAgentRunStore`，用于持久化 `agent_runs` 和 `agent_steps`。
 - 最小 `AgentStateMachine`，可以记录 Thought、Action、Observation。
+- `StructuredOutputGuardrail`，用于校验和修复 JSON / Pydantic 输出。
+- `AgentToolDecision` 和 `ReportStructure` 两个结构化输出 schema。
+- `build_json_repair_prompt` 和有限次 self-heal retry。
+- `validation_error_count` 与 `self_heal_count` 的 LLMOps 指标入口。
 - 工具调用前后状态落库，Action step 能从 pending/running 更新为 success/failed。
 - Agent 工具失败时，错误码和失败 observation 会写入数据库，不覆盖旧 step。
 - 队列不可用、状态缓存不可用、参数校验失败的统一错误响应。
@@ -374,7 +384,7 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 - 前端接真实 API。
 - Docker Compose 全链路一键启动。
 
-面试时可以诚实讲：这个项目正在按 30 天里程碑推进，目前已经完成底层任务入口、异步管线、任务事件流、PostgreSQL 持久化、Playwright 最小采集、采集结果入库、Agent 工具契约和最小 ReAct 状态机。下一阶段会补结构化输出 guardrails、短期记忆、评论 embedding 和报告链路。重点是展示工程化思路和持续推进能力，而不是假装已经做完所有功能。
+面试时可以诚实讲：这个项目正在按 30 天里程碑推进，目前已经完成底层任务入口、异步管线、任务事件流、PostgreSQL 持久化、Playwright 最小采集、采集结果入库、Agent 工具契约、最小 ReAct 状态机和结构化输出 guardrails。下一阶段会补短期记忆、评论 embedding 和报告链路。重点是展示工程化思路和持续推进能力，而不是假装已经做完所有功能。
 
 ## 2 分钟项目介绍话术
 
@@ -1133,13 +1143,13 @@ LangChain 和 LangGraph 能加快 Agent 构建，但我第一版更想掌握底�
 
 ### Q18：如果问你怎么处理模型输出 JSON 不合法？
 
-计划是：
+当前实现是：
 
-- 用 Pydantic 定义输出 schema。
-- 第一次解析失败后，把错误信息反馈给模型做 self-correction。
-- 限制修复次数。
-- 统计解析失败率和自愈成功率。
-- 多次失败后记录 `error_logs` 并中止或降级。
+- 用 Pydantic 定义输出 schema，例如 `AgentToolDecision` 和 `ReportStructure`。
+- 第一次 JSON parse 或 schema 校验失败后，通过 `build_json_repair_prompt` 组织修复提示词。
+- 使用有限次 self-heal 和 Tenacity repair retry，避免无限修复。
+- 统计 `validation_error_count` 和 `self_heal_count`。
+- 多次失败后抛出 `StructuredOutputGuardrailError`，保留原始输出和 attempts，后续可以写入 `error_logs`。
 
 ### Q19：如果问你如何控制成本？
 
@@ -1312,7 +1322,7 @@ Agent step 状态：
 
 ## 目前最适合展示的代码点
 
-截至 Day 11，最适合展示：
+截至 Day 12，最适合展示：
 
 - `backend/app/api/routes/tasks.py`：API 如何接收任务、投递队列、统一错误。
 - `backend/app/tasks/service.py`：任务状态创建和入队流程。
@@ -1330,6 +1340,7 @@ Agent step 状态：
 - `backend/app/agent/tools/builtin.py`：`crawl_product_tool` 内置工具。
 - `backend/app/storage/agent_stores.py`：Agent run / step 持久化 store。
 - `backend/app/agent/state_machine.py`：最小 ReAct 状态机，记录 Thought / Action / Observation。
+- `backend/app/agent/guardrails.py`：结构化输出校验、自愈提示词和失败封装。
 - `backend/app/storage/models.py`：数据库模型设计。
 - `migrations/versions/0002_task_queue_id.py`：任务队列 ID 持久化迁移。
 - `tests/test_task_persistence.py`：任务和事件持久化测试。
@@ -1339,6 +1350,7 @@ Agent step 状态：
 - `tests/test_crawl_persistence.py`：采集结果入库和幂等测试。
 - `tests/test_agent_tools.py`：工具注册、参数校验、统一执行结果和分类错误测试。
 - `tests/test_agent_state_machine.py`：Agent step 顺序、成功链路、失败链路和最大工具调用限制测试。
+- `tests/test_structured_output_guardrails.py`：坏 JSON 修复、修复失败、repair retry 和指标累计测试。
 
 ## 如果被问“你在项目中学到了什么”
 
@@ -1361,7 +1373,7 @@ Agent step 状态：
 
 - Day 10：Agent 工具 schema 和工具注册机制已完成。
 - Day 11：ReAct 状态机和 Agent step 持久化已完成。
-- Day 12：Pydantic guardrails 和 self-heal。
+- Day 12：Pydantic guardrails 和 self-heal 已完成。
 
 中期：
 
@@ -1389,4 +1401,4 @@ Agent step 状态：
 
 如果让你说下一步：
 
-> 下一步我会在现有 ReAct 状态机上补 Pydantic guardrails 和 self-heal，让模型结构化输出失败时可以被拦截、纠正和重试。
+> 下一步我会在现有状态机和 guardrails 上继续做短期记忆与上下文压缩，避免 Agent 后续多轮执行时上下文无限膨胀。
