@@ -88,7 +88,7 @@
 | Day 07 | Done | 第一周联调、任务事件持久化和基础设施验收 | `a70787a` |
 | Day 08 | Done | Playwright 最小采集、字段抽取、失败分类与 HTML 证据 artifact | `f9d43ca` |
 | Day 09 | Done | 采集结果入库、artifact 入库、评论入库和幂等策略 | `978d425` |
-| Day 10 | Done | Agent 工具 schema、工具注册机制、统一执行 envelope | 待提交 |
+| Day 10 | Done | Agent 工具 schema、工具注册机制、统一执行 envelope | `cad1671` |
 | Day 11 | Pending | Agent ReAct 循环 | 待记录 |
 | Day 12 | Pending | Pydantic Guardrails 与 self-heal | 待记录 |
 | Day 13 | Pending | 短期记忆与上下文压缩 | 待记录 |
@@ -693,7 +693,7 @@ Day 10 的目标是把后续 Agent 能调用的能力先包装成稳定工具契
 
 ### 提交记录
 
-- `待提交`
+- `cad1671 feat: define agent tool contracts`
 
 ### 遗留问题
 
@@ -713,7 +713,7 @@ Day 10 的目标是把后续 Agent 能调用的能力先包装成稳定工具契
 | --- | --- | --- | --- | --- |
 | Day 08 | Playwright 最小采集与失败兜底 | crawler service、字段抽取、失败分类、HTML artifact、Worker crawl 事件 | crawler/service + worker 测试通过，ruff 通过 | `f9d43ca` |
 | Day 09 | 爬虫结果入库和证据保存 | 采集结果入库、artifact 入库、评论入库和幂等策略 | pytest + ruff 通过 | `978d425` |
-| Day 10 | 工具 schema 与工具注册机制 | Agent 工具 schema、ToolRegistry、ToolExecutor、`crawl_product_tool` | pytest + ruff 通过 | 待提交 |
+| Day 10 | 工具 schema 与工具注册机制 | Agent 工具 schema、ToolRegistry、ToolExecutor、`crawl_product_tool` | pytest + ruff 通过 | `cad1671` |
 | Day 11 | Agent ReAct 循环 | 待记录 | 待记录 | 待记录 |
 | Day 12 | Pydantic Guardrails 与 self-heal | 待记录 | 待记录 | 待记录 |
 | Day 13 | 短期记忆与上下文压缩 | 待记录 | 待记录 | 待记录 |
