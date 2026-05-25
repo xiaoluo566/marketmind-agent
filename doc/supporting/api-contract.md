@@ -28,6 +28,8 @@ Day 4 的实现范围是“契约先行”：只完成参数校验、生成 `tas
 
 Day 5 开始接入 Celery + Redis：API 创建任务状态快照，投递 Celery 后返回 `queued`，Worker 负责把状态推进到 `running` / `completed`。
 
+Day 6 开始补任务进度事件流：API 和 Worker 每次关键状态变化都会写入统一事件格式，前端后续可以直接消费事件列表，而不是解析日志。
+
 输入：
 
 - `target`
@@ -53,10 +55,38 @@ Day 5 开始接入 Celery + Redis：API 创建任务状态快照，投递 Celery
 
 输出建议按时间排序，包含：
 
+- `task_id`
+- `events`
+- `event_id`
+- `status`
 - `event_type`
 - `message`
 - `payload`
+- `trace_id`
 - `created_at`
+
+每条事件建议至少包含：
+
+- `event_id`
+- `task_id`
+- `status`
+- `event_type`
+- `message`
+- `payload`
+- `trace_id`
+- `created_at`
+
+Day 6 事件来源：
+
+- API 创建任务时写入 `received`
+- API 投递成功后写入 `queued`
+- API 投递失败时写入 `failed`，`event_type=error`，payload 内包含 `error_code`
+- Worker 开始执行时写入 `running`
+- Worker 最小任务结束时写入 `completed`
+
+失败：
+
+- `EVENT_STORE_UNAVAILABLE`：事件缓存或事件写入层不可用
 
 ### `GET /api/tasks/{task_id}/steps`
 
@@ -79,7 +109,8 @@ Day 5 开始接入 Celery + Redis：API 创建任务状态快照，投递 Celery
 - API 不直接执行重任务
 - API 不写业务判断
 - API 只做参数接入、调度和查询
-- `GET /api/tasks/{task_id}` 在 Day 5 只读取 Redis 状态快照，Day 6 再扩展事件流
+- `GET /api/tasks/{task_id}` 读取 Redis 状态快照
+- `GET /api/tasks/{task_id}/events` 读取 Redis 事件流，后续再补 PostgreSQL 持久化
 
 ## 错误码建议
 
@@ -87,6 +118,7 @@ Day 5 开始接入 Celery + Redis：API 创建任务状态快照，投递 Celery
 - `TASK_NOT_FOUND`
 - `TASK_NOT_RETRYABLE`
 - `QUEUE_UNAVAILABLE`
+- `EVENT_STORE_UNAVAILABLE`
 - `VALIDATION_FAILED`
 - `INTERNAL_ERROR`
 

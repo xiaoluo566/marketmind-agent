@@ -1,7 +1,9 @@
 from app.api.schemas.tasks import TaskStatusData
 from app.core.config import get_settings
 from app.storage.statuses import TaskStatus
-from app.tasks.status_store import RedisTaskStatusStore, utc_now
+from app.tasks.event_store import RedisTaskEventStore, TaskEventStore
+from app.tasks.service import build_task_event
+from app.tasks.status_store import RedisTaskStatusStore, TaskStatusStore, utc_now
 from app.worker.celery_app import celery_app
 
 
@@ -13,10 +15,33 @@ def _status_store() -> RedisTaskStatusStore:
     )
 
 
+def _event_store() -> RedisTaskEventStore:
+    settings = get_settings()
+    return RedisTaskEventStore(
+        redis_url=settings.task_status_redis_url,
+        ttl_seconds=settings.task_status_ttl_seconds,
+    )
+
+
 @celery_app.task(name="marketmind.tasks.process_research_task")
 def process_research_task(task_id: str, payload: dict, trace_id: str) -> dict:
-    store = _status_store()
-    current_task = store.get(task_id)
+    return run_research_task(
+        task_id=task_id,
+        payload=payload,
+        trace_id=trace_id,
+        status_store=_status_store(),
+        event_store=_event_store(),
+    )
+
+
+def run_research_task(
+    task_id: str,
+    payload: dict,
+    trace_id: str,
+    status_store: TaskStatusStore,
+    event_store: TaskEventStore,
+) -> dict:
+    current_task = status_store.get(task_id)
     if current_task is None:
         current_task = TaskStatusData(
             task_id=task_id,
@@ -37,7 +62,17 @@ def process_research_task(task_id: str, payload: dict, trace_id: str) -> dict:
             "updated_at": utc_now(),
         }
     )
-    store.save(running_task)
+    status_store.save(running_task)
+    event_store.append(
+        build_task_event(
+            task_id=task_id,
+            status=TaskStatus.RUNNING.value,
+            event_type="status",
+            message="task running",
+            payload={},
+            trace_id=trace_id,
+        )
+    )
 
     completed_task = running_task.model_copy(
         update={
@@ -45,7 +80,17 @@ def process_research_task(task_id: str, payload: dict, trace_id: str) -> dict:
             "updated_at": utc_now(),
         }
     )
-    store.save(completed_task)
+    status_store.save(completed_task)
+    event_store.append(
+        build_task_event(
+            task_id=task_id,
+            status=TaskStatus.COMPLETED.value,
+            event_type="status",
+            message="task completed",
+            payload={"target": completed_task.target},
+            trace_id=trace_id,
+        )
+    )
 
     return {
         "task_id": task_id,

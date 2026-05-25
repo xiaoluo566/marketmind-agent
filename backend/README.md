@@ -37,6 +37,13 @@ Day 5 async task baseline:
 - Celery app configured with Redis broker and result backend
 - Minimal worker task that advances queued tasks to running and completed
 
+Day 6 task progress baseline:
+
+- `GET /api/tasks/{task_id}/events` reads the structured task timeline
+- Redis-backed task event store
+- API writes received, queued, and failed events
+- Worker writes running and completed events
+
 ## Local worker
 
 Redis must be running before using the real queue path.

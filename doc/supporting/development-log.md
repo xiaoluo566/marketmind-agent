@@ -47,8 +47,8 @@
 | --- | --- |
 | 稳定分支 | `main` |
 | 日常开发分支 | `dev` |
-| 当前开发阶段 | Day 5 已完成，准备进入 Day 6 |
-| 当前主链路 | 文档基线、Next.js 控制台骨架、FastAPI health、任务创建 API、Celery 入队、Redis 状态快照、数据库模型、Alembic 初始迁移 |
+| 当前开发阶段 | Day 6 已完成，准备进入 Day 7 |
+| 当前主链路 | 文档基线、Next.js 控制台骨架、FastAPI health、任务创建 API、Celery 入队、Redis 状态快照、Redis 事件流、数据库模型、Alembic 初始迁移 |
 | 最新开发提交 | 以 `git log -1 --oneline` 为准 |
 | 当前数据库决策 | PostgreSQL + pgvector，review chunk 使用 `vector(1536)` |
 | 当前模型决策 | 默认 `gpt-5.4-mini`，报告模型 `gpt-5.5`，embedding `text-embedding-3-small` |
@@ -83,8 +83,8 @@
 | Day 02 | Done | 架构冻结、分支策略、模型和数据源决策 | `d8e5ce2`、`c3fff46` |
 | Day 03 | Done | SQLAlchemy 数据模型与 Alembic 初始迁移 | `e258898` |
 | Day 04 | Done | API 契约与任务接收层 | `1abe635` |
-| Day 05 | Done | Celery + Redis 基础任务队列 | 本节所在提交 |
-| Day 06 | Pending | 任务状态流与事件表写入 | 待记录 |
+| Day 05 | Done | Celery + Redis 基础任务队列 | `10c11c1` |
+| Day 06 | Done | 任务状态流与事件流 | 本节所在提交 |
 | Day 07 | Pending | 第一周联调和基础设施验收 | 待记录 |
 | Day 08 | Pending | Playwright 采集策略与数据导入兜底 | 待记录 |
 | Day 09 | Pending | 爬虫结果入库和证据保存 | 待记录 |
@@ -372,7 +372,7 @@ Day 5 的目标是把任务接收层升级成真正的异步任务入口。今�
 
 ### 提交记录
 
-- 本节所在提交即 Day 5 开发提交，具体以 `git log -1 --oneline` 为准。
+- `10c11c1 feat: 接入 Celery Redis 异步任务管线`
 
 ### 遗留问题
 
@@ -384,19 +384,71 @@ Day 5 的目标是把任务接收层升级成真正的异步任务入口。今�
 
 进入 Day 6，把任务状态流和事件表写入补全，让 API 能看到更细的进度和失败原因。
 
-## Day 06 记录模板
+## Day 06 记录
 
-计划主题：任务状态流与事件记录。
+### 实际完成
 
-实际完成：待记录。
+Day 6 的目标是让任务不再是黑盒。今天把“状态”进一步拆成“状态快照 + 事件流”两层：状态快照保留当前最新结果，事件流保留每次关键变化，前端后续可以直接读事件列表，不需要解析日志。
 
-验证记录：待记录。
+完成内容：
 
-提交记录：待记录。
+- 新增 `TaskEventData` 和 `TaskEventsData` schema。
+- 新增事件存储抽象，并提供 Redis 实现和内存实现。
+- `POST /api/tasks` 在创建、排队、失败时写入结构化事件。
+- Worker 最小任务在 running 和 completed 时写入结构化事件。
+- 新增 `GET /api/tasks/{task_id}/events`。
+- 事件格式统一包含 `event_id`、`task_id`、`status`、`event_type`、`message`、`payload`、`trace_id`、`created_at`。
+- 为事件存储不可用增加统一错误 envelope。
+- 补充事件流和 worker 状态推进的测试。
 
-遗留问题：待记录。
+### 当天选择思考
 
-下一步：待记录。
+今天优先做事件流，不是因为它看起来更“亮眼”，而是因为到 Day 5 为止，系统已经有了任务提交和状态快照，但还缺少“过程可见性”。如果没有事件流，任务虽然能 queued，但用户仍然不知道它什么时候开始执行、有没有失败、卡在哪一步。
+
+我选择用 Redis 列表作为实时事件层，原因是：
+
+- 它天然保持顺序，适合 append-only 的事件时间线。
+- 开发成本低，能快速把前端进度展示跑起来。
+- 它和 Day 5 的 Redis 状态快照天然可以共存。
+
+我没有在 Day 6 先把 PostgreSQL 的 `task_events` 持久化写入做完，原因是今天的重点是先把“事件流接口”打通，让任务状态不再黑盒。持久化审计层可以放在 Day 7 联调时一起接入，这样更容易验证 API、Worker、前端的时间线展示。
+
+### 关键文件
+
+- `backend/app/api/routes/tasks.py`
+- `backend/app/api/schemas/tasks.py`
+- `backend/app/tasks/event_store.py`
+- `backend/app/tasks/dependencies.py`
+- `backend/app/tasks/service.py`
+- `backend/app/worker/tasks.py`
+- `tests/test_tasks_api.py`
+- `tests/test_celery_worker.py`
+- `doc/supporting/api-contract.md`
+- `doc/supporting/data-contract-examples.md`
+- `doc/supporting/data-model.md`
+- `doc/supporting/ui-console-spec.md`
+- `doc/supporting/interview-defense-dossier.md`
+
+### 验证记录
+
+- `uv run ruff check backend tests migrations`：通过
+- `uv run pytest tests\\test_tasks_api.py tests\\test_celery_worker.py`：12 passed
+- `uv run pytest`：29 passed
+- `npm run build`：通过
+
+### 提交记录
+
+- 本节所在提交即 Day 6 开发提交，具体以 `git log -1 --oneline` 为准。
+
+### 遗留问题
+
+- 事件流当前以 Redis 为实时层，PostgreSQL `task_events` 持久化还没接上。
+- 还没有 WebSocket / SSE。
+- 还没有把任务事件展示接到前端。
+
+### 下一步
+
+进入 Day 7，把任务状态流、事件流和基础设施做一次联调，并补上更稳定的持久化层接入方案。
 
 ## Day 07 记录模板
 

@@ -67,6 +67,17 @@
 - `started_at`
 - `finished_at`
 
+### `task_events`
+
+- `event_id`
+- `task_id`
+- `status`
+- `event_type`
+- `message`
+- `payload`
+- `trace_id`
+- `created_at`
+
 ### `reviews`
 
 - `id`

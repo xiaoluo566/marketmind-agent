@@ -15,6 +15,47 @@
 - 历史记录页
 - 调试和设置页
 
+## 任务进度数据格式
+
+前端实时进度页不直接解析日志，而是消费后端的结构化任务状态和事件流。
+
+### 状态快照
+
+`GET /api/tasks/{task_id}` 返回的数据建议用于任务详情页的顶部摘要：
+
+- `task_id`
+- `status`
+- `trace_id`
+- `target`
+- `mode`
+- `priority`
+- `source_type`
+- `queue_task_id`
+- `error_code`
+- `error_message`
+- `created_at`
+- `updated_at`
+
+### 事件时间线
+
+`GET /api/tasks/{task_id}/events` 返回的数据建议用于时间线组件：
+
+- `event_id`
+- `task_id`
+- `status`
+- `event_type`
+- `message`
+- `payload`
+- `trace_id`
+- `created_at`
+
+展示规则：
+
+- 按 `created_at` 排序。
+- `error` 类型事件用单独颜色或图标。
+- `payload` 只在详情展开时显示。
+- 失败时优先展示 `message` 和 `error_code`，不要让用户翻日志。
+
 ## 页面职责
 
 ### 任务提交页

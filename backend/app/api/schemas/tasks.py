@@ -63,3 +63,19 @@ class TaskStatusData(BaseModel):
     error_message: str | None = None
     created_at: datetime
     updated_at: datetime
+
+
+class TaskEventData(BaseModel):
+    event_id: str
+    task_id: str
+    status: str
+    event_type: str
+    message: str
+    payload: dict[str, Any] = Field(default_factory=dict)
+    trace_id: str | None = None
+    created_at: datetime
+
+
+class TaskEventsData(BaseModel):
+    task_id: str
+    events: list[TaskEventData]

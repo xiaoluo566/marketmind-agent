@@ -2,7 +2,7 @@
 
 ## 当天目标
 
-让任务不是一个黑盒。用户和开发者都应该知道任务在排队、运行、失败、重试还是完成。
+让任务不是一个黑盒。用户和开发者都应该知道任务在接收、排队、运行、失败、重试还是完成。
 
 ## 前置依赖
 
@@ -12,7 +12,7 @@
 
 ## 当天交付物
 
-- `task_events` 写入逻辑
+- 任务事件流写入逻辑
 - 任务状态枚举
 - 事件查询接口
 - 前端进度数据格式
@@ -20,14 +20,16 @@
 ## 实施步骤
 
 1. 定义状态：`received`、`queued`、`running`、`completed`、`failed`
-2. 每次状态变化写入 `task_events`
+2. 每次状态变化写入统一事件格式
 3. 实现 `GET /api/tasks/{task_id}/events`
 4. 为后续 WebSocket / SSE 预留统一事件格式
 5. 在失败事件里记录 `error_code` 和 `trace_id`
 
+Day 6 实现优先接 Redis 实时事件流。PostgreSQL `task_events` 表已经在 Day 3 预留，后续联调数据库和事件持久化时再接入。
+
 ## 验收标准
 
-- 一个任务至少有 received、queued、running、completed 或 failed
+- 一个任务至少有 received、queued、running、completed 或 failed 事件
 - 失败能看到失败阶段和错误码
 - 前端不用解析日志也能展示进度
 
@@ -46,4 +48,3 @@
 ## 建议提交
 
 `feat: expose task progress events`
-

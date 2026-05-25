@@ -23,6 +23,15 @@ class AppError(Exception):
         super().__init__(message)
 
 
+def app_error(
+    code: str,
+    message: str,
+    status_code: int = 400,
+    details: dict[str, Any] | None = None,
+) -> AppError:
+    return AppError(code=code, message=message, status_code=status_code, details=details)
+
+
 def _sanitize(value: Any) -> Any:
     if isinstance(value, dict):
         return {str(key): _sanitize(item) for key, item in value.items()}
