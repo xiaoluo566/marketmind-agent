@@ -90,7 +90,7 @@
 | Day 09 | Done | 采集结果入库、artifact 入库、评论入库和幂等策略 | `978d425` |
 | Day 10 | Done | Agent 工具 schema、工具注册机制、统一执行 envelope | `cad1671` |
 | Day 11 | Done | Agent ReAct 循环与状态落库 | `8e47731` |
-| Day 12 | Done | Pydantic Guardrails 与 self-heal | `待提交` |
+| Day 12 | Done | Pydantic Guardrails 与 self-heal | `5b1c0cf` |
 | Day 13 | Pending | 短期记忆与上下文压缩 | 待记录 |
 | Day 14 | Pending | 评论切片与 embedding 写入 | 待记录 |
 | Day 15 | Pending | `search_reviews_tool` 语义检索 | 待记录 |
@@ -820,7 +820,7 @@ Day 12 的目标是把模型输出从“看起来像 JSON”推进到“先校�
 
 ### 提交记录
 
-- `待提交`
+- `5b1c0cf feat: 实现 Day 12 结构化输出守门`
 
 ### 遗留问题
 
@@ -842,7 +842,7 @@ Day 12 的目标是把模型输出从“看起来像 JSON”推进到“先校�
 | Day 09 | 爬虫结果入库和证据保存 | 采集结果入库、artifact 入库、评论入库和幂等策略 | pytest + ruff 通过 | `978d425` |
 | Day 10 | 工具 schema 与工具注册机制 | Agent 工具 schema、ToolRegistry、ToolExecutor、`crawl_product_tool` | pytest + ruff 通过 | `cad1671` |
 | Day 11 | Agent ReAct 循环 | Agent Run / Step 持久化、最小 ReAct 状态机 | pytest + ruff + build 通过 | `8e47731` |
-| Day 12 | Pydantic Guardrails 与 self-heal | 结构化输出守门、JSON repair prompt、run 指标累计 | pytest + ruff 通过 | `待提交` |
+| Day 12 | Pydantic Guardrails 与 self-heal | 结构化输出守门、JSON repair prompt、run 指标累计 | pytest + ruff 通过 | `5b1c0cf` |
 | Day 13 | 短期记忆与上下文压缩 | 待记录 | 待记录 | 待记录 |
 | Day 14 | 评论切片与 embedding 写入 | 待记录 | 待记录 | 待记录 |
 
