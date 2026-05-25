@@ -1,10 +1,16 @@
 from app.api.schemas.tasks import TaskStatusData
 from app.core.config import get_settings
+from app.storage.base import Base
+from app.storage.crawl_stores import SQLAlchemyCrawlResultStore
+from app.storage.models import Artifact, CrawledPage, Product, Project, Review, Task, User
 from app.storage.statuses import TaskStatus
+from app.storage.task_stores import SQLAlchemyTaskStatusStore
 from app.tasks.event_store import InMemoryTaskEventStore
 from app.tasks.status_store import InMemoryTaskStatusStore, utc_now
 from app.worker.celery_app import celery_app
 from app.worker.tasks import process_research_task, run_research_task
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 
 def test_celery_uses_redis_configuration_from_settings() -> None:
@@ -183,3 +189,96 @@ def test_public_url_task_marks_failed_when_crawler_is_blocked(tmp_path) -> None:
     assert events[-1].payload["details"]["artifacts"][0]["artifact_type"] == (
         "crawler_failure_html"
     )
+
+
+def test_public_url_task_persists_crawl_results(tmp_path) -> None:
+    engine = create_engine("sqlite+pysqlite:///:memory:")
+    Base.metadata.create_all(
+        bind=engine,
+        tables=[
+            User.__table__,
+            Project.__table__,
+            Task.__table__,
+            Product.__table__,
+            CrawledPage.__table__,
+            Review.__table__,
+            Artifact.__table__,
+        ],
+    )
+    session_factory = sessionmaker(
+        bind=engine,
+        autoflush=False,
+        autocommit=False,
+        expire_on_commit=False,
+    )
+    status_store = InMemoryTaskStatusStore()
+    event_store = InMemoryTaskEventStore()
+    created_at = utc_now()
+    task_id = "tsk_worker_persist"
+    SQLAlchemyTaskStatusStore(
+        session_factory=session_factory,
+        default_user_id="usr_local",
+        default_project_id="prj_default",
+    ).create(
+        TaskStatusData(
+            task_id=task_id,
+            status=TaskStatus.QUEUED.value,
+            trace_id="trc_worker_persist",
+            target="https://example.com/product/espresso",
+            mode="competitive_research",
+            priority="normal",
+            source_type="public_url",
+            options={},
+            queue_task_id="celery_worker_persist",
+            created_at=created_at,
+            updated_at=created_at,
+        )
+    )
+    status_store.create(
+        TaskStatusData(
+            task_id=task_id,
+            status=TaskStatus.QUEUED.value,
+            trace_id="trc_worker_persist",
+            target="https://example.com/product/espresso",
+            mode="competitive_research",
+            priority="normal",
+            source_type="public_url",
+            options={},
+            queue_task_id="celery_worker_persist",
+            created_at=created_at,
+            updated_at=created_at,
+        )
+    )
+
+    result = run_research_task(
+        task_id=task_id,
+        payload={
+            "target": "https://example.com/product/espresso",
+            "mode": "competitive_research",
+            "priority": "normal",
+            "source_type": "public_url",
+            "options": {
+                "artifact_dir": str(tmp_path),
+                "fixture_html": """
+                    <html>
+                      <body>
+                        <h1>Portable Espresso Maker</h1>
+                        <article class="review" data-review-id="rev-001">
+                          <p>The pump stopped working after three days.</p>
+                          <span>1 out of 5</span>
+                        </article>
+                      </body>
+                    </html>
+                """,
+            },
+        },
+        trace_id="trc_worker_persist",
+        status_store=status_store,
+        event_store=event_store,
+        crawl_result_store=SQLAlchemyCrawlResultStore(session_factory=session_factory),
+    )
+
+    assert result["status"] == TaskStatus.COMPLETED.value
+    persisted_payload = event_store.list_for_task(task_id)[2].payload["persisted"]
+    assert persisted_payload["product_id"]
+    assert persisted_payload["page_id"]

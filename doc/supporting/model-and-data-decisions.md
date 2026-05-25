@@ -15,6 +15,7 @@ Day 3 会开始设计数据库模型。模型、embedding、数据源、用户�
 | embedding 维度 | `1536` | Day 3 的 pgvector 字段按 `vector(1536)` 设计 |
 | 第一版主数据源 | Demo Dataset + CSV/JSON Upload | 保证主链路不被真实站点反爬、登录、验证码卡死 |
 | 第一版 URL 爬虫 | Generic public page crawler | 只抓公开页面，作为能力展示，不绑定某个高风险电商站 |
+| 第一版代理策略 | 不加入代理池 | 项目重点是评论洞察和证据链，不把开发重心放在反爬绕过 |
 | 用户体系 | 不做真实登录 | 使用默认本地用户/系统用户，数据库保留 `users` 扩展点 |
 | 多项目隔离 | 数据库保留 `projects`，UI 第一版使用默认项目 | 先保留结构，不提前做复杂权限和项目管理 |
 
@@ -98,7 +99,7 @@ EMBEDDING_DIMENSIONS=1536
 这些内容不会阻塞 Day 3，可以后置：
 
 - 首个定制站点适配器选哪一个。
-- 是否加入代理池。
+- 是否加入代理池。Day 8 已决定第一版不做，后续只有在合法公开数据源仍频繁失败时再评估。
 - 是否接真实登录体系。
 - 是否做多项目 UI。
 - 是否把 report model 和 planner model 做成前端可配置。
@@ -110,4 +111,3 @@ EMBEDDING_DIMENSIONS=1536
 - 爬虫边界见 `crawler-strategy.md`
 - 环境变量见 `deployment.md` 和 `dev-environment.md`
 - 待决事项收敛见 `open-questions.md`
-

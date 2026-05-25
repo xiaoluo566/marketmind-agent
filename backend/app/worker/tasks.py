@@ -3,8 +3,13 @@ import asyncio
 from app.api.schemas.tasks import TaskStatusData
 from app.core.config import get_settings
 from app.crawler import CrawlError, CrawlRequest, crawl_product_page
+from app.storage.crawl_stores import CrawlResultStore
 from app.storage.statuses import TaskStatus
-from app.tasks.dependencies import get_task_event_store, get_task_status_store
+from app.tasks.dependencies import (
+    get_crawl_result_store,
+    get_task_event_store,
+    get_task_status_store,
+)
 from app.tasks.event_store import TaskEventStore
 from app.tasks.service import build_task_event
 from app.tasks.status_store import TaskStatusStore, utc_now
@@ -19,6 +24,7 @@ def process_research_task(task_id: str, payload: dict, trace_id: str) -> dict:
         trace_id=trace_id,
         status_store=get_task_status_store(),
         event_store=get_task_event_store(),
+        crawl_result_store=get_crawl_result_store(),
     )
 
 
@@ -28,6 +34,7 @@ def run_research_task(
     trace_id: str,
     status_store: TaskStatusStore,
     event_store: TaskEventStore,
+    crawl_result_store: CrawlResultStore | None = None,
 ) -> dict:
     current_task = status_store.get(task_id)
     if current_task is None:
@@ -120,7 +127,52 @@ def run_research_task(
             "artifacts": [
                 artifact.model_dump(mode="json") for artifact in crawl_result.artifacts
             ],
+            "reviews": [review.model_dump(mode="json") for review in crawl_result.reviews],
         }
+        persisted_crawl = None
+        if crawl_result_store is not None:
+            try:
+                persisted_crawl = crawl_result_store.persist_success(
+                    task_id=task_id,
+                    result=crawl_result,
+                )
+            except Exception as exc:
+                failed_task = running_task.model_copy(
+                    update={
+                        "status": TaskStatus.FAILED.value,
+                        "error_code": "CRAWL_PERSISTENCE_FAILED",
+                        "error_message": str(exc),
+                        "finished_at": utc_now(),
+                        "updated_at": utc_now(),
+                    }
+                )
+                status_store.save(failed_task)
+                event_store.append(
+                    build_task_event(
+                        task_id=task_id,
+                        status=TaskStatus.FAILED.value,
+                        event_type="crawler_error",
+                        message="crawl persistence failed",
+                        payload={
+                            "error_code": "CRAWL_PERSISTENCE_FAILED",
+                            "reason": str(exc),
+                        },
+                        trace_id=trace_id,
+                    )
+                )
+                return {
+                    "task_id": task_id,
+                    "status": failed_task.status,
+                    "trace_id": trace_id,
+                    "target": failed_task.target,
+                    "error_code": failed_task.error_code,
+                }
+            crawl_result_payload["persisted"] = {
+                "product_id": persisted_crawl.product_id,
+                "page_id": persisted_crawl.page_id,
+                "artifact_ids": persisted_crawl.artifact_ids,
+                "review_ids": persisted_crawl.review_ids,
+            }
         event_store.append(
             build_task_event(
                 task_id=task_id,

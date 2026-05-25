@@ -32,6 +32,31 @@ def test_crawl_product_page_extracts_fixture_content() -> None:
     assert result.source_type == "html_fixture"
 
 
+def test_crawl_product_page_extracts_structured_reviews() -> None:
+    request = CrawlRequest(
+        url="https://example.com/product/espresso",
+        source_type="html_fixture",
+        html="""
+            <html>
+              <body>
+                <h1>Portable Espresso Maker</h1>
+                <article class="review" data-review-id="rev-001">
+                  <p>The pump stopped working after three days.</p>
+                  <span>1 out of 5</span>
+                </article>
+              </body>
+            </html>
+        """,
+    )
+
+    result = asyncio.run(crawl_product_page(request))
+
+    assert len(result.reviews) == 1
+    assert result.reviews[0].external_id == "rev-001"
+    assert "pump stopped working" in result.reviews[0].content
+    assert result.reviews[0].rating == 1.0
+
+
 def test_crawl_product_page_rejects_blocked_pages() -> None:
     request = CrawlRequest(
         url="https://example.com/product/blocked",

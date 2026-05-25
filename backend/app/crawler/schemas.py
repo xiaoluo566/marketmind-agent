@@ -29,6 +29,14 @@ class CrawlArtifact(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
+class CrawlReview(BaseModel):
+    external_id: str | None = None
+    content: str
+    rating: float | None = None
+    source_url: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
 class CrawlResult(BaseModel):
     url: str
     source_type: str
@@ -39,6 +47,7 @@ class CrawlResult(BaseModel):
     html: str | None = None
     screenshot_path: str | None = None
     artifacts: list[CrawlArtifact] = Field(default_factory=list)
+    reviews: list[CrawlReview] = Field(default_factory=list)
     fetched_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     metadata: dict[str, Any] = Field(default_factory=dict)
 

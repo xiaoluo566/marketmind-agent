@@ -201,7 +201,8 @@ Day 7 增量迁移为 `0002_task_queue_id`：
 - API 和 Worker 通过 mirrored store 同步更新 Redis 实时层与 PostgreSQL 审计层
 - Worker 更新任务状态
 - Agent 创建 `agent_runs` 和 `agent_steps`
-- Crawler 写入 `products`、`reviews`、`artifacts`
+- Crawler 写入 `products`、`crawled_pages`、`reviews`、`artifacts`
+- Day 9 起 `SQLAlchemyCrawlResultStore` 负责把采集成功结果映射到这些表，并在 service 层用 `task_id + source_url`、`task_id + artifact_type + checksum` 和评论外部 ID 做第一版幂等控制。
 - RAG 写入 `review_chunks` 和向量
 - Report 模块写入 `reports`
 

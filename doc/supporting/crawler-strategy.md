@@ -63,7 +63,13 @@ Day 8 实现状态：
 - 已支持成功 HTML artifact 本地保存。
 - 已支持解析失败 / 访问拦截时的失败 HTML artifact 本地保存。
 - artifact 引用已进入任务事件 payload。
-- 截图证据和数据库 `artifacts` 表落库留到 Day 9 之后实现。
+- 截图证据留到后续实现。
+
+Day 9 实现状态：
+
+- 成功采集结果已写入 `products`、`crawled_pages`、`reviews` 和 `artifacts`。
+- `crawl completed` 事件会携带持久化后的 `product_id`、`page_id`、`artifact_ids` 和 `review_ids`。
+- 第一版评论抽取只处理简单 review 容器，复杂站点评论区仍留给后续 adapter。
 
 ## 风控策略
 

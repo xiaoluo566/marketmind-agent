@@ -5,7 +5,7 @@ from html import unescape
 from html.parser import HTMLParser
 
 from app.crawler.errors import CrawlError, CrawlErrorCode
-from app.crawler.schemas import CrawlResult
+from app.crawler.schemas import CrawlResult, CrawlReview
 
 _BLOCKED_MARKERS = (
     "access denied",
@@ -23,13 +23,28 @@ class _VisibleTextParser(HTMLParser):
         self._active_tag: str | None = None
         self._skip_depth = 0
         self._text_parts: list[str] = []
+        self._review_depth = 0
+        self._review_external_id: str | None = None
+        self._review_parts: list[str] = []
+        self.reviews: list[CrawlReview] = []
 
     def handle_starttag(self, tag: str, attrs) -> None:
         normalized_tag = tag.lower()
+        attrs_dict = {name.lower(): value for name, value in attrs}
         if normalized_tag in {"script", "style", "noscript"}:
             self._skip_depth += 1
         if normalized_tag in {"title", "h1"}:
             self._active_tag = normalized_tag
+        if self._is_review_container(normalized_tag, attrs_dict):
+            self._review_depth = 1
+            self._review_external_id = (
+                attrs_dict.get("data-review-id")
+                or attrs_dict.get("data-review")
+                or attrs_dict.get("id")
+            )
+            self._review_parts = []
+        elif self._review_depth:
+            self._review_depth += 1
 
     def handle_endtag(self, tag: str) -> None:
         normalized_tag = tag.lower()
@@ -37,6 +52,10 @@ class _VisibleTextParser(HTMLParser):
             self._skip_depth -= 1
         if self._active_tag == normalized_tag:
             self._active_tag = None
+        if self._review_depth:
+            self._review_depth -= 1
+            if self._review_depth == 0:
+                self._append_review()
 
     def handle_data(self, data: str) -> None:
         if self._skip_depth:
@@ -45,6 +64,8 @@ class _VisibleTextParser(HTMLParser):
         if not value:
             return
         self._text_parts.append(value)
+        if self._review_depth:
+            self._review_parts.append(value)
         if self._active_tag == "title" and self.title is None:
             self.title = value
         if self._active_tag == "h1" and self.heading is None:
@@ -52,6 +73,33 @@ class _VisibleTextParser(HTMLParser):
 
     def visible_text(self) -> str:
         return normalize_text(" ".join(self._text_parts))
+
+    def _append_review(self) -> None:
+        content = normalize_text(" ".join(self._review_parts))
+        if not content:
+            return
+        self.reviews.append(
+            CrawlReview(
+                external_id=self._review_external_id,
+                content=content,
+                rating=_extract_rating(content),
+                metadata={"extractor": "generic_html_review"},
+            )
+        )
+        self._review_external_id = None
+        self._review_parts = []
+
+    def _is_review_container(self, tag: str, attrs: dict[str, str | None]) -> bool:
+        if tag not in {"article", "div", "li", "section"}:
+            return False
+        class_value = attrs.get("class") or ""
+        itemprop_value = attrs.get("itemprop") or ""
+        return (
+            "review" in class_value.lower()
+            or itemprop_value.lower() == "review"
+            or attrs.get("data-review-id") is not None
+            or attrs.get("data-review") is not None
+        )
 
 
 def extract_product_page(html: str, url: str, source_type: str) -> CrawlResult:
@@ -89,6 +137,7 @@ def extract_product_page(html: str, url: str, source_type: str) -> CrawlResult:
         rating=_extract_rating(text),
         extracted_text=text,
         html=html,
+        reviews=parser.reviews,
         metadata={"extractor": "generic_html"},
     )
 

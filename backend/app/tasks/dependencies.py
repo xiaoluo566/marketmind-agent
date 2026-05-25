@@ -1,6 +1,7 @@
 from functools import lru_cache
 
 from app.core.config import get_settings
+from app.storage.crawl_stores import SQLAlchemyCrawlResultStore
 from app.storage.database import SessionLocal
 from app.storage.task_stores import (
     MirroredTaskEventStore,
@@ -44,3 +45,8 @@ def get_task_event_store() -> TaskEventStore:
 @lru_cache
 def get_task_dispatcher() -> TaskQueueDispatcher:
     return CeleryTaskDispatcher()
+
+
+@lru_cache
+def get_crawl_result_store() -> SQLAlchemyCrawlResultStore:
+    return SQLAlchemyCrawlResultStore(session_factory=SessionLocal)

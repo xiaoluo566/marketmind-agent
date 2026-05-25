@@ -161,6 +161,17 @@ CSV 表头或 JSON 对象字段第一版按下面约定：
           "rating": 4.6,
           "source_type": "html_fixture",
           "text_preview": "Portable Espresso Maker Travel ready. Only $39.99 today.",
+          "reviews": [
+            {
+              "external_id": "rev-001",
+              "content": "The pump stopped working after three days.",
+              "rating": 1.0,
+              "source_url": "https://example.com/product/123#rev-001",
+              "metadata": {
+                "extractor": "generic_html_review"
+              }
+            }
+          ],
           "artifacts": [
             {
               "artifact_type": "crawler_html",
@@ -171,7 +182,13 @@ CSV 表头或 JSON 对象字段第一版按下面约定：
                 "task_id": "tsk_01HXYZ"
               }
             }
-          ]
+          ],
+          "persisted": {
+            "product_id": "prd_01HPRODUCT",
+            "page_id": "pg_01HPAGE",
+            "artifact_ids": ["art_01HHTML"],
+            "review_ids": ["rev_01HREVIEW"]
+          }
         },
         "trace_id": "trc_01HABC",
         "created_at": "2026-05-25T10:00:03Z"

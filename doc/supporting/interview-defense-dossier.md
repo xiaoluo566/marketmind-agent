@@ -72,6 +72,12 @@ Day 8 做 Playwright 最小采集与失败兜底，是因为任务基础设施�
 
 > Day 8 我没有把目标定成“稳定爬某个大站”，因为那会把项目拖进站点适配和反爬细节。我的目标是先建立可复用的采集边界：输入是任务和 URL，输出是结构化字段、可追溯 artifact 和明确错误码。这样后续无论接具体站点 adapter、CSV 兜底，还是接 Agent 工具调用，底层契约都是稳定的。
 
+Day 9 做采集结果入库，是因为 Day 8 只把证据放进了任务事件和本地文件，后续 RAG、报告和证据链不能长期依赖事件 payload。当天选择复用 Day 3 的 `products`、`crawled_pages`、`reviews`、`artifacts` 表，而不是重新建表，是为了保持数据模型一致。幂等策略先放在 storage service 层，保证重复采集不会无限新增重复数据。
+
+面试时可以这样讲：
+
+> Day 9 我把采集结果从“过程事件”推进成“数据库资产”。这个阶段的重点不是多爬几个字段，而是让商品、页面、评论和 artifact 都能通过 `task_id` 回溯，并且重复运行不会造成不可控重复数据。这样后续 RAG 和报告才能引用稳定的数据库记录，而不是引用临时变量。
+
 ### Day 8 之后追加模板
 
 ```markdown
@@ -265,10 +271,10 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 
 ### 7. 我对“不要夸大进度”的思考
 
-这个项目目前还在 Day 8，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
+这个项目目前还在 Day 9，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
 
-- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、Playwright 最小采集、HTML 证据 artifact、错误 envelope、测试。
-- 正在做：采集结果入库和证据表关联。
+- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、错误 envelope、测试。
+- 正在做：工具 schema 和工具注册机制。
 - 后续做：Agent、RAG、报告、前端真实接入、部署。
 
 我认为这反而是加分项。因为真实开发中，清楚知道自己完成了什么、没完成什么，比把项目包装得过满更可信。
@@ -311,7 +317,7 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 
 ## 当前开发进度怎么讲
 
-截至 Day 8，项目已经完成：
+截至 Day 9，项目已经完成：
 
 - 文档体系、30 天 roadmap、开发日志。
 - Next.js 控制台骨架。
@@ -333,12 +339,14 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 - 采集成功 / 失败事件写入任务事件流。
 - 成功 HTML 和失败 HTML artifact 本地保存。
 - `ACCESS_BLOCKED`、`DOM_NOT_FOUND`、`PAGE_TIMEOUT` 等采集错误分类。
+- 采集成功结果写入 `products`、`crawled_pages`、`reviews` 和 `artifacts`。
+- Worker 采集完成事件携带持久化后的 product/page/artifact/review ID。
+- 采集结果幂等写入策略，避免同一任务重复运行造成不可控重复数据。
 - 队列不可用、状态缓存不可用、参数校验失败的统一错误响应。
 - pytest + ruff + Next.js build 验证。
 
 还没有完成：
 
-- 采集结果写入 `crawled_pages` 和 `artifacts` 表。
 - 具体电商站点 adapter。
 - 失败截图 artifact。
 - Agent ReAct 状态机。
@@ -347,7 +355,7 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 - 前端接真实 API。
 - Docker Compose 全链路一键启动。
 
-面试时可以诚实讲：这个项目正在按 30 天里程碑推进，目前已经完成底层任务入口、异步管线、任务事件流、PostgreSQL 持久化和 Playwright 最小采集，下一阶段会把采集结果入库并接 Agent 状态机。重点是展示工程化思路和持续推进能力，而不是假装已经做完所有功能。
+面试时可以诚实讲：这个项目正在按 30 天里程碑推进，目前已经完成底层任务入口、异步管线、任务事件流、PostgreSQL 持久化、Playwright 最小采集和采集结果入库，下一阶段会接工具 schema 和 Agent 状态机。重点是展示工程化思路和持续推进能力，而不是假装已经做完所有功能。
 
 ## 2 分钟项目介绍话术
 
@@ -1260,7 +1268,7 @@ Agent step 状态：
 
 ## 目前最适合展示的代码点
 
-截至 Day 8，最适合展示：
+截至 Day 9，最适合展示：
 
 - `backend/app/api/routes/tasks.py`：API 如何接收任务、投递队列、统一错误。
 - `backend/app/tasks/service.py`：任务状态创建和入队流程。
@@ -1271,12 +1279,14 @@ Agent step 状态：
 - `backend/app/worker/tasks.py`：最小 worker 状态推进。
 - `backend/app/crawler/service.py`：Playwright 最小采集和 HTML artifact 保存。
 - `backend/app/crawler/extractors.py`：通用 HTML 字段抽取和失败分类。
+- `backend/app/storage/crawl_stores.py`：采集结果写入 product、page、review、artifact 的持久化和幂等策略。
 - `backend/app/storage/models.py`：数据库模型设计。
 - `migrations/versions/0002_task_queue_id.py`：任务队列 ID 持久化迁移。
 - `tests/test_task_persistence.py`：任务和事件持久化测试。
 - `tests/test_tasks_api.py`：API 成功、失败、队列不可用测试。
 - `tests/test_celery_worker.py`：Celery 配置、worker 状态推进和事件写入测试。
 - `tests/test_crawler_service.py`：采集成功、拦截、空 DOM 和 artifact 保存测试。
+- `tests/test_crawl_persistence.py`：采集结果入库和幂等测试。
 
 ## 如果被问“你在项目中学到了什么”
 

@@ -47,8 +47,8 @@
 | --- | --- |
 | 稳定分支 | `main` |
 | 日常开发分支 | `dev` |
-| 当前开发阶段 | Day 8 已完成，准备进入 Day 9 |
-| 当前主链路 | 文档基线、Next.js 控制台骨架、FastAPI health、任务创建 API、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、数据库模型、Alembic 迁移 |
+| 当前开发阶段 | Day 9 已完成，准备进入 Day 10 |
+| 当前主链路 | 文档基线、Next.js 控制台骨架、FastAPI health、任务创建 API、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、数据库模型、Alembic 迁移 |
 | 最新开发提交 | 以 `git log -1 --oneline` 为准 |
 | 当前数据库决策 | PostgreSQL + pgvector，review chunk 使用 `vector(1536)` |
 | 当前模型决策 | 默认 `gpt-5.4-mini`，报告模型 `gpt-5.5`，embedding `text-embedding-3-small` |
@@ -87,7 +87,7 @@
 | Day 06 | Done | 任务状态流与事件流 | `e7d361c` |
 | Day 07 | Done | 第一周联调、任务事件持久化和基础设施验收 | `a70787a` |
 | Day 08 | Done | Playwright 最小采集、字段抽取、失败分类与 HTML 证据 artifact | `f9d43ca` |
-| Day 09 | Pending | 爬虫结果入库和证据保存 | 待记录 |
+| Day 09 | Done | 采集结果入库、artifact 入库、评论入库和幂等策略 | 待提交 |
 | Day 10 | Pending | 工具 schema 与工具注册机制 | 待记录 |
 | Day 11 | Pending | Agent ReAct 循环 | 待记录 |
 | Day 12 | Pending | Pydantic Guardrails 与 self-heal | 待记录 |
@@ -584,6 +584,68 @@ Day 8 没有直接跳到复杂站点适配，而是把“最小可解释采集�
 
 进入 Day 9，把 crawler 结果写入 PostgreSQL，同时把 HTML / 截图 / 抽取结果和任务记录真正联起来，让后续 RAG 和报告生成能直接消费结构化采集数据。
 
+## Day 09 记录
+
+### 实际完成
+
+Day 9 的目标是把 Day 8 采集到的证据真正沉淀成数据库资产。今天没有新增迁移，因为 Day 3 已经预留了 `products`、`crawled_pages`、`reviews` 和 `artifacts` 这些实体，所以实现重点放在 storage 封装和幂等写入。
+
+完成内容：
+
+- 新增 `SQLAlchemyCrawlResultStore`，统一负责采集结果持久化。
+- 将 `CrawlResult` 映射到 `products`、`crawled_pages`、`reviews`、`artifacts`。
+- `Product` 用 `task_id + source_url` 做幂等更新。
+- `CrawledPage` 用 `task_id + source_url` 做幂等更新。
+- `Artifact` 用 `task_id + artifact_type + checksum` 做幂等更新。
+- `Review` 支持页面外部 ID 或稳定 hash 去重。
+- Worker 在采集成功后调用持久化 store，把页面证据写入 PostgreSQL。
+- 通用 HTML extractor 会顺带抽取简单 review 容器，形成最小评论入库入口。
+- 新增采集结果持久化测试，覆盖 product、page、artifact、review 和幂等更新。
+
+### 当天选择思考
+
+Day 8 先做采集、Day 9 再做入库，是为了把“拿到证据”和“沉淀数据资产”拆开。采集层的问题通常是页面结构、浏览器和访问失败；入库层的问题通常是实体关系、幂等和可追踪性。把两件事分开做，调试路径更清楚。
+
+我没有给 `products`、`crawled_pages` 和 `artifacts` 再补一套新表，而是沿用 Day 3 冻结的模型，原因是项目已经有明确的数据分层：任务、页面、评论、报告、证据。如果 Day 9 再重新造表，后续 RAG 和报告引用会乱。
+
+我把幂等策略放在 service 层，而不是先加复杂唯一索引，是因为当前阶段更需要快速跑通“同一任务重复采集不会无限膨胀”这个行为。后面如果真的有高并发冲突，再考虑更强的数据库约束。
+
+### 关键文件
+
+- `backend/app/storage/crawl_stores.py`
+- `backend/app/crawler/extractors.py`
+- `backend/app/crawler/schemas.py`
+- `backend/app/worker/tasks.py`
+- `backend/app/tasks/dependencies.py`
+- `tests/test_crawl_persistence.py`
+- `tests/test_crawler_service.py`
+- `tests/test_celery_worker.py`
+- `doc/roadmap/day-09.md`
+- `doc/supporting/api-contract.md`
+- `doc/supporting/data-contract-examples.md`
+- `doc/supporting/crawler-strategy.md`
+- `doc/supporting/model-and-data-decisions.md`
+
+### 验证记录
+
+- `uv run pytest tests\\test_crawler_service.py tests\\test_crawl_persistence.py tests\\test_celery_worker.py`：14 passed
+- `uv run pytest`：47 passed
+- `uv run ruff check backend tests migrations`：通过
+
+### 提交记录
+
+- `待提交`
+
+### 遗留问题
+
+- 目前只做了 HTML artifact 入库，没有把截图证据入库。
+- 没有给 `artifacts`、`crawled_pages` 加唯一约束，幂等主要依赖 service 层。
+- 通用评论抽取只支持简单 review 容器，后续还需要站点适配。
+
+### 下一步
+
+进入 Day 10，把采集、评论和报告相关的工具 schema 固定下来，并开始做工具注册机制，给后面的 ReAct 状态机铺路。
+
 ## Day 08 到 Day 14 记录模板
 
 第二周重点从数据采集进入 Agent 工具和状态机。每天开发后按下面格式补充。
@@ -591,7 +653,7 @@ Day 8 没有直接跳到复杂站点适配，而是把“最小可解释采集�
 | Day | 计划主题 | 实际完成 | 验证 | 提交 |
 | --- | --- | --- | --- | --- |
 | Day 08 | Playwright 最小采集与失败兜底 | crawler service、字段抽取、失败分类、HTML artifact、Worker crawl 事件 | crawler/service + worker 测试通过，ruff 通过 | `f9d43ca` |
-| Day 09 | 爬虫结果入库和证据保存 | 待记录 | 待记录 | 待记录 |
+| Day 09 | 爬虫结果入库和证据保存 | 采集结果入库、artifact 入库、评论入库和幂等策略 | pytest + ruff 通过 | 待提交 |
 | Day 10 | 工具 schema 与工具注册机制 | 待记录 | 待记录 | 待记录 |
 | Day 11 | Agent ReAct 循环 | 待记录 | 待记录 | 待记录 |
 | Day 12 | Pydantic Guardrails 与 self-heal | 待记录 | 待记录 | 待记录 |

@@ -31,6 +31,7 @@ Day 5 开始接入 Celery + Redis：API 创建任务状态快照，投递 Celery
 Day 6 开始补任务进度事件流：API 和 Worker 每次关键状态变化都会写入统一事件格式，前端后续可以直接消费事件列表，而不是解析日志。
 Day 7 已把关键任务状态和事件同步到 PostgreSQL，形成长期审计和恢复层。Redis 仍然承担实时进度读取职责。
 Day 8 开始接入 crawler 最小采集：`public_url` 任务会在 Worker 中进入采集阶段，成功写入 `crawl completed` 事件，失败写入 `crawl failed` 事件并标记任务失败。
+Day 9 开始把 crawler 成功结果写入 PostgreSQL：`crawl completed` 事件的 payload 会追加 `persisted` 字段，包含 `product_id`、`page_id`、`artifact_ids` 和 `review_ids`。
 
 输入：
 
@@ -89,7 +90,7 @@ Day 6 事件来源：
 Day 8 事件来源：
 
 - Crawler 开始执行时写入 `event_type=crawler`、`message=crawl started`
-- Crawler 成功时写入 `event_type=crawler`、`message=crawl completed`，payload 包含标题、价格、评分、文本预览和 HTML artifact 引用
+- Crawler 成功时写入 `event_type=crawler`、`message=crawl completed`，payload 包含标题、价格、评分、文本预览、评论摘要、HTML artifact 引用和持久化 ID
 - Crawler 失败时写入 `event_type=crawler_error`、`message=crawl failed`，payload 包含 `error_code`、失败原因和可选失败 HTML artifact 引用
 
 失败：
