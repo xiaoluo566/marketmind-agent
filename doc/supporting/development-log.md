@@ -85,7 +85,7 @@
 | Day 04 | Done | API 契约与任务接收层 | `1abe635` |
 | Day 05 | Done | Celery + Redis 基础任务队列 | `10c11c1` |
 | Day 06 | Done | 任务状态流与事件流 | `e7d361c` |
-| Day 07 | Done | 第一周联调、任务事件持久化和基础设施验收 | 待提交 |
+| Day 07 | Done | 第一周联调、任务事件持久化和基础设施验收 | `a70787a` |
 | Day 08 | Pending | Playwright 最小采集与失败兜底 | 待记录 |
 | Day 09 | Pending | 爬虫结果入库和证据保存 | 待记录 |
 | Day 10 | Pending | 工具 schema 与工具注册机制 | 待记录 |
@@ -508,7 +508,7 @@ Day 7 的目标是把 Day 6 的 Redis 实时事件流接到 PostgreSQL 审计层
 
 ### 提交记录
 
-- 待提交
+- `a70787a feat: 持久化任务状态与事件日志`
 
 ### 遗留问题
 
