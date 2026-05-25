@@ -39,8 +39,8 @@
 | Day 04 | API 契约 | 任务接收接口、请求校验、错误 envelope |
 | Day 05 | Celery | 异步任务链路 |
 | Day 06 | 任务状态 | 事件流、进度记录 |
-| Day 07 | 爬虫骨架 | Playwright 最小采集 |
-| Day 08 | 爬虫加固 | 限速、重试、兜底 |
+| Day 07 | 第一周联调 | 任务事件持久化、基础设施验收 |
+| Day 08 | 爬虫骨架 | Playwright 最小采集、失败兜底 |
 | Day 09 | 数据入库 | 商品、评论、证据入库 |
 | Day 10 | 工具接口 | Agent tool schema |
 | Day 11 | 状态机 | ReAct 循环落库 |
@@ -68,7 +68,8 @@
 
 - Day 01 到 Day 03 决定项目边界和数据底座
 - Day 04 到 Day 06 决定任务系统
-- Day 07 到 Day 09 决定数据采集
+- Day 07 决定任务持久化和第一周联调
+- Day 08 到 Day 09 决定数据采集
 - Day 10 到 Day 12 决定 Agent 核心
 - Day 13 到 Day 18 决定记忆、检索和报告
 - Day 19 到 Day 22 决定可视化和可观测性

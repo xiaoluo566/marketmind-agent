@@ -29,6 +29,7 @@ Day 4 的实现范围是“契约先行”：只完成参数校验、生成 `tas
 Day 5 开始接入 Celery + Redis：API 创建任务状态快照，投递 Celery 后返回 `queued`，Worker 负责把状态推进到 `running` / `completed`。
 
 Day 6 开始补任务进度事件流：API 和 Worker 每次关键状态变化都会写入统一事件格式，前端后续可以直接消费事件列表，而不是解析日志。
+Day 7 再把关键事件同步到 PostgreSQL，形成长期审计和恢复层。
 
 输入：
 
@@ -110,7 +111,7 @@ Day 6 事件来源：
 - API 不写业务判断
 - API 只做参数接入、调度和查询
 - `GET /api/tasks/{task_id}` 读取 Redis 状态快照
-- `GET /api/tasks/{task_id}/events` 读取 Redis 事件流，后续再补 PostgreSQL 持久化
+- `GET /api/tasks/{task_id}/events` 先消费 Redis 实时事件层，Day 7 后补 PostgreSQL 持久化和历史查询层
 
 ## 错误码建议
 
