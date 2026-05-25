@@ -219,11 +219,17 @@ class MirroredTaskStatusStore:
 
     def create(self, task: TaskStatusData) -> TaskStatusData:
         secondary_task = self._secondary.create(task)
-        return self._primary.create(secondary_task)
+        try:
+            return self._primary.create(secondary_task)
+        except TaskStatusStoreUnavailableError:
+            return secondary_task
 
     def save(self, task: TaskStatusData) -> TaskStatusData:
         secondary_task = self._secondary.save(task)
-        return self._primary.save(secondary_task)
+        try:
+            return self._primary.save(secondary_task)
+        except TaskStatusStoreUnavailableError:
+            return secondary_task
 
     def get(self, task_id: str) -> TaskStatusData | None:
         try:
@@ -246,7 +252,10 @@ class MirroredTaskEventStore:
 
     def append(self, event: TaskEventData) -> TaskEventData:
         secondary_event = self._secondary.append(event)
-        return self._primary.append(secondary_event)
+        try:
+            return self._primary.append(secondary_event)
+        except TaskEventStoreUnavailableError:
+            return secondary_event
 
     def list_for_task(self, task_id: str) -> list[TaskEventData]:
         try:

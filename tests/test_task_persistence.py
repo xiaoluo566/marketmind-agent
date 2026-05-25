@@ -3,7 +3,14 @@ from datetime import UTC, datetime, timedelta
 from app.api.schemas.tasks import TaskEventData, TaskStatusData
 from app.storage.base import Base
 from app.storage.models import Project, Task, TaskEvent, User
-from app.storage.task_stores import SQLAlchemyTaskEventStore, SQLAlchemyTaskStatusStore
+from app.storage.task_stores import (
+    MirroredTaskEventStore,
+    MirroredTaskStatusStore,
+    SQLAlchemyTaskEventStore,
+    SQLAlchemyTaskStatusStore,
+)
+from app.tasks.event_store import TaskEventStoreUnavailableError
+from app.tasks.status_store import TaskStatusStoreUnavailableError
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
@@ -36,6 +43,25 @@ def build_task_status(status: str = "received") -> TaskStatusData:
         created_at=now,
         updated_at=now,
     )
+
+
+class FailingPrimaryStatusStore:
+    def create(self, task: TaskStatusData) -> TaskStatusData:
+        raise TaskStatusStoreUnavailableError("redis status store is unavailable")
+
+    def save(self, task: TaskStatusData) -> TaskStatusData:
+        raise TaskStatusStoreUnavailableError("redis status store is unavailable")
+
+    def get(self, task_id: str) -> TaskStatusData | None:
+        raise TaskStatusStoreUnavailableError("redis status store is unavailable")
+
+
+class FailingPrimaryEventStore:
+    def append(self, event: TaskEventData) -> TaskEventData:
+        raise TaskEventStoreUnavailableError("redis event store is unavailable")
+
+    def list_for_task(self, task_id: str) -> list[TaskEventData]:
+        raise TaskEventStoreUnavailableError("redis event store is unavailable")
 
 
 def test_sqlalchemy_status_store_creates_default_workspace_and_task() -> None:
@@ -126,3 +152,54 @@ def test_sqlalchemy_event_store_appends_and_lists_task_events_in_order() -> None
     with session_factory() as session:
         persisted_count = len(session.scalars(select(TaskEvent)).all())
     assert persisted_count == 2
+
+
+def test_mirrored_status_store_keeps_durable_write_when_realtime_store_is_down() -> None:
+    session_factory = build_session_factory()
+    database_store = SQLAlchemyTaskStatusStore(
+        session_factory=session_factory,
+        default_user_id="usr_local",
+        default_project_id="prj_default",
+    )
+    mirrored_store = MirroredTaskStatusStore(
+        primary=FailingPrimaryStatusStore(),
+        secondary=database_store,
+    )
+
+    created = mirrored_store.create(build_task_status())
+    persisted = mirrored_store.get("tsk_persist_001")
+
+    assert created.task_id == "tsk_persist_001"
+    assert persisted is not None
+    assert persisted.status == "received"
+
+
+def test_mirrored_event_store_keeps_durable_event_when_realtime_store_is_down() -> None:
+    session_factory = build_session_factory()
+    status_store = SQLAlchemyTaskStatusStore(
+        session_factory=session_factory,
+        default_user_id="usr_local",
+        default_project_id="prj_default",
+    )
+    database_event_store = SQLAlchemyTaskEventStore(session_factory=session_factory)
+    mirrored_event_store = MirroredTaskEventStore(
+        primary=FailingPrimaryEventStore(),
+        secondary=database_event_store,
+    )
+    status_store.create(build_task_status())
+    event = TaskEventData(
+        event_id="evt_realtime_down",
+        task_id="tsk_persist_001",
+        status="received",
+        event_type="status",
+        message="task received",
+        payload={},
+        trace_id="trc_persist_001",
+        created_at=datetime(2026, 5, 25, 10, 0, tzinfo=UTC),
+    )
+
+    appended = mirrored_event_store.append(event)
+    events = mirrored_event_store.list_for_task("tsk_persist_001")
+
+    assert appended.event_id == "evt_realtime_down"
+    assert [stored.event_id for stored in events] == ["evt_realtime_down"]

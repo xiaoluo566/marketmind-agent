@@ -834,7 +834,7 @@ Day 6 的目标是任务状态与进度流。直觉上可以直接做 WebSocket 
 
 现象：
 
-Day 6 已经有 `task_events` 数据表，也已经有 `GET /api/tasks/{task_id}/events` 接口，但实际事件流当前先写入 Redis，还没有写入 PostgreSQL。
+Day 6 已经有 `task_events` 数据表，也已经有 `GET /api/tasks/{task_id}/events` 接口，但当时事件流还只写入 Redis，没有写入 PostgreSQL。
 
 思考：
 
@@ -843,8 +843,9 @@ Day 6 已经有 `task_events` 数据表，也已经有 `GET /api/tasks/{task_id}
 解决：
 
 - Day 6 先完成 Redis 实时事件流，让任务过程可见。
-- Day 7 再做第一周联调，把关键事件写入 PostgreSQL `task_events`。
+- Day 7 完成第一周联调，把关键事件写入 PostgreSQL `task_events`。
 - Redis 定位为实时展示层，PostgreSQL 定位为审计、历史查询和断点续跑层。
+- 双写时以 PostgreSQL 持久化成功为准，Redis 实时层失败时不覆盖 durable write 的成功结果。
 - Playwright 采集顺延到 Day 8，避免基础设施联调和采集不稳定性同时出现。
 
 面试表达：

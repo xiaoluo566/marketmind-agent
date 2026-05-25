@@ -74,6 +74,8 @@ CSV 表头或 JSON 对象字段第一版按下面约定：
       "export_format": "markdown"
     },
     "queue_task_id": "celery_01HQUEUE",
+    "started_at": null,
+    "finished_at": null,
     "error_code": null,
     "error_message": null,
     "created_at": "2026-05-25T10:00:00Z",
@@ -109,48 +111,6 @@ CSV 表头或 JSON 对象字段第一版按下面约定：
       },
       {
         "event_id": "evt_01H002",
-        "task_id": "tsk_01HXYZ",
-        "status": "queued",
-        "event_type": "status",
-        "message": "task queued",
-        "payload": {
-          "queue_task_id": "celery_01HQUEUE"
-        },
-        "trace_id": "trc_01HABC",
-        "created_at": "2026-05-25T10:00:01Z"
-      }
-    ]
-  },
-  "message": "ok",
-  "trace_id": "trc_01HABC"
-}
-```
-
-## 查询任务事件响应
-
-```json
-{
-  "success": true,
-  "data": {
-    "task_id": "tsk_01HXYZ",
-    "events": [
-      {
-        "event_id": "evt_01HAAA",
-        "task_id": "tsk_01HXYZ",
-        "status": "received",
-        "event_type": "status",
-        "message": "task received",
-        "payload": {
-          "target": "https://example.com/product/123",
-          "mode": "competitive_research",
-          "priority": "normal",
-          "source_type": "public_url"
-        },
-        "trace_id": "trc_01HABC",
-        "created_at": "2026-05-25T10:00:00Z"
-      },
-      {
-        "event_id": "evt_01HBBB",
         "task_id": "tsk_01HXYZ",
         "status": "queued",
         "event_type": "status",

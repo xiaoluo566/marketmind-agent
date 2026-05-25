@@ -464,6 +464,7 @@ Day 7 的目标是把 Day 6 的 Redis 实时事件流接到 PostgreSQL 审计层
 - API 和 Worker 默认依赖从单 Redis store 升级为 mirrored store。
 - `GET /api/tasks/{task_id}` 仍优先读取 Redis 状态快照，Redis 缺失时可以回退到 PostgreSQL。
 - `GET /api/tasks/{task_id}/events` 仍优先读取 Redis 事件流，Redis 为空或不可用时可以读取 PostgreSQL 历史事件。
+- mirrored store 以 PostgreSQL durable write 为准，Redis 实时层写入失败时不再把已落库结果误判为整体失败。
 - 新增本地默认用户和默认项目配置，解决 `tasks.user_id`、`tasks.project_id` 外键落库问题。
 - 新增 `queue_task_id` 字段和 Alembic 迁移 `0002_task_queue_id`，用于把 Celery 任务 ID 持久化到 `tasks` 表。
 - Worker 在进入 running / completed 时补充 `started_at` 和 `finished_at`。
@@ -496,13 +497,14 @@ Day 7 的目标是把 Day 6 的 Redis 实时事件流接到 PostgreSQL 审计层
 - `.env.example`
 - `doc/supporting/api-contract.md`
 - `doc/supporting/data-model.md`
+- `doc/supporting/data-contract-examples.md`
 - `doc/supporting/interview-defense-dossier.md`
 
 ### 验证记录
 
-- `uv run pytest tests\\test_task_persistence.py tests\\test_tasks_api.py tests\\test_celery_worker.py`：17 passed
+- `uv run pytest tests\\test_task_persistence.py tests\\test_tasks_api.py tests\\test_celery_worker.py`：19 passed
 - `uv run ruff check backend tests migrations`：通过
-- `uv run pytest`：34 passed
+- `uv run pytest`：36 passed
 - `uv run alembic heads`：输出 `0002_task_queue_id (head)`
 - `uv run alembic upgrade head --sql`：成功生成 `0001_initial_schema` 到 `0002_task_queue_id` 的 SQL
 
