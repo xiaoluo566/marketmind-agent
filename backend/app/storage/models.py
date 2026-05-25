@@ -69,6 +69,7 @@ class Task(TimestampMixin, Base):
     priority: Mapped[str] = mapped_column(String(32), default="normal")
     source_type: Mapped[str] = mapped_column(String(32), default="demo_dataset")
     trace_id: Mapped[str] = mapped_column(String(80), nullable=False)
+    queue_task_id: Mapped[str | None] = mapped_column(String(120))
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     error_code: Mapped[str | None] = mapped_column(String(80))

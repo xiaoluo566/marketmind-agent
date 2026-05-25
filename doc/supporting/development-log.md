@@ -47,8 +47,8 @@
 | --- | --- |
 | 稳定分支 | `main` |
 | 日常开发分支 | `dev` |
-| 当前开发阶段 | Day 6 已完成，准备进入 Day 7 |
-| 当前主链路 | 文档基线、Next.js 控制台骨架、FastAPI health、任务创建 API、Celery 入队、Redis 状态快照、Redis 事件流、数据库模型、Alembic 初始迁移 |
+| 当前开发阶段 | Day 7 已完成，准备进入 Day 8 |
+| 当前主链路 | 文档基线、Next.js 控制台骨架、FastAPI health、任务创建 API、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、数据库模型、Alembic 迁移 |
 | 最新开发提交 | 以 `git log -1 --oneline` 为准 |
 | 当前数据库决策 | PostgreSQL + pgvector，review chunk 使用 `vector(1536)` |
 | 当前模型决策 | 默认 `gpt-5.4-mini`，报告模型 `gpt-5.5`，embedding `text-embedding-3-small` |
@@ -85,7 +85,7 @@
 | Day 04 | Done | API 契约与任务接收层 | `1abe635` |
 | Day 05 | Done | Celery + Redis 基础任务队列 | `10c11c1` |
 | Day 06 | Done | 任务状态流与事件流 | `e7d361c` |
-| Day 07 | Pending | 第一周联调、任务事件持久化和基础设施验收 | 待记录 |
+| Day 07 | Done | 第一周联调、任务事件持久化和基础设施验收 | 待提交 |
 | Day 08 | Pending | Playwright 最小采集与失败兜底 | 待记录 |
 | Day 09 | Pending | 爬虫结果入库和证据保存 | 待记录 |
 | Day 10 | Pending | 工具 schema 与工具注册机制 | 待记录 |
@@ -450,19 +450,76 @@ Day 6 的目标是让任务不再是黑盒。今天把“状态”进一步拆�
 
 进入 Day 7，把任务状态流、事件流和基础设施做一次联调，并补上更稳定的持久化层接入方案。
 
-## Day 07 记录模板
+## Day 07 记录
 
-计划主题：第一周联调、任务事件持久化和基础设施验收。
+### 实际完成
 
-实际完成：待记录。
+Day 7 的目标是把 Day 6 的 Redis 实时事件流接到 PostgreSQL 审计层，并把第一周的任务基础设施做一次收束。实际完成了任务状态和任务事件的 SQLAlchemy 持久化实现，同时保留 Redis 作为实时读取层。
 
-验证记录：待记录。
+完成内容：
 
-提交记录：待记录。
+- 新增 `SQLAlchemyTaskStatusStore`，把任务快照写入 `tasks` 表。
+- 新增 `SQLAlchemyTaskEventStore`，把结构化任务事件写入 `task_events` 表。
+- 新增 `MirroredTaskStatusStore` 和 `MirroredTaskEventStore`，实现 Redis + PostgreSQL 双写。
+- API 和 Worker 默认依赖从单 Redis store 升级为 mirrored store。
+- `GET /api/tasks/{task_id}` 仍优先读取 Redis 状态快照，Redis 缺失时可以回退到 PostgreSQL。
+- `GET /api/tasks/{task_id}/events` 仍优先读取 Redis 事件流，Redis 为空或不可用时可以读取 PostgreSQL 历史事件。
+- 新增本地默认用户和默认项目配置，解决 `tasks.user_id`、`tasks.project_id` 外键落库问题。
+- 新增 `queue_task_id` 字段和 Alembic 迁移 `0002_task_queue_id`，用于把 Celery 任务 ID 持久化到 `tasks` 表。
+- Worker 在进入 running / completed 时补充 `started_at` 和 `finished_at`。
+- 补充 SQLAlchemy 持久化测试，覆盖默认工作区创建、任务状态更新和事件顺序查询。
 
-遗留问题：待记录。
+### 当天选择思考
 
-下一步：待记录。
+今天优先做持久化和联调边界，而不是直接进入 Playwright，是因为 Day 6 已经把事件格式和事件写入时机稳定下来，但这些事件还只存在 Redis 里。Redis 适合实时进度，但不适合作为长期审计来源；一旦 TTL 到期或 Redis 重启，历史任务时间线就会丢失。
+
+我选择 mirrored store，而不是在 route 和 worker 里直接写两份逻辑，原因是：
+
+- API route 继续只负责接收请求和返回 envelope，不关心底层双写细节。
+- Worker 继续只负责推进任务状态，不直接操作 ORM。
+- Redis 与 PostgreSQL 的职责通过 store 抽象隔离，后续接 SSE、历史任务页或 Agent step 时更容易复用。
+- 测试可以继续用内存 store，不强依赖本地 Redis 或 PostgreSQL。
+
+我没有在 Day 7 做真正的 Playwright 采集，是因为采集本身会带来页面结构、网络、反爬、浏览器依赖等不稳定因素。如果基础设施还没有完成持久化就接采集，后续排错会分不清是任务系统问题还是采集问题。
+
+### 关键文件
+
+- `backend/app/storage/task_stores.py`
+- `backend/app/storage/models.py`
+- `backend/app/tasks/dependencies.py`
+- `backend/app/worker/tasks.py`
+- `backend/app/api/schemas/tasks.py`
+- `migrations/versions/0002_task_queue_id.py`
+- `tests/test_task_persistence.py`
+- `tests/test_database_models.py`
+- `tests/test_migrations.py`
+- `.env.example`
+- `doc/supporting/api-contract.md`
+- `doc/supporting/data-model.md`
+- `doc/supporting/interview-defense-dossier.md`
+
+### 验证记录
+
+- `uv run pytest tests\\test_task_persistence.py tests\\test_tasks_api.py tests\\test_celery_worker.py`：17 passed
+- `uv run ruff check backend tests migrations`：通过
+- `uv run pytest`：34 passed
+- `uv run alembic heads`：输出 `0002_task_queue_id (head)`
+- `uv run alembic upgrade head --sql`：成功生成 `0001_initial_schema` 到 `0002_task_queue_id` 的 SQL
+
+### 提交记录
+
+- 待提交
+
+### 遗留问题
+
+- 真实 PostgreSQL + Redis + Celery worker 的手工端到端联调还没有执行，当前验证以自动化测试和 Alembic SQL 生成为主。
+- 还没有 Docker Compose 一键拉起 PostgreSQL、Redis、API 和 Worker。
+- 还没有 WebSocket / SSE。
+- 还没有把任务事件展示接到前端。
+
+### 下一步
+
+进入 Day 8，开始 Playwright 最小采集与失败兜底。Day 8 不追求复杂站点适配，优先用本地 HTML fixture 或公开页面跑通采集证据，并继续把采集阶段写入任务事件。
 
 ## Day 08 到 Day 14 记录模板
 

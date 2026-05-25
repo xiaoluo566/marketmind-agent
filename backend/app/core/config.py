@@ -17,6 +17,10 @@ class Settings(BaseSettings):
     celery_result_backend: str = "redis://localhost:6379/2"
     task_status_redis_url: str = "redis://localhost:6379/3"
     task_status_ttl_seconds: int = 86_400
+    default_local_user_id: str = "usr_local"
+    default_local_user_email: str | None = None
+    default_local_project_id: str = "prj_default"
+    default_local_project_name: str = "Default Project"
     model_provider: str = "openai-compatible"
     model_name: str = "gpt-5.4-mini"
     report_model_name: str = "gpt-5.5"

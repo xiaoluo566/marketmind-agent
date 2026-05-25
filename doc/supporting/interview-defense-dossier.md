@@ -64,7 +64,9 @@ Day 5 接 Celery + Redis，是因为评论采集和 LLM 分析都是长任务，
 
 Day 6 做任务事件流，是因为 Day 5 只能看到“当前状态快照”，但看不到状态是怎么一步步变化的。如果后续要做前端进度条、失败回放、Agent step 调试和断点续跑，就必须先把 `received -> queued -> running -> completed/failed` 这些变化变成结构化事件。当天没有直接做 WebSocket / SSE，是因为实时推送应该建立在稳定事件格式之上，先做可查询事件流更稳。
 
-### Day 7 之后追加模板
+Day 7 做任务事件持久化和第一周联调，是因为 Day 6 的事件流只在 Redis 实时层里，不能承担长期审计、历史任务回放和断点续跑。当天没有直接进入 Playwright，是因为采集层会引入页面结构、浏览器依赖和网络不稳定性，先把任务状态双写到 PostgreSQL 更利于后续排错。
+
+### Day 8 之后追加模板
 
 ```markdown
 ### Day XX 选择思考
@@ -257,11 +259,11 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 
 ### 7. 我对“不要夸大进度”的思考
 
-这个项目目前还在 Day 6，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
+这个项目目前还在 Day 7，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
 
-- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、错误 envelope、测试。
-- 正在做：状态持久化和基础设施联调。
-- 后续做：采集、Agent、RAG、报告、前端真实接入、部署。
+- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、错误 envelope、测试。
+- 正在做：采集层接入和失败兜底。
+- 后续做：Agent、RAG、报告、前端真实接入、部署。
 
 我认为这反而是加分项。因为真实开发中，清楚知道自己完成了什么、没完成什么，比把项目包装得过满更可信。
 
@@ -303,7 +305,7 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 
 ## 当前开发进度怎么讲
 
-截至 Day 6，项目已经完成：
+截至 Day 7，项目已经完成：
 
 - 文档体系、30 天 roadmap、开发日志。
 - Next.js 控制台骨架。
@@ -316,6 +318,9 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 - Redis 状态快照和 `GET /api/tasks/{task_id}` 查询。
 - `GET /api/tasks/{task_id}/events` 任务事件流查询。
 - API 和 Worker 在状态变化时写入结构化事件。
+- Redis + PostgreSQL mirrored store，任务状态和任务事件可以双写。
+- `tasks.queue_task_id` 迁移，用于持久化 Celery 后台任务 ID。
+- 本地默认用户和默认项目的按需初始化，解决任务落库外键问题。
 - 队列不可用、状态缓存不可用、参数校验失败的统一错误响应。
 - pytest + ruff + Next.js build 验证。
 
@@ -328,7 +333,7 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 - 前端接真实 API。
 - Docker Compose 全链路一键启动。
 
-面试时可以诚实讲：这个项目正在按 30 天里程碑推进，目前已经完成底层任务入口、异步管线和任务事件流，下一阶段会接 PostgreSQL 持久化、Playwright 采集和 Agent 状态机。重点是展示工程化思路和持续推进能力，而不是假装已经做完所有功能。
+面试时可以诚实讲：这个项目正在按 30 天里程碑推进，目前已经完成底层任务入口、异步管线、任务事件流和 PostgreSQL 持久化，下一阶段会接 Playwright 采集和 Agent 状态机。重点是展示工程化思路和持续推进能力，而不是假装已经做完所有功能。
 
 ## 2 分钟项目介绍话术
 
@@ -450,7 +455,7 @@ Day 5 里 Redis 有三个用途：
 
 - Redis 快照适合实时状态和临时查询。
 - PostgreSQL 适合长期审计、历史报告、断点续跑和数据分析。
-- Day 6 已经补上 Redis 事件流，后续会继续把关键事件写入 PostgreSQL，形成长期审计记录。
+- Day 7 已经通过 mirrored store 把关键任务状态和事件同步写入 PostgreSQL，形成长期审计记录。
 
 面试回答重点：
 
@@ -951,7 +956,7 @@ Agent 的价值是根据任务目标选择工具和下一步动作。但我不�
 
 Day 5 的目标是异步队列最小闭环。Redis 快照足够支持快速查询任务状态，也能减少当天引入数据库事务、repository 和 worker 事务一致性问题。
 
-但长期设计不是只靠 Redis。Day 6 已经先把状态变化写成 Redis 事件流，后续还要把关键事件写入 PostgreSQL，这样才能支持历史任务、审计和断点续跑。
+但长期设计不是只靠 Redis。Day 6 先把状态变化写成 Redis 事件流，Day 7 再把关键任务状态和事件同步写入 PostgreSQL，这样才能支持历史任务、审计和断点续跑。
 
 ### Q10：Celery 投递成功但 Worker 没启动怎么办？
 
@@ -1240,15 +1245,18 @@ Agent step 状态：
 
 ## 目前最适合展示的代码点
 
-截至 Day 6，最适合展示：
+截至 Day 7，最适合展示：
 
 - `backend/app/api/routes/tasks.py`：API 如何接收任务、投递队列、统一错误。
 - `backend/app/tasks/service.py`：任务状态创建和入队流程。
 - `backend/app/tasks/dispatcher.py`：Celery 分发器抽象。
 - `backend/app/tasks/status_store.py`：Redis 状态存储和内存测试实现。
 - `backend/app/tasks/event_store.py`：Redis 事件流存储和内存测试实现。
+- `backend/app/storage/task_stores.py`：SQLAlchemy 持久化 store 和 Redis/PostgreSQL mirrored store。
 - `backend/app/worker/tasks.py`：最小 worker 状态推进。
 - `backend/app/storage/models.py`：数据库模型设计。
+- `migrations/versions/0002_task_queue_id.py`：任务队列 ID 持久化迁移。
+- `tests/test_task_persistence.py`：任务和事件持久化测试。
 - `tests/test_tasks_api.py`：API 成功、失败、队列不可用测试。
 - `tests/test_celery_worker.py`：Celery 配置、worker 状态推进和事件写入测试。
 

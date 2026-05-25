@@ -44,11 +44,20 @@ Day 6 task progress baseline:
 - API writes received, queued, and failed events
 - Worker writes running and completed events
 
+Day 7 persistence baseline:
+
+- SQLAlchemy-backed task status store and task event store
+- Redis + PostgreSQL mirrored task persistence
+- `tasks.queue_task_id` persisted for Celery task tracking
+- default local user and default project auto-created in local development
+- Redis remains the realtime read layer, PostgreSQL becomes the audit layer
+
 ## Local worker
 
-Redis must be running before using the real queue path.
+Redis must be running before using the real queue path. Day 7 persistence also expects PostgreSQL to be available and migrations to be applied first.
 
 ```powershell
+uv run alembic upgrade head
 uv run uvicorn app.main:app --app-dir backend --reload
 uv run celery -A app.worker.celery_app.celery_app worker -Q marketmind --loglevel=INFO --pool=solo
 ```

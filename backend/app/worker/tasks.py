@@ -1,26 +1,10 @@
 from app.api.schemas.tasks import TaskStatusData
-from app.core.config import get_settings
 from app.storage.statuses import TaskStatus
-from app.tasks.event_store import RedisTaskEventStore, TaskEventStore
+from app.tasks.dependencies import get_task_event_store, get_task_status_store
+from app.tasks.event_store import TaskEventStore
 from app.tasks.service import build_task_event
-from app.tasks.status_store import RedisTaskStatusStore, TaskStatusStore, utc_now
+from app.tasks.status_store import TaskStatusStore, utc_now
 from app.worker.celery_app import celery_app
-
-
-def _status_store() -> RedisTaskStatusStore:
-    settings = get_settings()
-    return RedisTaskStatusStore(
-        redis_url=settings.task_status_redis_url,
-        ttl_seconds=settings.task_status_ttl_seconds,
-    )
-
-
-def _event_store() -> RedisTaskEventStore:
-    settings = get_settings()
-    return RedisTaskEventStore(
-        redis_url=settings.task_status_redis_url,
-        ttl_seconds=settings.task_status_ttl_seconds,
-    )
 
 
 @celery_app.task(name="marketmind.tasks.process_research_task")
@@ -29,8 +13,8 @@ def process_research_task(task_id: str, payload: dict, trace_id: str) -> dict:
         task_id=task_id,
         payload=payload,
         trace_id=trace_id,
-        status_store=_status_store(),
-        event_store=_event_store(),
+        status_store=get_task_status_store(),
+        event_store=get_task_event_store(),
     )
 
 
@@ -59,6 +43,7 @@ def run_research_task(
     running_task = current_task.model_copy(
         update={
             "status": TaskStatus.RUNNING.value,
+            "started_at": current_task.started_at or utc_now(),
             "updated_at": utc_now(),
         }
     )
@@ -77,6 +62,7 @@ def run_research_task(
     completed_task = running_task.model_copy(
         update={
             "status": TaskStatus.COMPLETED.value,
+            "finished_at": utc_now(),
             "updated_at": utc_now(),
         }
     )

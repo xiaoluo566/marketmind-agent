@@ -28,12 +28,16 @@
 - `mode`
 - `status`
 - `priority`
+- `source_type`
+- `options`
+- `queue_task_id`
+- `trace_id`
 - `created_at`
+- `updated_at`
 - `started_at`
 - `finished_at`
 - `error_code`
 - `error_message`
-- `trace_id`
 
 ### `agent_runs`
 
@@ -178,16 +182,23 @@ Day 3 初始迁移为 `0001_initial_schema`：
 - 创建 `reports`、`artifacts`、`error_logs`
 - 创建状态流、Agent step、评论归属和 pgvector HNSW 索引
 
+Day 7 增量迁移为 `0002_task_queue_id`：
+
+- 给 `tasks` 增加 `queue_task_id`
+- 保存 Celery 返回的后台任务 ID，方便从业务任务追踪到队列任务
+- 不改变任务主键，系统内部仍以 `task_id` 作为统一追踪 ID
+
 迁移原则：
 
 - 迁移脚本必须可 downgrade。
 - 不在 Day 3 写复杂 repository。
 - 不在迁移中写真实业务数据。
-- 默认本地用户和默认项目后续通过 seed 脚本或应用初始化创建。
+- 默认本地用户和默认项目由 Day 7 的 `SQLAlchemyTaskStatusStore` 在本地开发场景中按需创建。
 
 ## 数据所有权
 
 - API 创建 `tasks`
+- API 和 Worker 通过 mirrored store 同步更新 Redis 实时层与 PostgreSQL 审计层
 - Worker 更新任务状态
 - Agent 创建 `agent_runs` 和 `agent_steps`
 - Crawler 写入 `products`、`reviews`、`artifacts`

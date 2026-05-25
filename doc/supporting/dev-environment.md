@@ -32,6 +32,10 @@
 - `CELERY_RESULT_BACKEND`
 - `TASK_STATUS_REDIS_URL`
 - `TASK_STATUS_TTL_SECONDS`
+- `DEFAULT_LOCAL_USER_ID`
+- `DEFAULT_LOCAL_USER_EMAIL`
+- `DEFAULT_LOCAL_PROJECT_ID`
+- `DEFAULT_LOCAL_PROJECT_NAME`
 - `MODEL_PROVIDER`
 - `MODEL_NAME`
 - `REPORT_MODEL_NAME`
@@ -49,12 +53,17 @@
 - `CELERY_BROKER_URL=redis://localhost:6379/1`
 - `CELERY_RESULT_BACKEND=redis://localhost:6379/2`
 - `TASK_STATUS_REDIS_URL=redis://localhost:6379/3`
+- `DEFAULT_LOCAL_USER_ID=usr_local`
+- `DEFAULT_LOCAL_PROJECT_ID=prj_default`
 
 ## 本地启动约定
 
 Day 5 开始后端依赖 Redis 才能投递真实后台任务。Windows 本机开发时，Celery worker 建议使用 `solo` pool，避免默认 prefork 在 Windows 下不稳定。
 
+Day 7 开始任务状态和事件会同步写入 PostgreSQL，所以本地真实联调还需要 `DATABASE_URL` 指向可用的 PostgreSQL 数据库，并先执行 Alembic 迁移。
+
 ```powershell
+uv run alembic upgrade head
 uv run uvicorn app.main:app --app-dir backend --reload
 uv run celery -A app.worker.celery_app.celery_app worker -Q marketmind --loglevel=INFO --pool=solo
 ```

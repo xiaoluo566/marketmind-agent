@@ -61,6 +61,8 @@ class TaskStatusData(BaseModel):
     queue_task_id: str | None = None
     error_code: str | None = None
     error_message: str | None = None
+    started_at: datetime | None = None
+    finished_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
 

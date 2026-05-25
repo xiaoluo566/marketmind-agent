@@ -62,6 +62,7 @@ def submit_task_request(
                 "status": TaskStatus.FAILED.value,
                 "error_code": "QUEUE_UNAVAILABLE",
                 "error_message": "task queue is unavailable",
+                "finished_at": utc_now(),
                 "updated_at": utc_now(),
             }
         )

@@ -89,3 +89,7 @@ def test_report_can_link_back_to_task_and_evidence() -> None:
     assert Report.__table__.c.evidence_refs.nullable is False
     assert Product.__table__.c.task_id.foreign_keys
     assert Review.__table__.c.source_url.nullable is True
+
+
+def test_task_can_persist_queue_task_id_for_worker_tracking() -> None:
+    assert Task.__table__.c.queue_task_id.nullable is True
