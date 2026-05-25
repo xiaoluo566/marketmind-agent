@@ -47,8 +47,8 @@
 | --- | --- |
 | 稳定分支 | `main` |
 | 日常开发分支 | `dev` |
-| 当前开发阶段 | Day 9 已完成，准备进入 Day 10 |
-| 当前主链路 | 文档基线、Next.js 控制台骨架、FastAPI health、任务创建 API、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、数据库模型、Alembic 迁移 |
+| 当前开发阶段 | Day 10 已完成，准备进入 Day 11 |
+| 当前主链路 | 文档基线、Next.js 控制台骨架、FastAPI health、任务创建 API、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、数据库模型、Alembic 迁移 |
 | 最新开发提交 | 以 `git log -1 --oneline` 为准 |
 | 当前数据库决策 | PostgreSQL + pgvector，review chunk 使用 `vector(1536)` |
 | 当前模型决策 | 默认 `gpt-5.4-mini`，报告模型 `gpt-5.5`，embedding `text-embedding-3-small` |
@@ -88,7 +88,7 @@
 | Day 07 | Done | 第一周联调、任务事件持久化和基础设施验收 | `a70787a` |
 | Day 08 | Done | Playwright 最小采集、字段抽取、失败分类与 HTML 证据 artifact | `f9d43ca` |
 | Day 09 | Done | 采集结果入库、artifact 入库、评论入库和幂等策略 | `978d425` |
-| Day 10 | Pending | 工具 schema 与工具注册机制 | 待记录 |
+| Day 10 | Done | Agent 工具 schema、工具注册机制、统一执行 envelope | 待提交 |
 | Day 11 | Pending | Agent ReAct 循环 | 待记录 |
 | Day 12 | Pending | Pydantic Guardrails 与 self-heal | 待记录 |
 | Day 13 | Pending | 短期记忆与上下文压缩 | 待记录 |
@@ -646,6 +646,65 @@ Day 8 先做采集、Day 9 再做入库，是为了把“拿到证据”和“�
 
 进入 Day 10，把采集、评论和报告相关的工具 schema 固定下来，并开始做工具注册机制，给后面的 ReAct 状态机铺路。
 
+## Day 10 记录
+
+### 实际完成
+
+Day 10 的目标是把后续 Agent 能调用的能力先包装成稳定工具契约，而不是直接开始写 ReAct loop。今天完成了工具 schema、工具注册表和统一执行器的第一版。
+
+完成内容：
+
+- 新增 `backend/app/agent/` 包。
+- 新增 `ToolSpec`，描述工具名称、版本、输入 schema、输出 schema、幂等性、重试性和错误码。
+- 新增 `ToolManifest`，用于向 Agent 或前端暴露工具清单。
+- 新增 `ToolRegistry`，支持注册工具、查询工具、列出工具，并拒绝重复注册。
+- 新增 `ToolExecutor`，统一处理输入校验、工具执行、输出校验、错误 envelope、耗时统计和 artifact 汇总。
+- 新增 `crawl_product_tool`，把 Day 8/9 的采集能力包装成 Agent 可调用工具。
+- 工具失败时不再只返回通用异常，能透传 `ACCESS_BLOCKED` 等 crawler 错误码和失败 artifact。
+- 新增工具层测试，覆盖默认工具注册、重复注册、成功执行、输入校验失败、工具不存在和 crawler 分类错误。
+
+### 当天选择思考
+
+今天优先做工具契约，而不是直接做 Agent ReAct 循环，是因为 ReAct 本质上就是“选择工具、组织参数、执行工具、观察结果、决定下一步”。如果工具边界不稳定，后面 Agent loop 会把参数校验、错误处理和业务执行混在一起，调试会非常痛苦。
+
+我选择自己实现轻量 `ToolRegistry` 和 `ToolExecutor`，而不是一开始引入 LangChain / LangGraph，是为了先掌握这个项目最核心的工程边界：工具输入输出 schema、错误分类、幂等标记和统一结果 envelope。后续如果流程复杂，再评估是否迁移到更完整的图执行框架。
+
+`crawl_product_tool` 现在只包装采集能力，不直接写报告，也不让模型操作数据库。这个边界能保证模型只能提出工具调用意图，实际参数校验和执行仍由后端掌控。
+
+### 关键文件
+
+- `backend/app/agent/__init__.py`
+- `backend/app/agent/tools/__init__.py`
+- `backend/app/agent/tools/schemas.py`
+- `backend/app/agent/tools/registry.py`
+- `backend/app/agent/tools/executor.py`
+- `backend/app/agent/tools/builtin.py`
+- `tests/test_agent_tools.py`
+- `doc/roadmap/day-10.md`
+- `doc/supporting/agent-state-machine.md`
+- `doc/supporting/data-contract-examples.md`
+- `doc/supporting/interview-defense-dossier.md`
+
+### 验证记录
+
+- `uv run pytest tests\\test_agent_tools.py`：6 passed
+- `uv run pytest`：53 passed
+- `uv run ruff check backend tests migrations`：通过
+
+### 提交记录
+
+- `待提交`
+
+### 遗留问题
+
+- 工具执行结果还没有写入 `agent_steps`。
+- 当前只注册了 `crawl_product_tool`，还没有 `search_reviews_tool` 和报告生成工具。
+- 当前工具执行是同步封装，后续如果工具数量和耗时增加，需要评估独立工具队列或异步执行策略。
+
+### 下一步
+
+进入 Day 11，实现最小 ReAct 状态机，让 Agent 能基于任务目标选择工具、校验参数、执行工具，并把 Action / Observation 写入数据库。
+
 ## Day 08 到 Day 14 记录模板
 
 第二周重点从数据采集进入 Agent 工具和状态机。每天开发后按下面格式补充。
@@ -654,7 +713,7 @@ Day 8 先做采集、Day 9 再做入库，是为了把“拿到证据”和“�
 | --- | --- | --- | --- | --- |
 | Day 08 | Playwright 最小采集与失败兜底 | crawler service、字段抽取、失败分类、HTML artifact、Worker crawl 事件 | crawler/service + worker 测试通过，ruff 通过 | `f9d43ca` |
 | Day 09 | 爬虫结果入库和证据保存 | 采集结果入库、artifact 入库、评论入库和幂等策略 | pytest + ruff 通过 | `978d425` |
-| Day 10 | 工具 schema 与工具注册机制 | 待记录 | 待记录 | 待记录 |
+| Day 10 | 工具 schema 与工具注册机制 | Agent 工具 schema、ToolRegistry、ToolExecutor、`crawl_product_tool` | pytest + ruff 通过 | 待提交 |
 | Day 11 | Agent ReAct 循环 | 待记录 | 待记录 | 待记录 |
 | Day 12 | Pydantic Guardrails 与 self-heal | 待记录 | 待记录 | 待记录 |
 | Day 13 | 短期记忆与上下文压缩 | 待记录 | 待记录 | 待记录 |

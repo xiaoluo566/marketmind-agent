@@ -61,6 +61,29 @@
 - 错误分类
 - 结果摘要函数
 
+Day 10 起工具契约由 `backend/app/agent/tools/` 维护：
+
+- `ToolSpec` 负责描述工具元信息和 schema。
+- `ToolRegistry` 负责工具注册和发现。
+- `ToolExecutor` 负责输入校验、执行、输出校验和统一错误 envelope。
+- `crawl_product_tool` 是第一版内置工具，用于把采集能力暴露给 Agent。
+
+工具执行结果必须统一包含：
+
+- `success`
+- `data`
+- `error`
+- `artifacts`
+- `task_id`
+- `trace_id`
+- `idempotent`
+- `retryable`
+- `started_at`
+- `finished_at`
+- `duration_ms`
+
+Agent 后续只能通过 registry 和 executor 调用工具，不允许直接绕过 schema 调用具体业务函数。
+
 ## 断点续跑算法
 
 1. 从 `agent_runs` 找到最近一次未完成 run

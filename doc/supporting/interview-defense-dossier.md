@@ -78,6 +78,12 @@ Day 9 做采集结果入库，是因为 Day 8 只把证据放进了任务事件�
 
 > Day 9 我把采集结果从“过程事件”推进成“数据库资产”。这个阶段的重点不是多爬几个字段，而是让商品、页面、评论和 artifact 都能通过 `task_id` 回溯，并且重复运行不会造成不可控重复数据。这样后续 RAG 和报告才能引用稳定的数据库记录，而不是引用临时变量。
 
+Day 10 做工具 schema 和工具注册机制，是因为 ReAct loop 不是凭空推理，它的核心动作是选择工具、校验参数、执行工具、观察结果。如果没有稳定的工具契约，Agent 代码很容易把模型输出、参数校验、业务函数和错误处理混在一起。当天我选择先实现轻量 `ToolRegistry` 和 `ToolExecutor`，而不是马上引入 LangChain / LangGraph，是为了先掌握输入输出 schema、幂等标记、重试标记和错误 envelope 这些底层边界。
+
+面试时可以这样讲：
+
+> Day 10 我没有急着写 Agent loop，而是先把工具层打稳。因为 Agent 最容易失控的地方不是循环本身，而是模型生成的工具参数不可靠、工具失败不可分类、结果格式不统一。我通过 Pydantic schema、ToolRegistry 和 ToolExecutor 先把工具调用变成一个可验证的后端契约。
+
 ### Day 8 之后追加模板
 
 ```markdown
@@ -271,10 +277,10 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 
 ### 7. 我对“不要夸大进度”的思考
 
-这个项目目前还在 Day 9，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
+这个项目目前还在 Day 10，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
 
-- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、错误 envelope、测试。
-- 正在做：工具 schema 和工具注册机制。
+- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、工具 schema、工具注册机制、错误 envelope、测试。
+- 正在做：ReAct 状态机。
 - 后续做：Agent、RAG、报告、前端真实接入、部署。
 
 我认为这反而是加分项。因为真实开发中，清楚知道自己完成了什么、没完成什么，比把项目包装得过满更可信。
@@ -317,7 +323,7 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 
 ## 当前开发进度怎么讲
 
-截至 Day 9，项目已经完成：
+截至 Day 10，项目已经完成：
 
 - 文档体系、30 天 roadmap、开发日志。
 - Next.js 控制台骨架。
@@ -342,6 +348,8 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 - 采集成功结果写入 `products`、`crawled_pages`、`reviews` 和 `artifacts`。
 - Worker 采集完成事件携带持久化后的 product/page/artifact/review ID。
 - 采集结果幂等写入策略，避免同一任务重复运行造成不可控重复数据。
+- Agent 工具 schema、工具注册机制和统一工具执行 envelope。
+- 第一版 `crawl_product_tool`，可通过 ToolExecutor 调用采集能力。
 - 队列不可用、状态缓存不可用、参数校验失败的统一错误响应。
 - pytest + ruff + Next.js build 验证。
 
@@ -350,12 +358,13 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 - 具体电商站点 adapter。
 - 失败截图 artifact。
 - Agent ReAct 状态机。
+- Agent step 持久化接入工具执行结果。
 - 评论 embedding 写入和语义检索。
 - 报告生成。
 - 前端接真实 API。
 - Docker Compose 全链路一键启动。
 
-面试时可以诚实讲：这个项目正在按 30 天里程碑推进，目前已经完成底层任务入口、异步管线、任务事件流、PostgreSQL 持久化、Playwright 最小采集和采集结果入库，下一阶段会接工具 schema 和 Agent 状态机。重点是展示工程化思路和持续推进能力，而不是假装已经做完所有功能。
+面试时可以诚实讲：这个项目正在按 30 天里程碑推进，目前已经完成底层任务入口、异步管线、任务事件流、PostgreSQL 持久化、Playwright 最小采集、采集结果入库和 Agent 工具契约，下一阶段会接 ReAct 状态机。重点是展示工程化思路和持续推进能力，而不是假装已经做完所有功能。
 
 ## 2 分钟项目介绍话术
 
@@ -1268,7 +1277,7 @@ Agent step 状态：
 
 ## 目前最适合展示的代码点
 
-截至 Day 9，最适合展示：
+截至 Day 10，最适合展示：
 
 - `backend/app/api/routes/tasks.py`：API 如何接收任务、投递队列、统一错误。
 - `backend/app/tasks/service.py`：任务状态创建和入队流程。
@@ -1280,6 +1289,10 @@ Agent step 状态：
 - `backend/app/crawler/service.py`：Playwright 最小采集和 HTML artifact 保存。
 - `backend/app/crawler/extractors.py`：通用 HTML 字段抽取和失败分类。
 - `backend/app/storage/crawl_stores.py`：采集结果写入 product、page、review、artifact 的持久化和幂等策略。
+- `backend/app/agent/tools/schemas.py`：工具输入输出、错误和执行结果 schema。
+- `backend/app/agent/tools/registry.py`：工具注册和发现机制。
+- `backend/app/agent/tools/executor.py`：统一工具执行 envelope 和错误分类。
+- `backend/app/agent/tools/builtin.py`：`crawl_product_tool` 内置工具。
 - `backend/app/storage/models.py`：数据库模型设计。
 - `migrations/versions/0002_task_queue_id.py`：任务队列 ID 持久化迁移。
 - `tests/test_task_persistence.py`：任务和事件持久化测试。
@@ -1287,6 +1300,7 @@ Agent step 状态：
 - `tests/test_celery_worker.py`：Celery 配置、worker 状态推进和事件写入测试。
 - `tests/test_crawler_service.py`：采集成功、拦截、空 DOM 和 artifact 保存测试。
 - `tests/test_crawl_persistence.py`：采集结果入库和幂等测试。
+- `tests/test_agent_tools.py`：工具注册、参数校验、统一执行结果和分类错误测试。
 
 ## 如果被问“你在项目中学到了什么”
 
@@ -1307,17 +1321,15 @@ Agent step 状态：
 
 短期：
 
-- Day 7：基础设施联调和任务事件持久化。
-- Day 8：Playwright 最小采集与失败兜底。
-- Day 9：爬虫结果入库和证据保存。
+- Day 10：Agent 工具 schema 和工具注册机制已完成。
+- Day 11：ReAct 状态机和 Agent step 持久化。
+- Day 12：Pydantic guardrails 和 self-heal。
 
 中期：
 
-- Agent 工具 schema。
-- ReAct 状态机。
-- Pydantic guardrails。
 - 评论切片和 embedding。
 - `search_reviews_tool`。
+- 报告 schema 和报告生成。
 
 后期：
 
@@ -1339,4 +1351,4 @@ Agent step 状态：
 
 如果让你说下一步：
 
-> 下一步我会把采集结果写入 PostgreSQL 的 `crawled_pages` 和 `artifacts` 表，并继续接入 Agent step，这样任务就不仅能看到采集进度，还能看到完整证据链和可回放执行时间线。
+> 下一步我会把 ToolExecutor 接到 ReAct 状态机里，并把每次 Action / Observation 写入 `agent_steps`，这样 Agent 的每一步工具调用都能被回放和恢复。

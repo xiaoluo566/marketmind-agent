@@ -256,6 +256,62 @@ CSV 表头或 JSON 对象字段第一版按下面约定：
 }
 ```
 
+## Agent 工具清单示例
+
+```json
+{
+  "name": "crawl_product_tool",
+  "version": "v1",
+  "description": "Fetch a public product page or fixture HTML and extract product evidence.",
+  "input_schema": "CrawlProductToolInput",
+  "output_schema": "CrawlProductToolOutput",
+  "idempotent": true,
+  "retryable": true,
+  "timeout_ms": 60000,
+  "error_codes": [
+    "PAGE_TIMEOUT",
+    "DOM_NOT_FOUND",
+    "ACCESS_BLOCKED",
+    "NETWORK_ERROR",
+    "PARSER_ERROR",
+    "UNKNOWN_SITE"
+  ]
+}
+```
+
+## Agent 工具执行结果示例
+
+```json
+{
+  "tool_name": "crawl_product_tool",
+  "tool_version": "v1",
+  "success": true,
+  "data": {
+    "url": "https://example.com/product/123",
+    "source_type": "html_fixture",
+    "title": "Portable Espresso Maker",
+    "price": 39.99,
+    "rating": 4.6,
+    "extracted_text_preview": "Portable Espresso Maker Travel ready.",
+    "reviews": [],
+    "artifacts": [],
+    "metadata": {
+      "extractor": "generic_html",
+      "fetched_at": "2026-05-25T10:00:03Z"
+    }
+  },
+  "error": null,
+  "artifacts": [],
+  "task_id": "tsk_01HXYZ",
+  "trace_id": "trc_01HABC",
+  "idempotent": true,
+  "retryable": true,
+  "started_at": "2026-05-25T10:00:02Z",
+  "finished_at": "2026-05-25T10:00:03Z",
+  "duration_ms": 120
+}
+```
+
 ## 作用
 
 这些示例是给 `api-contract.md`、`data-model.md`、`agent-state-machine.md`、`model-and-data-decisions.md` 和 `testing-strategy.md` 共用的参考样例。
