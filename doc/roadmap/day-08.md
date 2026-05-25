@@ -45,6 +45,28 @@ Day 8 的成果是让任务链路第一次拿到“外部页面证据”：标�
 - 采集失败不会让任务一直停在 `running`。
 - 不绕过登录、验证码、付费墙或其他访问限制。
 
+## 实际完成记录
+
+Day 8 最终完成的是“最小可解释采集链路”，不是完整站点适配器。系统现在支持：
+
+- `backend/app/crawler/` 独立采集模块。
+- Playwright 获取公开页面 HTML 的 best-effort 路径。
+- 本地 HTML fixture 路径，用于稳定测试和演示。
+- 通用 HTML 可见文本提取，抽取标题、价格、评分和文本预览。
+- 访问拦截、DOM 缺失、页面超时、网络失败、解析失败等错误分类。
+- 成功 HTML artifact 保存。
+- 失败 HTML artifact 保存，并把 artifact 引用附加到失败详情。
+- Worker 在 `public_url` 任务中写入 `crawl started`、`crawl completed`、`crawl failed` 事件。
+
+Day 8 刻意没有完成的内容：
+
+- 不做真实电商站深度适配。
+- 不做代理池和验证码绕过。
+- 不把采集结果写入 `crawled_pages` / `artifacts` 表，这部分进入 Day 9。
+- 不把截图作为默认证据格式，当前先用 HTML artifact 保证可复盘。
+
+这一天的核心价值是让后续 Agent 工具、RAG 和报告系统有一个清晰的采集入口，而不是继续依赖临时脚本或不可解释的浏览器动作。
+
 ## 风险与回退
 
 - 如果目标站点不稳定，先使用本地 HTML fixture 保证主链路开发。

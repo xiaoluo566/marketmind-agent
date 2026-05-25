@@ -58,6 +58,13 @@
 - 采集时间
 - 失败截图
 
+Day 8 实现状态：
+
+- 已支持成功 HTML artifact 本地保存。
+- 已支持解析失败 / 访问拦截时的失败 HTML artifact 本地保存。
+- artifact 引用已进入任务事件 payload。
+- 截图证据和数据库 `artifacts` 表落库留到 Day 9 之后实现。
+
 ## 风控策略
 
 - 限速

@@ -128,6 +128,103 @@ CSV 表头或 JSON 对象字段第一版按下面约定：
 }
 ```
 
+## 采集成功事件示例
+
+```json
+{
+  "success": true,
+  "data": {
+    "task_id": "tsk_01HXYZ",
+    "events": [
+      {
+        "event_id": "evt_01H003",
+        "task_id": "tsk_01HXYZ",
+        "status": "running",
+        "event_type": "crawler",
+        "message": "crawl started",
+        "payload": {
+          "target": "https://example.com/product/123"
+        },
+        "trace_id": "trc_01HABC",
+        "created_at": "2026-05-25T10:00:02Z"
+      },
+      {
+        "event_id": "evt_01H004",
+        "task_id": "tsk_01HXYZ",
+        "status": "running",
+        "event_type": "crawler",
+        "message": "crawl completed",
+        "payload": {
+          "url": "https://example.com/product/123",
+          "title": "Portable Espresso Maker",
+          "price": 39.99,
+          "rating": 4.6,
+          "source_type": "html_fixture",
+          "text_preview": "Portable Espresso Maker Travel ready. Only $39.99 today.",
+          "artifacts": [
+            {
+              "artifact_type": "crawler_html",
+              "path": "data/artifacts/crawler/tsk_01HXYZ/20260525T100003000000Z_crawler_html.html",
+              "mime_type": "text/html",
+              "checksum": "sha256_hex",
+              "metadata": {
+                "task_id": "tsk_01HXYZ"
+              }
+            }
+          ]
+        },
+        "trace_id": "trc_01HABC",
+        "created_at": "2026-05-25T10:00:03Z"
+      }
+    ]
+  },
+  "message": "ok",
+  "trace_id": "trc_01HABC"
+}
+```
+
+## 采集失败事件示例
+
+```json
+{
+  "success": true,
+  "data": {
+    "task_id": "tsk_01HXYZ",
+    "events": [
+      {
+        "event_id": "evt_01H005",
+        "task_id": "tsk_01HXYZ",
+        "status": "failed",
+        "event_type": "crawler_error",
+        "message": "crawl failed",
+        "payload": {
+          "error_code": "ACCESS_BLOCKED",
+          "reason": "page appears to be blocked by access controls",
+          "details": {
+            "url": "https://example.com/product/blocked",
+            "artifacts": [
+              {
+                "artifact_type": "crawler_failure_html",
+                "path": "data/artifacts/crawler/tsk_01HXYZ/20260525T100003000000Z_crawler_failure_html.html",
+                "mime_type": "text/html",
+                "checksum": "sha256_hex",
+                "metadata": {
+                  "task_id": "tsk_01HXYZ"
+                }
+              }
+            ]
+          }
+        },
+        "trace_id": "trc_01HABC",
+        "created_at": "2026-05-25T10:00:03Z"
+      }
+    ]
+  },
+  "message": "ok",
+  "trace_id": "trc_01HABC"
+}
+```
+
 ## Agent step 记录示例
 
 ```json

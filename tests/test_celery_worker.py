@@ -63,3 +63,123 @@ def test_minimal_research_task_advances_status_to_completed() -> None:
         TaskStatus.RUNNING.value,
         TaskStatus.COMPLETED.value,
     ]
+
+
+def test_public_url_task_runs_crawler_and_records_crawl_event(tmp_path) -> None:
+    store = InMemoryTaskStatusStore()
+    event_store = InMemoryTaskEventStore()
+    created_at = utc_now()
+    task_id = "tsk_worker_crawl"
+    store.create(
+        TaskStatusData(
+            task_id=task_id,
+            status=TaskStatus.QUEUED.value,
+            trace_id="trc_worker_crawl",
+            target="https://example.com/product/espresso",
+            mode="competitive_research",
+            priority="normal",
+            source_type="public_url",
+            options={},
+            queue_task_id="celery_worker_crawl",
+            created_at=created_at,
+            updated_at=created_at,
+        )
+    )
+
+    result = run_research_task(
+        task_id=task_id,
+        payload={
+            "target": "https://example.com/product/espresso",
+            "mode": "competitive_research",
+            "priority": "normal",
+            "source_type": "public_url",
+            "options": {
+                "artifact_dir": str(tmp_path),
+                "fixture_html": """
+                    <html>
+                      <body>
+                        <h1>Portable Espresso Maker</h1>
+                        <p>Travel ready.</p>
+                        <p>$39.99</p>
+                        <p>4.6 out of 5</p>
+                      </body>
+                    </html>
+                """,
+            },
+        },
+        trace_id="trc_worker_crawl",
+        status_store=store,
+        event_store=event_store,
+    )
+
+    stored_task = store.get(task_id)
+    events = event_store.list_for_task(task_id)
+
+    assert stored_task is not None
+    assert stored_task.status == TaskStatus.COMPLETED.value
+    assert result["status"] == TaskStatus.COMPLETED.value
+    assert [event.message for event in events] == [
+        "task running",
+        "crawl started",
+        "crawl completed",
+        "task completed",
+    ]
+    assert events[2].payload["title"] == "Portable Espresso Maker"
+    assert events[2].payload["price"] == 39.99
+    assert events[2].payload["artifacts"][0]["artifact_type"] == "crawler_html"
+
+
+def test_public_url_task_marks_failed_when_crawler_is_blocked(tmp_path) -> None:
+    store = InMemoryTaskStatusStore()
+    event_store = InMemoryTaskEventStore()
+    created_at = utc_now()
+    task_id = "tsk_worker_crawl_blocked"
+    store.create(
+        TaskStatusData(
+            task_id=task_id,
+            status=TaskStatus.QUEUED.value,
+            trace_id="trc_worker_crawl_blocked",
+            target="https://example.com/product/blocked",
+            mode="competitive_research",
+            priority="normal",
+            source_type="public_url",
+            options={},
+            queue_task_id="celery_worker_crawl_blocked",
+            created_at=created_at,
+            updated_at=created_at,
+        )
+    )
+
+    result = run_research_task(
+        task_id=task_id,
+        payload={
+            "target": "https://example.com/product/blocked",
+            "mode": "competitive_research",
+            "priority": "normal",
+            "source_type": "public_url",
+            "options": {
+                "artifact_dir": str(tmp_path),
+                "fixture_html": "<html><body><h1>Access Denied</h1><p>captcha</p></body></html>",
+            },
+        },
+        trace_id="trc_worker_crawl_blocked",
+        status_store=store,
+        event_store=event_store,
+    )
+
+    stored_task = store.get(task_id)
+    events = event_store.list_for_task(task_id)
+
+    assert stored_task is not None
+    assert stored_task.status == TaskStatus.FAILED.value
+    assert stored_task.error_code == "ACCESS_BLOCKED"
+    assert result["status"] == TaskStatus.FAILED.value
+    assert [event.message for event in events] == [
+        "task running",
+        "crawl started",
+        "crawl failed",
+    ]
+    assert events[-1].payload["error_code"] == "ACCESS_BLOCKED"
+    assert events[-1].payload["details"]["artifacts"][0]["artifact_type"] == (
+        "crawler_failure_html"
+    )

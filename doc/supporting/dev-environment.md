@@ -32,6 +32,9 @@
 - `CELERY_RESULT_BACKEND`
 - `TASK_STATUS_REDIS_URL`
 - `TASK_STATUS_TTL_SECONDS`
+- `CRAWLER_ARTIFACT_DIR`
+- `CRAWLER_SAVE_HTML_ARTIFACT`
+- `CRAWLER_CAPTURE_SCREENSHOT`
 - `DEFAULT_LOCAL_USER_ID`
 - `DEFAULT_LOCAL_USER_EMAIL`
 - `DEFAULT_LOCAL_PROJECT_ID`
@@ -53,6 +56,9 @@
 - `CELERY_BROKER_URL=redis://localhost:6379/1`
 - `CELERY_RESULT_BACKEND=redis://localhost:6379/2`
 - `TASK_STATUS_REDIS_URL=redis://localhost:6379/3`
+- `CRAWLER_ARTIFACT_DIR=data/artifacts/crawler`
+- `CRAWLER_SAVE_HTML_ARTIFACT=true`
+- `CRAWLER_CAPTURE_SCREENSHOT=false`
 - `DEFAULT_LOCAL_USER_ID=usr_local`
 - `DEFAULT_LOCAL_PROJECT_ID=prj_default`
 
@@ -61,6 +67,14 @@
 Day 5 开始后端依赖 Redis 才能投递真实后台任务。Windows 本机开发时，Celery worker 建议使用 `solo` pool，避免默认 prefork 在 Windows 下不稳定。
 
 Day 7 开始任务状态和事件会同步写入 PostgreSQL，所以本地真实联调还需要 `DATABASE_URL` 指向可用的 PostgreSQL 数据库，并先执行 Alembic 迁移。
+
+Day 8 开始接入 Playwright 最小采集。首次运行真实浏览器采集前，需要安装 Chromium：
+
+```powershell
+uv run playwright install chromium
+```
+
+当前 HTML artifact 默认写入 `data/artifacts/crawler`，该目录属于本地运行产物，不进入 Git。
 
 ```powershell
 uv run alembic upgrade head

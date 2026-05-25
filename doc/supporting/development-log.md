@@ -47,8 +47,8 @@
 | --- | --- |
 | 稳定分支 | `main` |
 | 日常开发分支 | `dev` |
-| 当前开发阶段 | Day 7 已完成，准备进入 Day 8 |
-| 当前主链路 | 文档基线、Next.js 控制台骨架、FastAPI health、任务创建 API、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、数据库模型、Alembic 迁移 |
+| 当前开发阶段 | Day 8 已完成，准备进入 Day 9 |
+| 当前主链路 | 文档基线、Next.js 控制台骨架、FastAPI health、任务创建 API、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、数据库模型、Alembic 迁移 |
 | 最新开发提交 | 以 `git log -1 --oneline` 为准 |
 | 当前数据库决策 | PostgreSQL + pgvector，review chunk 使用 `vector(1536)` |
 | 当前模型决策 | 默认 `gpt-5.4-mini`，报告模型 `gpt-5.5`，embedding `text-embedding-3-small` |
@@ -86,7 +86,7 @@
 | Day 05 | Done | Celery + Redis 基础任务队列 | `10c11c1` |
 | Day 06 | Done | 任务状态流与事件流 | `e7d361c` |
 | Day 07 | Done | 第一周联调、任务事件持久化和基础设施验收 | `a70787a` |
-| Day 08 | Pending | Playwright 最小采集与失败兜底 | 待记录 |
+| Day 08 | Done | Playwright 最小采集、字段抽取、失败分类与 HTML 证据 artifact | 待提交 |
 | Day 09 | Pending | 爬虫结果入库和证据保存 | 待记录 |
 | Day 10 | Pending | 工具 schema 与工具注册机制 | 待记录 |
 | Day 11 | Pending | Agent ReAct 循环 | 待记录 |
@@ -523,13 +523,74 @@ Day 7 的目标是把 Day 6 的 Redis 实时事件流接到 PostgreSQL 审计层
 
 进入 Day 8，开始 Playwright 最小采集与失败兜底。Day 8 不追求复杂站点适配，优先用本地 HTML fixture 或公开页面跑通采集证据，并继续把采集阶段写入任务事件。
 
+## Day 08 记录
+
+### 实际完成
+
+Day 8 没有直接跳到复杂站点适配，而是把“最小可解释采集链路”先做实。当前实现已经能在 Worker 中对 `public_url` 任务进入采集阶段，先用本地 HTML fixture 跑通，再在具备 Playwright 环境时使用真实页面 best-effort 获取 HTML 内容。
+
+完成内容：
+
+- 新增 `backend/app/crawler/`，拆分为 `errors`、`schemas`、`extractors`、`service` 和 artifact 保存层。
+- 接入 `playwright>=1.60.0`，并确认 Chromium 可启动。
+- 在 crawler schema 中补充 `task_id`、`artifact_dir`、`save_html_artifact` 等字段，便于后续接入持久化。
+- 实现最小 HTML 抽取：标题、价格、评分、可见文本。
+- 增加失败分类：`PAGE_TIMEOUT`、`DOM_NOT_FOUND`、`ACCESS_BLOCKED`、`NETWORK_ERROR`、`PARSER_ERROR`、`UNKNOWN_SITE`。
+- 支持将成功或失败时的 HTML 证据保存为本地 artifact，并把 artifact 引用写入任务事件。
+- Worker 在 `public_url` 任务中补充 crawl 开始 / 成功 / 失败事件，成功事件携带字段摘要和 artifact 引用，失败事件携带错误码和失败原因。
+- 新增 fixture 级别测试，覆盖成功抽取、访问拦截、空 DOM、成功 artifact、失败 artifact，以及 Worker 事件写入。
+
+### 当天选择思考
+
+今天的目标不是“把爬虫做得很强”，而是先把“采集链路工程化”建立起来。对这个项目来说，最先需要的不是复杂适配器，而是一个能被任务系统稳定调用、能解释成功和失败、能把证据留下来的采集层。
+
+我把 HTML artifact 保存放在这一天，而不是等到 Day 9 再做，是因为采集成功与否都需要证据出口。没有证据，后续入库、RAG、报告引用和面试复盘都很难说明“结果从哪来”。先把文件型证据链跑通，Day 9 再把它落到 PostgreSQL 的 `crawled_pages` 和 `artifacts` 表，会更顺。
+
+我没有在 Day 8 就做复杂站点适配，是因为复杂适配会把页面结构、网络、浏览器和反爬问题同时引入。先用 fixture 和通用 HTML 提取把边界固定下来，更容易判断后续问题是“采集策略问题”还是“站点适配问题”。
+
+### 关键文件
+
+- `backend/app/crawler/artifacts.py`
+- `backend/app/crawler/errors.py`
+- `backend/app/crawler/extractors.py`
+- `backend/app/crawler/schemas.py`
+- `backend/app/crawler/service.py`
+- `backend/app/worker/tasks.py`
+- `backend/app/core/config.py`
+- `.env.example`
+- `tests/test_crawler_service.py`
+- `tests/test_celery_worker.py`
+- `doc/supporting/api-contract.md`
+- `doc/supporting/data-contract-examples.md`
+- `doc/supporting/crawler-strategy.md`
+
+### 验证记录
+
+- `uv run playwright install chromium`：完成
+- `uv run pytest tests\\test_crawler_service.py tests\\test_celery_worker.py`：10 passed
+- `uv run ruff check backend tests migrations`：通过
+
+### 提交记录
+
+- `待提交`
+
+### 遗留问题
+
+- 目前还没有把 crawler 写入 PostgreSQL 的 `crawled_pages` / `artifacts` 表。
+- 目前只保存 HTML artifact，还没有把失败截图也落盘。
+- 目前只做了通用 HTML 抽取，还没有接入具体站点 adapter。
+
+### 下一步
+
+进入 Day 9，把 crawler 结果写入 PostgreSQL，同时把 HTML / 截图 / 抽取结果和任务记录真正联起来，让后续 RAG 和报告生成能直接消费结构化采集数据。
+
 ## Day 08 到 Day 14 记录模板
 
 第二周重点从数据采集进入 Agent 工具和状态机。每天开发后按下面格式补充。
 
 | Day | 计划主题 | 实际完成 | 验证 | 提交 |
 | --- | --- | --- | --- | --- |
-| Day 08 | Playwright 最小采集与失败兜底 | 待记录 | 待记录 | 待记录 |
+| Day 08 | Playwright 最小采集与失败兜底 | crawler service、字段抽取、失败分类、HTML artifact、Worker crawl 事件 | crawler/service + worker 测试通过，ruff 通过 | 待提交 |
 | Day 09 | 爬虫结果入库和证据保存 | 待记录 | 待记录 | 待记录 |
 | Day 10 | 工具 schema 与工具注册机制 | 待记录 | 待记录 | 待记录 |
 | Day 11 | Agent ReAct 循环 | 待记录 | 待记录 | 待记录 |

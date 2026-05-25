@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     celery_result_backend: str = "redis://localhost:6379/2"
     task_status_redis_url: str = "redis://localhost:6379/3"
     task_status_ttl_seconds: int = 86_400
+    crawler_artifact_dir: str = "data/artifacts/crawler"
+    crawler_save_html_artifact: bool = True
+    crawler_capture_screenshot: bool = False
     default_local_user_id: str = "usr_local"
     default_local_user_email: str | None = None
     default_local_project_id: str = "prj_default"
