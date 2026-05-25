@@ -84,7 +84,7 @@
 | Day 03 | Done | SQLAlchemy 数据模型与 Alembic 初始迁移 | `e258898` |
 | Day 04 | Done | API 契约与任务接收层 | `1abe635` |
 | Day 05 | Done | Celery + Redis 基础任务队列 | `10c11c1` |
-| Day 06 | Done | 任务状态流与事件流 | 本节所在提交 |
+| Day 06 | Done | 任务状态流与事件流 | `e7d361c` |
 | Day 07 | Pending | 第一周联调和基础设施验收 | 待记录 |
 | Day 08 | Pending | Playwright 采集策略与数据导入兜底 | 待记录 |
 | Day 09 | Pending | 爬虫结果入库和证据保存 | 待记录 |
@@ -438,7 +438,7 @@ Day 6 的目标是让任务不再是黑盒。今天把“状态”进一步拆�
 
 ### 提交记录
 
-- 本节所在提交即 Day 6 开发提交，具体以 `git log -1 --oneline` 为准。
+- `e7d361c feat: 增加任务进度事件流`
 
 ### 遗留问题
 
