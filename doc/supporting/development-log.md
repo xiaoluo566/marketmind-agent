@@ -91,7 +91,7 @@
 | Day 10 | Done | Agent 工具 schema、工具注册机制、统一执行 envelope | `cad1671` |
 | Day 11 | Done | Agent ReAct 循环与状态落库 | `8e47731` |
 | Day 12 | Done | Pydantic Guardrails 与 self-heal | `5b1c0cf` |
-| Day 13 | Done | 短期记忆与上下文压缩 | 待提交 |
+| Day 13 | Done | 短期记忆与上下文压缩 | `c552801` |
 | Day 14 | Pending | 评论切片与 embedding 写入 | 待记录 |
 | Day 15 | Pending | `search_reviews_tool` 语义检索 | 待记录 |
 | Day 16 | Pending | 报告 schema 与报告生成 | 待记录 |
@@ -886,7 +886,7 @@ Day 13 的目标是让 Agent 后续多轮执行时不会把所有历史内容无
 
 ### 提交记录
 
-- 待提交
+- `c552801 feat: 实现 Day 13 短期记忆压缩`
 
 ### 遗留问题
 
@@ -909,7 +909,7 @@ Day 13 的目标是让 Agent 后续多轮执行时不会把所有历史内容无
 | Day 10 | 工具 schema 与工具注册机制 | Agent 工具 schema、ToolRegistry、ToolExecutor、`crawl_product_tool` | pytest + ruff 通过 | `cad1671` |
 | Day 11 | Agent ReAct 循环 | Agent Run / Step 持久化、最小 ReAct 状态机 | pytest + ruff + build 通过 | `8e47731` |
 | Day 12 | Pydantic Guardrails 与 self-heal | 结构化输出守门、JSON repair prompt、run 指标累计 | pytest + ruff + build 通过 | `5b1c0cf` |
-| Day 13 | 短期记忆与上下文压缩 | 短期记忆 snapshot、滑动窗口摘要、证据 ID 保留、从 Agent step 恢复、状态机接入记忆 | pytest 67 passed，ruff 通过，alembic head 正常，npm build 通过 | 待提交 |
+| Day 13 | 短期记忆与上下文压缩 | 短期记忆 snapshot、滑动窗口摘要、证据 ID 保留、从 Agent step 恢复、状态机接入记忆 | pytest 67 passed，ruff 通过，alembic head 正常，npm build 通过 | `c552801` |
 | Day 14 | 评论切片与 embedding 写入 | 待记录 | 待记录 | 待记录 |
 
 ## Day 15 到 Day 21 记录模板
