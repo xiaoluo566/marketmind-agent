@@ -4,10 +4,11 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
+from app.agent.memory import AgentShortTermMemory
 from app.agent.tools.builtin import build_default_tool_registry
 from app.agent.tools.executor import ToolExecutor
 from app.agent.tools.schemas import ToolInvocationContext, ToolInvocationResult
-from app.storage.agent_stores import SQLAlchemyAgentRunStore
+from app.storage.agent_stores import AgentStepData, SQLAlchemyAgentRunStore
 from app.storage.statuses import AgentStepStatus
 
 
@@ -36,25 +37,29 @@ class AgentStateMachine:
         *,
         run_store: SQLAlchemyAgentRunStore,
         tool_executor: ToolExecutor | None = None,
+        short_term_memory: AgentShortTermMemory | None = None,
         max_tool_calls: int = 1,
     ) -> None:
         self._run_store = run_store
         self._tool_executor = tool_executor or ToolExecutor(build_default_tool_registry())
+        self._short_term_memory = short_term_memory
         self._max_tool_calls = max_tool_calls
 
     def run(self, task: AgentTaskInput) -> AgentRunResult:
+        prompt_context = self._load_prompt_context(task.task_id)
         run = self._run_store.create_run(task_id=task.task_id)
         run = self._run_store.mark_run_running(run.run_id, started_at=_now())
 
-        self._run_store.append_step(
+        thought_step = self._run_store.append_step(
             agent_run_id=run.run_id,
             task_id=task.task_id,
             step_type="thought",
             status=AgentStepStatus.SUCCESS.value,
-            thought=self._build_thought(task),
+            thought=self._build_thought(task, context_summary=prompt_context.summary),
             started_at=_now(),
             finished_at=_now(),
         )
+        self._remember_step(thought_step)
 
         if self._max_tool_calls < 1:
             failed_run = self._run_store.fail_run(run.run_id, finished_at=_now())
@@ -95,6 +100,7 @@ class AgentStateMachine:
                 observation=self._build_observation(tool_result),
                 finished_at=_now(),
             )
+            self._remember_step(action_step)
             self._run_store.append_step(
                 agent_run_id=run.run_id,
                 task_id=task.task_id,
@@ -104,6 +110,7 @@ class AgentStateMachine:
                 tool_output=tool_result.model_dump(mode="json"),
                 finished_at=_now(),
             )
+            self._remember_latest_step(run.run_id)
             completed_run = self._run_store.complete_run(run.run_id, finished_at=_now())
             return AgentRunResult(
                 run_id=completed_run.run_id,
@@ -120,6 +127,7 @@ class AgentStateMachine:
             error_message=tool_result.error.message if tool_result.error else "tool failed",
             finished_at=_now(),
         )
+        self._remember_step(action_step)
         self._run_store.append_step(
             agent_run_id=run.run_id,
             task_id=task.task_id,
@@ -130,6 +138,7 @@ class AgentStateMachine:
             error_message=tool_result.error.message if tool_result.error else "tool failed",
             finished_at=_now(),
         )
+        self._remember_latest_step(run.run_id)
         failed_run = self._run_store.fail_run(run.run_id, finished_at=_now())
         return AgentRunResult(
             run_id=failed_run.run_id,
@@ -140,10 +149,27 @@ class AgentStateMachine:
             last_error_code=tool_result.error.code if tool_result.error else None,
         )
 
-    def _build_thought(self, task: AgentTaskInput) -> str:
+    def _load_prompt_context(self, task_id: str):
+        if self._short_term_memory is None:
+            return _EmptyPromptContext()
+        return self._short_term_memory.build_prompt_context(task_id)
+
+    def _remember_step(self, step: AgentStepData) -> None:
+        if self._short_term_memory is not None:
+            self._short_term_memory.remember_step(step)
+
+    def _remember_latest_step(self, run_id: str) -> None:
+        latest_step = self._run_store.get_latest_step(run_id)
+        if latest_step is not None:
+            self._remember_step(latest_step)
+
+    def _build_thought(self, task: AgentTaskInput, *, context_summary: str = "") -> str:
+        context_hint = ""
+        if context_summary:
+            context_hint = " 已加载历史摘要，避免重复塞入完整上下文。"
         if task.source_type == "public_url":
-            return f"需要先采集商品页 {task.target}，再判断是否存在评论证据。"
-        return f"当前任务来源为 {task.source_type}，先检查是否需要工具调用。"
+            return f"需要先采集商品页 {task.target}，再判断是否存在评论证据。{context_hint}"
+        return f"当前任务来源为 {task.source_type}，先检查是否需要工具调用。{context_hint}"
 
     def _build_tool_input(self, task: AgentTaskInput) -> dict[str, Any]:
         options = dict(task.options or {})
@@ -178,6 +204,11 @@ class AgentStateMachine:
         if tool_result.error is None:
             return "工具调用失败，未返回结构化错误。"
         return f"工具调用失败：{tool_result.error.code} - {tool_result.error.message}"
+
+
+@dataclass(frozen=True, slots=True)
+class _EmptyPromptContext:
+    summary: str = ""
 
 
 def _now() -> datetime:

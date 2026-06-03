@@ -48,6 +48,23 @@ Day 12 起，结构化输出修复由 `backend/app/agent/guardrails.py` 统一�
 - 修复成功要记录 `self_heal_count`。
 - 解析或校验失败要记录 `validation_error_count`。
 
+## Day 13 summary prompt 规则
+
+Day 13 第一版短期记忆摘要先采用确定性摘要，不调用大模型。后续如果接入 LLM summary prompt，必须遵守下面约束：
+
+- 输入必须包含当前 `summary`、待压缩 entries、每条 entry 的 `evidence_refs`。
+- 输出必须包含 `summary` 和 `summary_evidence_refs`。
+- 不允许删除证据 ID。
+- 不允许把没有证据的判断改写成事实。
+- 不允许在摘要中新增原始 entry 没有出现过的商品、评论、价格或结论。
+- 输出必须经过 Pydantic schema 校验，失败时走 Day 12 self-heal。
+
+推荐 prompt 名称：
+
+- `memory.short_term_summary.v1`
+
+第一版暂时不用 LLM summary 的原因是：短期记忆的核心风险是上下文预算失控和证据 ID 丢失，先用确定性摘要更容易测试和回归。等 Day 14 - Day 17 评论切片、检索和报告证据链稳定后，再考虑把 summary prompt 版本化。
+
 ## 版本管理建议
 
 - prompt 不要直接散落在代码里

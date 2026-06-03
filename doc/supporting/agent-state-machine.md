@@ -138,6 +138,39 @@ LLM raw output
 
 不允许把 raw LLM output 直接当作工具参数进入 `ToolExecutor`。如果 guardrail 修复成功，需要累计 `agent_runs.self_heal_count`；如果解析或 schema 校验失败，需要累计 `agent_runs.validation_error_count`。
 
+## Day 13 短期记忆接入
+
+Day 13 新增 `backend/app/agent/memory.py`，用于控制 Agent 每轮执行前看到的上下文。状态机现在支持可选 `short_term_memory`：
+
+```text
+agent_steps / Redis snapshot
+  -> AgentShortTermMemory.build_prompt_context
+  -> planner / thought builder
+  -> ToolExecutor
+  -> agent_steps
+  -> AgentShortTermMemory.remember_step
+```
+
+当前接入点：
+
+1. run 开始前调用 `build_prompt_context(task_id)`，读取历史摘要和最近上下文。
+2. `thought` step 落库后，写入短期记忆。
+3. `action` step 完成或失败后，写入短期记忆。
+4. `observation` step 落库后，写入短期记忆。
+
+短期记忆默认最近 3 条保留详细内容，更早内容进入 summary。这里的 summary 不是长期业务结论，而是帮助后续 planner 避免重复塞入完整上下文的工作摘要。
+
+### 恢复策略
+
+Redis 短期记忆不是唯一事实来源。如果 worker 重启或 Redis key 过期，可以用 `AgentShortTermMemory.restore_from_steps(task_id, steps)` 从 PostgreSQL `agent_steps` 重建：
+
+- `observation` 优先转为记忆内容。
+- 其次使用 `thought`。
+- 工具 step 使用 `tool_name` 和 `tool_input` 生成简短描述。
+- 从 `tool_output` 中提取 `artifact_id`、`review_id`、`chunk_id`、`evidence_refs` 等证据引用。
+
+这让 Day 13 的记忆机制和 Day 11 的状态落库形成互补：Redis 提供快速上下文读取，PostgreSQL 提供可恢复执行历史。
+
 ## 断点续跑算法
 
 1. 从 `agent_runs` 找到最近一次未完成 run

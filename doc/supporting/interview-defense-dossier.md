@@ -96,6 +96,12 @@ Day 12 做结构化输出 guardrails 和 self-heal，是因为 Day 11 只是把�
 
 > Day 12 我没有继续加新功能，而是先把模型输出的边界钉住。因为再聪明的 Agent，只要输出格式不稳定，后面的工具调用和报告生成都会被脏数据拖垮。
 
+Day 13 做短期记忆和上下文压缩，是因为 Agent 后续进入多轮执行、评论检索和报告生成后，不能把所有历史 Thought、Action、Observation 和工具输出无限塞进模型上下文。当天我实现了 `AgentShortTermMemory`，默认保留最近 3 条详细 entry，更早内容进入 summary，并单独保留 `summary_evidence_refs`。Redis 用于短期缓存，PostgreSQL `agent_steps` 仍然是恢复事实来源。
+
+面试时可以这样讲：
+
+> Day 13 我做的是 Agent 的工作记忆，不是长期 RAG。它解决的是“当前任务上下文怎么少而准地交给模型”，所以我用滑动窗口控制最近上下文，用 summary 压缩旧步骤，并且单独保留证据 ID，避免报告后续找不到来源。
+
 ### Day 8 之后追加模板
 
 ```markdown
@@ -289,11 +295,11 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 
 ### 7. 我对“不要夸大进度”的思考
 
-这个项目目前推进到 Day 12，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
+这个项目目前推进到 Day 13，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
 
-- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、工具 schema、工具注册机制、最小 ReAct 状态机、Agent step 落库、结构化输出 guardrails、错误 envelope、测试。
-- 正在做：短期记忆和上下文压缩。
-- 后续做：多轮 LLM planner、RAG、报告、前端真实接入、部署。
+- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、工具 schema、工具注册机制、最小 ReAct 状态机、Agent step 落库、结构化输出 guardrails、短期记忆滑动窗口、上下文摘要压缩、错误 envelope、测试。
+- 正在做：评论切片和 embedding 前的准备。
+- 后续做：多轮 LLM planner、RAG 检索、报告、前端真实接入、部署。
 
 我认为这反而是加分项。因为真实开发中，清楚知道自己完成了什么、没完成什么，比把项目包装得过满更可信。
 
@@ -335,7 +341,7 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 
 ## 当前开发进度怎么讲
 
-截至 Day 12，项目已经完成：
+截至 Day 13，项目已经完成：
 
 - 文档体系、30 天 roadmap、开发日志。
 - Next.js 控制台骨架。
@@ -368,6 +374,12 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 - `AgentToolDecision` 和 `ReportStructure` 两个结构化输出 schema。
 - `build_json_repair_prompt` 和有限次 self-heal retry。
 - `validation_error_count` 与 `self_heal_count` 的 LLMOps 指标入口。
+- `AgentShortTermMemory`，用于当前任务短期上下文管理。
+- 短期记忆滑动窗口，默认最近 3 条保留详细内容。
+- 历史上下文确定性摘要压缩，避免 prompt context 无限增长。
+- `summary_evidence_refs` 和 `recent_entries[].evidence_refs`，保证摘要后仍能追溯证据。
+- `RedisAgentMemoryStore` 和 `InMemoryAgentMemoryStore`，区分真实缓存和测试实现。
+- 从 `AgentStepData` 恢复短期记忆，Redis 丢失时仍能从 PostgreSQL step 重建上下文。
 - 工具调用前后状态落库，Action step 能从 pending/running 更新为 success/failed。
 - Agent 工具失败时，错误码和失败 observation 会写入数据库，不覆盖旧 step。
 - 队列不可用、状态缓存不可用、参数校验失败的统一错误响应。
@@ -384,7 +396,7 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 - 前端接真实 API。
 - Docker Compose 全链路一键启动。
 
-面试时可以诚实讲：这个项目正在按 30 天里程碑推进，目前已经完成底层任务入口、异步管线、任务事件流、PostgreSQL 持久化、Playwright 最小采集、采集结果入库、Agent 工具契约、最小 ReAct 状态机和结构化输出 guardrails。下一阶段会补短期记忆、评论 embedding 和报告链路。重点是展示工程化思路和持续推进能力，而不是假装已经做完所有功能。
+面试时可以诚实讲：这个项目正在按 30 天里程碑推进，目前已经完成底层任务入口、异步管线、任务事件流、PostgreSQL 持久化、Playwright 最小采集、采集结果入库、Agent 工具契约、最小 ReAct 状态机、结构化输出 guardrails 和短期记忆压缩。下一阶段会补评论 embedding、语义检索和报告链路。重点是展示工程化思路和持续推进能力，而不是假装已经做完所有功能。
 
 ## 2 分钟项目介绍话术
 
@@ -925,6 +937,28 @@ Day 10 已经有工具契约和执行器，下一步很容易直接上完整 LLM
 
 > Day 11 我没有急着做完整多轮 Agent，而是先把状态机做成可回放、可恢复的最小版本。因为在工程上，先证明“能记录清楚每一步”比先证明“模型能想很多步”更重要。
 
+### 问题 13：Day 13 为什么先做短期记忆，而不是直接做 embedding
+
+现象：
+
+Day 13 原计划属于“记忆系统”阶段，很容易直接跳到 pgvector、embedding 和语义检索。但如果 Agent 的当前任务上下文没有控制住，后续多轮 planner 会不断把旧 Thought、Action、Observation 和工具输出塞回模型。
+
+思考：
+
+短期记忆和长期 RAG 解决的问题不同。短期记忆解决“当前任务最近发生了什么，怎么少量带给模型”；长期 RAG 解决“海量评论里哪些证据和问题相关”。如果先做 embedding，Agent 仍然可能因为上下文膨胀、重复带旧工具结果而浪费 token。
+
+解决：
+
+- 新增 `AgentShortTermMemory`，先固定上下文窗口。
+- 最近 3 条 entry 保留详细内容，更早内容进入 summary。
+- 证据 ID 不只写在摘要文本里，而是单独保留在 `summary_evidence_refs`。
+- Redis 做短期缓存，PostgreSQL `agent_steps` 做可恢复事实来源。
+- 先用确定性摘要，暂时不引入 LLM summary prompt。
+
+面试表达：
+
+> Day 13 我先做短期记忆，是为了控制 Agent 当前任务的 token 增长。embedding 是长期记忆，解决评论召回；短期记忆是工作记忆，解决 Agent 多轮执行时“带多少上下文”的问题。这两个边界拆清楚，后面的 RAG 才不会和状态机混在一起。
+
 ## 高频面试问题与回答
 
 ### Q1：你这个项目和普通“调用大模型生成报告”的项目有什么区别？
@@ -1180,6 +1214,16 @@ LangChain 和 LangGraph 能加快 Agent 构建，但我第一版更想掌握底�
 
 第一版本地开发先用 uv + npm，等 Day 23 做容器化一键启动。
 
+### Q21：短期记忆、长期记忆和 RAG 的区别是什么？
+
+短期记忆是当前任务的工作上下文，保存最近几轮 Thought、Action、Observation 和压缩后的历史摘要。它主要服务于 Agent planner，目的是控制 token 增长。
+
+长期记忆是可跨任务复用的数据资产，例如评论切片、报告结论、证据 metadata 和 embedding。它主要服务于语义检索和证据召回。
+
+RAG 是使用长期记忆的一种检索增强流程：先根据问题召回相关评论 chunk，再把这些 evidence refs 交给模型生成报告。
+
+这个项目里 Day 13 做的是短期记忆，Day 14 - Day 15 才会进入评论切片、embedding 和 `search_reviews_tool`。
+
 ## 面试官可能深挖的技术点
 
 ### 异步任务一致性
@@ -1322,7 +1366,7 @@ Agent step 状态：
 
 ## 目前最适合展示的代码点
 
-截至 Day 12，最适合展示：
+截至 Day 13，最适合展示：
 
 - `backend/app/api/routes/tasks.py`：API 如何接收任务、投递队列、统一错误。
 - `backend/app/tasks/service.py`：任务状态创建和入队流程。
@@ -1341,6 +1385,7 @@ Agent step 状态：
 - `backend/app/storage/agent_stores.py`：Agent run / step 持久化 store。
 - `backend/app/agent/state_machine.py`：最小 ReAct 状态机，记录 Thought / Action / Observation。
 - `backend/app/agent/guardrails.py`：结构化输出校验、自愈提示词和失败封装。
+- `backend/app/agent/memory.py`：短期记忆滑动窗口、摘要压缩、证据 ID 保留和 Redis 缓存 store。
 - `backend/app/storage/models.py`：数据库模型设计。
 - `migrations/versions/0002_task_queue_id.py`：任务队列 ID 持久化迁移。
 - `tests/test_task_persistence.py`：任务和事件持久化测试。
@@ -1351,6 +1396,7 @@ Agent step 状态：
 - `tests/test_agent_tools.py`：工具注册、参数校验、统一执行结果和分类错误测试。
 - `tests/test_agent_state_machine.py`：Agent step 顺序、成功链路、失败链路和最大工具调用限制测试。
 - `tests/test_structured_output_guardrails.py`：坏 JSON 修复、修复失败、repair retry 和指标累计测试。
+- `tests/test_short_term_memory.py`：短期记忆窗口、摘要压缩、证据引用、从 step 恢复和状态机接入测试。
 
 ## 如果被问“你在项目中学到了什么”
 
@@ -1374,6 +1420,7 @@ Agent step 状态：
 - Day 10：Agent 工具 schema 和工具注册机制已完成。
 - Day 11：ReAct 状态机和 Agent step 持久化已完成。
 - Day 12：Pydantic guardrails 和 self-heal 已完成。
+- Day 13：短期记忆滑动窗口和上下文压缩已完成。
 
 中期：
 
@@ -1401,4 +1448,4 @@ Agent step 状态：
 
 如果让你说下一步：
 
-> 下一步我会在现有状态机和 guardrails 上继续做短期记忆与上下文压缩，避免 Agent 后续多轮执行时上下文无限膨胀。
+> 下一步我会在现有短期记忆和状态机基础上做评论切片与 embedding，把入库评论变成可检索的长期记忆。

@@ -47,8 +47,8 @@
 | --- | --- |
 | 稳定分支 | `main` |
 | 日常开发分支 | `dev` |
-| 当前开发阶段 | Day 12 已完成，准备进入 Day 13 |
-| 当前主链路 | 文档基线、Next.js 控制台骨架、FastAPI health、任务创建 API、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、数据库模型、Alembic 迁移 |
+| 当前开发阶段 | Day 13 已完成，准备进入 Day 14 |
+| 当前主链路 | 文档基线、Next.js 控制台骨架、FastAPI health、任务创建 API、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、数据库模型、Alembic 迁移 |
 | 最新开发提交 | 以 `git log -1 --oneline` 为准 |
 | 当前数据库决策 | PostgreSQL + pgvector，review chunk 使用 `vector(1536)` |
 | 当前模型决策 | 默认 `gpt-5.4-mini`，报告模型 `gpt-5.5`，embedding `text-embedding-3-small` |
@@ -91,7 +91,7 @@
 | Day 10 | Done | Agent 工具 schema、工具注册机制、统一执行 envelope | `cad1671` |
 | Day 11 | Done | Agent ReAct 循环与状态落库 | `8e47731` |
 | Day 12 | Done | Pydantic Guardrails 与 self-heal | `5b1c0cf` |
-| Day 13 | Pending | 短期记忆与上下文压缩 | 待记录 |
+| Day 13 | Done | 短期记忆与上下文压缩 | 待提交 |
 | Day 14 | Pending | 评论切片与 embedding 写入 | 待记录 |
 | Day 15 | Pending | `search_reviews_tool` 语义检索 | 待记录 |
 | Day 16 | Pending | 报告 schema 与报告生成 | 待记录 |
@@ -833,6 +833,71 @@ Day 12 的目标是把模型输出从“看起来像 JSON”推进到“先校�
 
 进入 Day 13，继续做短期记忆与上下文压缩，把结构化输出和状态机结果接进可复用的记忆层。
 
+## Day 13 记录
+
+### 实际完成
+
+Day 13 的目标是让 Agent 后续多轮执行时不会把所有历史内容无限塞进模型上下文。今天完成了短期记忆模块，并把它以可选依赖接入 Day 11 的状态机。
+
+完成内容：
+
+- 新增 `backend/app/agent/memory.py`。
+- 新增 `AgentMemoryEntry`，表示一条可进入上下文的 Thought / Action / Observation 记忆。
+- 新增 `AgentMemorySnapshot`，表示当前任务的短期记忆快照。
+- 新增 `AgentPromptContext`，把 summary、recent entries 和 evidence refs 组织成 prompt 可读上下文。
+- 新增 `AgentShortTermMemory`，实现默认最近 3 条详细保留、更早内容压缩为摘要的滑动窗口策略。
+- 新增 `InMemoryAgentMemoryStore`，用于测试和本地无 Redis 场景。
+- 新增 `RedisAgentMemoryStore`，用于真实短期上下文缓存。
+- 新增 `memory_entry_from_step`，可以把 `AgentStepData` 转成短期记忆。
+- 新增 `extract_evidence_refs`，从工具输出中提取 artifact、review、chunk 和 evidence refs。
+- `AgentStateMachine` 增加可选 `short_term_memory` 参数。
+- 状态机 run 开始前会加载 prompt context。
+- Thought、Action、Observation 落库后会同步写入短期记忆。
+- 新增 Day 13 测试，覆盖滑动窗口、摘要压缩、证据 ID 保留、从已持久化 step 恢复、状态机写入短期记忆。
+
+### 当天选择思考
+
+今天优先做短期记忆，是因为 Day 11 已经完成 Agent step 落库，Day 12 已经完成结构化输出 guardrails。下一步如果直接进入评论 embedding 或报告生成，Agent 多轮执行时会马上出现上下文无限增长的问题。短期记忆先把“当前任务上下文怎么进入模型”这件事固定住，后续接 RAG 和报告会更顺。
+
+我选择“Redis 短期缓存 + PostgreSQL step 恢复”的组合，而不是只用 Redis，是因为 Redis 适合快速读写当前上下文，但不能作为断点续跑的唯一事实来源。真正可恢复的数据仍然来自 `agent_steps`。
+
+我没有今天就做 LLM summary prompt，是因为 summary prompt 会引入新的模型调用、格式校验和 prompt 漂移。Day 13 先用确定性摘要，让上下文预算和证据 ID 保留变成可测试行为；后续再把 summary prompt 接到 Day 12 的 guardrails。
+
+### 关键文件
+
+- `backend/app/agent/memory.py`
+- `backend/app/agent/state_machine.py`
+- `tests/test_short_term_memory.py`
+- `doc/roadmap/day-13.md`
+- `doc/supporting/rag-memory.md`
+- `doc/supporting/agent-state-machine.md`
+- `doc/supporting/prompt-strategy.md`
+- `doc/supporting/data-contract-examples.md`
+- `doc/supporting/interview-defense-dossier.md`
+
+### 验证记录
+
+- `uv run pytest tests\test_short_term_memory.py`：4 passed
+- `uv run pytest tests\test_agent_state_machine.py tests\test_structured_output_guardrails.py`：10 passed
+- `uv run pytest`：67 passed
+- `uv run ruff check backend tests migrations`：通过
+- `uv run alembic heads`：`0002_task_queue_id (head)`
+- `npm run build`：通过
+
+### 提交记录
+
+- 待提交
+
+### 遗留问题
+
+- 短期记忆已经提供 Redis store，但还没有在 FastAPI / Worker dependency 中默认实例化。
+- 当前摘要是确定性摘要，还没有接 LLM summary prompt。
+- 当前状态机仍是最小单步 ReAct，短期记忆的价值会在后续多轮 planner、RAG 检索和报告生成中进一步体现。
+
+### 下一步
+
+进入 Day 14，做评论切片与 embedding 写入，把 Day 9 入库的评论转换成可检索的长期记忆。
+
 ## Day 08 到 Day 14 记录模板
 
 第二周重点从数据采集进入 Agent 工具和状态机。每天开发后按下面格式补充。
@@ -844,7 +909,7 @@ Day 12 的目标是把模型输出从“看起来像 JSON”推进到“先校�
 | Day 10 | 工具 schema 与工具注册机制 | Agent 工具 schema、ToolRegistry、ToolExecutor、`crawl_product_tool` | pytest + ruff 通过 | `cad1671` |
 | Day 11 | Agent ReAct 循环 | Agent Run / Step 持久化、最小 ReAct 状态机 | pytest + ruff + build 通过 | `8e47731` |
 | Day 12 | Pydantic Guardrails 与 self-heal | 结构化输出守门、JSON repair prompt、run 指标累计 | pytest + ruff + build 通过 | `5b1c0cf` |
-| Day 13 | 短期记忆与上下文压缩 | 待记录 | 待记录 | 待记录 |
+| Day 13 | 短期记忆与上下文压缩 | 短期记忆 snapshot、滑动窗口摘要、证据 ID 保留、从 Agent step 恢复、状态机接入记忆 | pytest 67 passed，ruff 通过，alembic head 正常，npm build 通过 | 待提交 |
 | Day 14 | 评论切片与 embedding 写入 | 待记录 | 待记录 | 待记录 |
 
 ## Day 15 到 Day 21 记录模板

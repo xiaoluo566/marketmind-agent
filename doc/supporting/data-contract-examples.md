@@ -384,6 +384,44 @@ tool_name=crawl_product_tool url=https://example.com/product/espresso
 }
 ```
 
+## 短期记忆 snapshot 示例
+
+```json
+{
+  "task_id": "tsk_01HXYZ",
+  "summary": "step 1 thought: 需要先采集商品页。 evidence=rev_001\nstep 2 action: 调用工具 crawl_product_tool，参数：{...} evidence=art_01HHTML",
+  "summary_evidence_refs": ["rev_001", "art_01HHTML"],
+  "recent_entries": [
+    {
+      "sequence": 3,
+      "step_type": "observation",
+      "content": "采集完成：Portable Espresso Maker，共提取 4 条评论证据。",
+      "evidence_refs": ["rev_002", "rev_003"],
+      "metadata": {
+        "agent_run_id": "run_01HXYZ",
+        "step_id": "stp_01H003",
+        "status": "success",
+        "tool_name": "crawl_product_tool"
+      }
+    }
+  ],
+  "updated_at": "2026-05-25T10:00:05Z"
+}
+```
+
+## 短期记忆 prompt context 示例
+
+```text
+历史摘要：
+step 1 thought: 需要先采集商品页。
+step 2 action: 调用工具 crawl_product_tool，参数：{...}
+
+最近上下文：
+- step 3 observation: 采集完成：Portable Espresso Maker，共提取 4 条评论证据。
+
+证据引用：rev_001, art_01HHTML, rev_002, rev_003
+```
+
 ## 作用
 
 这些示例是给 `api-contract.md`、`data-model.md`、`agent-state-machine.md`、`model-and-data-decisions.md` 和 `testing-strategy.md` 共用的参考样例。

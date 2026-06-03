@@ -10,6 +10,34 @@
 - 中期记忆：当前项目的历史任务摘要
 - 长期记忆：评论切片、报告、结论和证据向量
 
+## Day 13 短期记忆实现
+
+Day 13 已经新增 `backend/app/agent/memory.py`，把短期记忆从概念推进到代码。当前短期记忆由三部分组成：
+
+- `AgentMemoryEntry`：一条可放进上下文的记忆，通常由 `agent_steps` 转换而来。
+- `AgentMemorySnapshot`：当前任务的记忆快照，包含历史摘要、摘要证据 ID 和最近详细 entry。
+- `AgentPromptContext`：真正交给 planner / prompt 使用的上下文视图。
+
+当前默认策略：
+
+- 最近 3 条 entry 保留详细内容。
+- 更早 entry 压缩到 `summary`。
+- 证据引用单独保存在 `summary_evidence_refs` 和 `recent_entries[].evidence_refs`。
+- Redis key 使用 `marketmind:agent:memory:{task_id}`。
+- Redis 只做短期缓存，PostgreSQL `agent_steps` 仍是断点恢复的事实来源。
+
+第一版摘要是确定性摘要，不调用大模型。这样可以先保证上下文预算稳定，避免把 summary prompt、模型调用失败和业务记忆机制同时引入。后续如果把摘要改成 LLM summary，必须接 Day 12 的 Pydantic Guardrails，并继续保留证据 ID。
+
+### 短期记忆和长期 RAG 的区别
+
+| 项 | 短期记忆 | 长期 RAG |
+| --- | --- | --- |
+| 作用 | 控制当前任务上下文增长 | 从大量评论中召回证据 |
+| 存储 | Redis snapshot + PostgreSQL step 恢复 | PostgreSQL + pgvector |
+| 内容 | Thought、Action、Observation 摘要 | review chunk、embedding、metadata |
+| 生命周期 | 当前任务执行期间为主 | 可跨任务复用 |
+| 关键风险 | 摘要丢证据 ID | 召回不准或样本偏差 |
+
 ## 处理链路
 
 1. 清洗原始评论
