@@ -45,6 +45,23 @@
 - 保留模型输出失败样例
 - 保留 Agent step 恢复样例
 
+## Day 14 RAG 测试边界
+
+Day 14 新增 `tests/test_review_rag_indexing.py`，当前覆盖：
+
+- 评论 HTML / script 清洗。
+- 按句子边界切片。
+- fake embedding 稳定性和维度。
+- `review_chunks` 幂等入库。
+- top_k 相似评论检索返回 `review_id`、`source_url`、`rating` 和 `similarity`。
+
+当前没有覆盖真实 embedding API 和 PostgreSQL pgvector 原生排序。后续接真实 provider 和 Docker Compose PostgreSQL 后，需要补：
+
+- provider 超时和重试。
+- embedding 维度不匹配失败。
+- pgvector `<=>` 排序结果。
+- 相似度阈值过低时的“证据不足”行为。
+
 ## 回归要求
 
 任何 bug 修复都要留下一个能复现旧问题的测试。没有测试的修复，后续很容易被重构再次破坏。

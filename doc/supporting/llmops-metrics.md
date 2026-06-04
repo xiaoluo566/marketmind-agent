@@ -59,6 +59,30 @@ Day 12 已经在 `agent_runs` 层补齐可累计指标入口：
 
 注意：self-heal 调用失败或修复后仍不符合 schema，不计入 `self_heal_count`，但会保留在 guardrail error attempts 里，便于后续复盘。
 
+## Day 14 已落地索引统计
+
+Day 14 的 `SQLAlchemyReviewChunkStore.index_task_reviews` 返回 `ReviewChunkIndexResult`：
+
+- `task_id`
+- `review_count`
+- `chunk_count`
+- `embedding_model`
+- `embedding_dimensions`
+
+这些数据后续可以进入任务事件或 LLMOps 面板，用来回答：
+
+- 当前任务实际索引了多少条评论。
+- 评论被切成多少个 chunk。
+- 使用了哪个 embedding 模型。
+- 是否存在 embedding 维度不匹配。
+
+当前还没有统计真实 embedding token 和成本，因为 Day 14 使用的是确定性 fake embedding provider。接入真实 provider 后，再补：
+
+- embedding 输入字符数或 token 数。
+- embedding 调用次数。
+- embedding 失败次数。
+- embedding 总成本估算。
+
 ## 简历可用数据
 
 - 平均任务耗时

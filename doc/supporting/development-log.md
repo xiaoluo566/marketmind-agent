@@ -47,8 +47,8 @@
 | --- | --- |
 | 稳定分支 | `main` |
 | 日常开发分支 | `dev` |
-| 当前开发阶段 | Day 13 已完成，准备进入 Day 14 |
-| 当前主链路 | 文档基线、Next.js 控制台骨架、FastAPI health、任务创建 API、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、数据库模型、Alembic 迁移 |
+| 当前开发阶段 | Day 14 已完成，准备进入 Day 15 |
+| 当前主链路 | 文档基线、Next.js 控制台骨架、FastAPI health、任务创建 API、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、相似度检索原型、数据库模型、Alembic 迁移 |
 | 最新开发提交 | 以 `git log -1 --oneline` 为准 |
 | 当前数据库决策 | PostgreSQL + pgvector，review chunk 使用 `vector(1536)` |
 | 当前模型决策 | 默认 `gpt-5.4-mini`，报告模型 `gpt-5.5`，embedding `text-embedding-3-small` |
@@ -92,7 +92,7 @@
 | Day 11 | Done | Agent ReAct 循环与状态落库 | `8e47731` |
 | Day 12 | Done | Pydantic Guardrails 与 self-heal | `5b1c0cf` |
 | Day 13 | Done | 短期记忆与上下文压缩 | `c552801` |
-| Day 14 | Pending | 评论切片与 embedding 写入 | 待记录 |
+| Day 14 | Done | 评论切片与 embedding 写入 | 待提交 |
 | Day 15 | Pending | `search_reviews_tool` 语义检索 | 待记录 |
 | Day 16 | Pending | 报告 schema 与报告生成 | 待记录 |
 | Day 17 | Pending | 证据链引用和报告可追溯 | 待记录 |
@@ -898,6 +898,70 @@ Day 13 的目标是让 Agent 后续多轮执行时不会把所有历史内容无
 
 进入 Day 14，做评论切片与 embedding 写入，把 Day 9 入库的评论转换成可检索的长期记忆。
 
+## Day 14 记录
+
+### 实际完成
+
+Day 14 的目标是把 Day 9 已入库的原始评论变成可检索的长期记忆基础。今天先完成 RAG 数据链路的本地可测版本：清洗、切片、fake embedding、`review_chunks` 幂等入库和 top_k 相似度检索原型。
+
+完成内容：
+
+- 新增 `backend/app/rag/` 包。
+- 新增 `clean_review_text`，去除 HTML / script / style 并合并空白。
+- 新增 `split_review_text`，按句子边界切片，长句再强制切分。
+- 新增 `EmbeddingProvider` 抽象，后续真实 embedding provider 只需要实现同一接口。
+- 新增 `DeterministicEmbeddingProvider`，用于本地测试和 embedding 服务不可用时的流程验证。
+- 新增 `SQLAlchemyReviewChunkStore.index_task_reviews`，把指定任务下的 reviews 写入 `review_chunks`。
+- `review_chunks` 写入时保留 `embedding_model`、`embedding_dimensions`、`source_url`、`rating`、`review_external_id`。
+- service 层按 `review_id + task_id + chunk_index + embedding_model + embedding_dimensions` 做幂等 upsert。
+- 新增 `search_similar_reviews`，用 Python cosine similarity 做 top_k 检索原型。
+- 新增 Day 14 测试，覆盖清洗、切片、fake embedding 稳定性、入库幂等和检索返回来源字段。
+
+### 当天选择思考
+
+今天优先做评论切片和 embedding 入库，是因为 Day 13 已经解决当前任务上下文增长问题，下一步必须把“长期评论证据”变成可检索资产。没有 `review_chunks`，后续 `search_reviews_tool` 只能读原始评论，无法支撑上千评论的精准召回。
+
+我选择先用 fake embedding provider，而不是直接接真实模型，是因为今天的核心风险是数据链路和持久化边界：切片是否稳定、维度是否一致、重复索引是否幂等、检索结果是否带来源。真实 embedding provider 还会引入网络、鉴权、成本和限流，适合在接口稳定后接入。
+
+我选择第一版用 Python cosine 检索，而不是直接写 pgvector SQL，是因为自动化测试使用 SQLite。先固定 `search_similar_reviews` 的输入输出和排序行为，后续在 PostgreSQL 环境中可以替换为 pgvector 原生 `<=>` 排序，不影响上层工具接口。
+
+### 关键文件
+
+- `backend/app/rag/__init__.py`
+- `backend/app/rag/text.py`
+- `backend/app/rag/embeddings.py`
+- `backend/app/rag/review_index.py`
+- `tests/test_review_rag_indexing.py`
+- `doc/roadmap/day-14.md`
+- `doc/supporting/rag-memory.md`
+- `doc/supporting/data-model.md`
+- `doc/supporting/data-contract-examples.md`
+- `doc/supporting/llmops-metrics.md`
+- `doc/supporting/interview-defense-dossier.md`
+
+### 验证记录
+
+- `uv run pytest tests\test_review_rag_indexing.py`：5 passed
+- `uv run pytest tests\test_review_rag_indexing.py tests\test_short_term_memory.py tests\test_agent_state_machine.py`：13 passed
+- `uv run pytest`：72 passed
+- `uv run ruff check backend tests migrations`：通过
+- `uv run alembic heads`：`0002_task_queue_id (head)`
+- `npm run build`：通过
+
+### 提交记录
+
+- 待提交
+
+### 遗留问题
+
+- 当前 `DeterministicEmbeddingProvider` 只用于流程验证，不代表真实 embedding 语义质量。
+- 当前相似度检索在 Python 中完成，后续 PostgreSQL 环境要切换到 pgvector 原生排序。
+- 当前 RAG 检索还没有包装成 Agent tool，Day 15 继续做 `search_reviews_tool`。
+
+### 下一步
+
+进入 Day 15，把 Day 14 的 review chunk 检索能力包装成 Agent 可调用工具，并补充工具 schema、错误分类和 evidence refs。
+
 ## Day 08 到 Day 14 记录模板
 
 第二周重点从数据采集进入 Agent 工具和状态机。每天开发后按下面格式补充。
@@ -910,7 +974,7 @@ Day 13 的目标是让 Agent 后续多轮执行时不会把所有历史内容无
 | Day 11 | Agent ReAct 循环 | Agent Run / Step 持久化、最小 ReAct 状态机 | pytest + ruff + build 通过 | `8e47731` |
 | Day 12 | Pydantic Guardrails 与 self-heal | 结构化输出守门、JSON repair prompt、run 指标累计 | pytest + ruff + build 通过 | `5b1c0cf` |
 | Day 13 | 短期记忆与上下文压缩 | 短期记忆 snapshot、滑动窗口摘要、证据 ID 保留、从 Agent step 恢复、状态机接入记忆 | pytest 67 passed，ruff 通过，alembic head 正常，npm build 通过 | `c552801` |
-| Day 14 | 评论切片与 embedding 写入 | 待记录 | 待记录 | 待记录 |
+| Day 14 | 评论切片与 embedding 写入 | 评论清洗、切片、fake embedding、review chunk 幂等入库、相似度检索原型 | pytest 72 passed，ruff 通过，alembic head 正常，npm build 通过 | 待提交 |
 
 ## Day 15 到 Day 21 记录模板
 

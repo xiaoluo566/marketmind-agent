@@ -422,6 +422,49 @@ step 2 action: 调用工具 crawl_product_tool，参数：{...}
 证据引用：rev_001, art_01HHTML, rev_002, rev_003
 ```
 
+## Review chunk 记录示例
+
+```json
+{
+  "id": "chk_01HXYZ",
+  "review_id": "rev_01HREVIEW",
+  "task_id": "tsk_01HXYZ",
+  "chunk_index": 0,
+  "content": "The pump failed after three days. Return request and support were ignored.",
+  "embedding": [0.0123, -0.0456],
+  "embedding_model": "text-embedding-3-small",
+  "embedding_dimensions": 1536,
+  "metadata": {
+    "review_external_id": "rev-return",
+    "source_url": "https://example.com/product/espresso#rev-return",
+    "rating": 1.0,
+    "source_type": "crawler"
+  }
+}
+```
+
+说明：示例中的 `embedding` 只展示前两位，真实库中是 1536 维向量。
+
+## 相似评论检索结果示例
+
+```json
+{
+  "chunk_id": "chk_01HXYZ",
+  "review_id": "rev_01HREVIEW",
+  "review_external_id": "rev-return",
+  "content": "The pump failed after three days. Return request and support were ignored.",
+  "similarity": 0.82,
+  "source_url": "https://example.com/product/espresso#rev-return",
+  "rating": 1.0,
+  "metadata": {
+    "review_external_id": "rev-return",
+    "source_url": "https://example.com/product/espresso#rev-return",
+    "rating": 1.0,
+    "source_type": "crawler"
+  }
+}
+```
+
 ## 作用
 
 这些示例是给 `api-contract.md`、`data-model.md`、`agent-state-machine.md`、`model-and-data-decisions.md` 和 `testing-strategy.md` 共用的参考样例。

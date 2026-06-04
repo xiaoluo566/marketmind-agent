@@ -102,6 +102,12 @@ Day 13 做短期记忆和上下文压缩，是因为 Agent 后续进入多轮执
 
 > Day 13 我做的是 Agent 的工作记忆，不是长期 RAG。它解决的是“当前任务上下文怎么少而准地交给模型”，所以我用滑动窗口控制最近上下文，用 summary 压缩旧步骤，并且单独保留证据 ID，避免报告后续找不到来源。
 
+Day 14 做评论切片、fake embedding 和 `review_chunks` 入库，是因为短期记忆只解决当前任务上下文，不解决大量评论证据召回。今天我把 Day 9 入库的 reviews 转成 review chunks，并通过 `EmbeddingProvider` 抽象生成向量，写入固定 1536 维的 pgvector 字段。第一版检索用 Python cosine similarity 做原型，后续可以替换为 PostgreSQL pgvector 原生排序。
+
+面试时可以这样讲：
+
+> Day 14 我开始做长期记忆。这里我没有直接接真实 embedding API，而是先用 fake provider 把清洗、切片、维度约束、幂等写入和检索返回格式跑通。因为真实 API 是可替换外部依赖，先把数据链路稳定下来更重要。
+
 ### Day 8 之后追加模板
 
 ```markdown
@@ -295,11 +301,11 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 
 ### 7. 我对“不要夸大进度”的思考
 
-这个项目目前推进到 Day 13，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
+这个项目目前推进到 Day 14，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
 
-- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、工具 schema、工具注册机制、最小 ReAct 状态机、Agent step 落库、结构化输出 guardrails、短期记忆滑动窗口、上下文摘要压缩、错误 envelope、测试。
-- 正在做：评论切片和 embedding 前的准备。
-- 后续做：多轮 LLM planner、RAG 检索、报告、前端真实接入、部署。
+- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、工具 schema、工具注册机制、最小 ReAct 状态机、Agent step 落库、结构化输出 guardrails、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、错误 envelope、测试。
+- 正在做：把 RAG 检索包装成 Agent tool。
+- 后续做：真实 embedding provider、pgvector 原生检索、报告、前端真实接入、部署。
 
 我认为这反而是加分项。因为真实开发中，清楚知道自己完成了什么、没完成什么，比把项目包装得过满更可信。
 
@@ -341,7 +347,7 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 
 ## 当前开发进度怎么讲
 
-截至 Day 13，项目已经完成：
+截至 Day 14，项目已经完成：
 
 - 文档体系、30 天 roadmap、开发日志。
 - Next.js 控制台骨架。
@@ -380,6 +386,12 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 - `summary_evidence_refs` 和 `recent_entries[].evidence_refs`，保证摘要后仍能追溯证据。
 - `RedisAgentMemoryStore` 和 `InMemoryAgentMemoryStore`，区分真实缓存和测试实现。
 - 从 `AgentStepData` 恢复短期记忆，Redis 丢失时仍能从 PostgreSQL step 重建上下文。
+- `clean_review_text` 和 `split_review_text`，用于评论清洗和切片。
+- `EmbeddingProvider` 抽象，隔离真实 embedding 服务。
+- `DeterministicEmbeddingProvider`，用于本地测试和流程验证。
+- `SQLAlchemyReviewChunkStore`，把 reviews 写入 `review_chunks`。
+- `ReviewChunkIndexResult`，记录 review_count、chunk_count、embedding_model、embedding_dimensions。
+- `search_similar_reviews`，返回 chunk、review 来源、评分和 similarity。
 - 工具调用前后状态落库，Action step 能从 pending/running 更新为 success/failed。
 - Agent 工具失败时，错误码和失败 observation 会写入数据库，不覆盖旧 step。
 - 队列不可用、状态缓存不可用、参数校验失败的统一错误响应。
@@ -391,12 +403,14 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 - 失败截图 artifact。
 - 多轮 LLM planner。
 - Agent step 前端展示。
-- 评论 embedding 写入和语义检索。
+- 真实 embedding API 接入。
+- pgvector 原生相似度 SQL。
+- `search_reviews_tool`。
 - 报告生成。
 - 前端接真实 API。
 - Docker Compose 全链路一键启动。
 
-面试时可以诚实讲：这个项目正在按 30 天里程碑推进，目前已经完成底层任务入口、异步管线、任务事件流、PostgreSQL 持久化、Playwright 最小采集、采集结果入库、Agent 工具契约、最小 ReAct 状态机、结构化输出 guardrails 和短期记忆压缩。下一阶段会补评论 embedding、语义检索和报告链路。重点是展示工程化思路和持续推进能力，而不是假装已经做完所有功能。
+面试时可以诚实讲：这个项目正在按 30 天里程碑推进，目前已经完成底层任务入口、异步管线、任务事件流、PostgreSQL 持久化、Playwright 最小采集、采集结果入库、Agent 工具契约、最小 ReAct 状态机、结构化输出 guardrails、短期记忆压缩和评论 RAG 索引基础。下一阶段会把相似评论检索包装成 Agent tool，并继续补真实 embedding provider、报告和证据链。重点是展示工程化思路和持续推进能力，而不是假装已经做完所有功能。
 
 ## 2 分钟项目介绍话术
 
@@ -959,6 +973,27 @@ Day 13 原计划属于“记忆系统”阶段，很容易直接跳到 pgvector�
 
 > Day 13 我先做短期记忆，是为了控制 Agent 当前任务的 token 增长。embedding 是长期记忆，解决评论召回；短期记忆是工作记忆，解决 Agent 多轮执行时“带多少上下文”的问题。这两个边界拆清楚，后面的 RAG 才不会和状态机混在一起。
 
+### 问题 14：Day 14 为什么先用 fake embedding，而不是直接接真实模型
+
+现象：
+
+Day 14 的路线图包含 embedding 生成流程，但最终实现没有直接调用线上 embedding API，而是先定义 `EmbeddingProvider` 并实现 `DeterministicEmbeddingProvider`。
+
+思考：
+
+真实 embedding API 涉及网络、密钥、限流、成本和失败重试。如果在评论清洗、切片、维度约束、幂等入库和检索结果格式还没稳定时就接真实服务，调试时很难判断问题来自数据链路还是外部模型服务。
+
+解决：
+
+- 先定义 provider 抽象，把外部模型调用隔离在接口后面。
+- 用 fake provider 输出 1536 维向量，遵守 `review_chunks.embedding` 的真实维度约束。
+- 先把 `reviews -> review_chunks -> top_k results` 跑通。
+- 检索结果先包含 `source_url`、`rating`、`review_external_id` 和 `similarity`，为 Day 15 tool 契约做准备。
+
+面试表达：
+
+> Day 14 我没有为了“看起来接了模型”而直接调用 embedding API。我的判断是：先把数据链路做成可测试、可替换，再接真实 provider。这样真实 API 出问题时，边界会很清楚，不会和切片或入库问题混在一起。
+
 ## 高频面试问题与回答
 
 ### Q1：你这个项目和普通“调用大模型生成报告”的项目有什么区别？
@@ -1224,6 +1259,18 @@ RAG 是使用长期记忆的一种检索增强流程：先根据问题召回相�
 
 这个项目里 Day 13 做的是短期记忆，Day 14 - Day 15 才会进入评论切片、embedding 和 `search_reviews_tool`。
 
+### Q22：Day 14 的 fake embedding 会不会让项目显得不真实？
+
+不会，但必须讲清楚边界。fake embedding 不是为了假装已经有真实语义能力，而是为了在没有外部服务依赖的情况下验证工程链路：
+
+- 评论能否被清洗和切片。
+- 维度是否严格保持 1536。
+- 重复索引是否幂等。
+- 检索结果是否带来源、评分和相似度。
+- 后续真实 provider 能否无缝替换。
+
+面试时要诚实说：当前 fake provider 只保证流程和接口，真实召回质量要等接入 `text-embedding-3-small` 或兼容 embedding 服务后评估。
+
 ## 面试官可能深挖的技术点
 
 ### 异步任务一致性
@@ -1366,7 +1413,7 @@ Agent step 状态：
 
 ## 目前最适合展示的代码点
 
-截至 Day 13，最适合展示：
+截至 Day 14，最适合展示：
 
 - `backend/app/api/routes/tasks.py`：API 如何接收任务、投递队列、统一错误。
 - `backend/app/tasks/service.py`：任务状态创建和入队流程。
@@ -1386,6 +1433,9 @@ Agent step 状态：
 - `backend/app/agent/state_machine.py`：最小 ReAct 状态机，记录 Thought / Action / Observation。
 - `backend/app/agent/guardrails.py`：结构化输出校验、自愈提示词和失败封装。
 - `backend/app/agent/memory.py`：短期记忆滑动窗口、摘要压缩、证据 ID 保留和 Redis 缓存 store。
+- `backend/app/rag/text.py`：评论清洗和按句子边界切片。
+- `backend/app/rag/embeddings.py`：embedding provider 抽象和确定性 fake provider。
+- `backend/app/rag/review_index.py`：review chunk 入库、幂等更新和 top_k 检索原型。
 - `backend/app/storage/models.py`：数据库模型设计。
 - `migrations/versions/0002_task_queue_id.py`：任务队列 ID 持久化迁移。
 - `tests/test_task_persistence.py`：任务和事件持久化测试。
@@ -1397,6 +1447,7 @@ Agent step 状态：
 - `tests/test_agent_state_machine.py`：Agent step 顺序、成功链路、失败链路和最大工具调用限制测试。
 - `tests/test_structured_output_guardrails.py`：坏 JSON 修复、修复失败、repair retry 和指标累计测试。
 - `tests/test_short_term_memory.py`：短期记忆窗口、摘要压缩、证据引用、从 step 恢复和状态机接入测试。
+- `tests/test_review_rag_indexing.py`：评论清洗、切片、fake embedding、入库幂等和相似检索测试。
 
 ## 如果被问“你在项目中学到了什么”
 
@@ -1421,11 +1472,13 @@ Agent step 状态：
 - Day 11：ReAct 状态机和 Agent step 持久化已完成。
 - Day 12：Pydantic guardrails 和 self-heal 已完成。
 - Day 13：短期记忆滑动窗口和上下文压缩已完成。
+- Day 14：评论切片、fake embedding、review chunk 入库和相似检索原型已完成。
 
 中期：
 
-- 评论切片和 embedding。
 - `search_reviews_tool`。
+- 真实 embedding provider。
+- pgvector 原生向量排序。
 - 报告 schema 和报告生成。
 
 后期：
@@ -1448,4 +1501,4 @@ Agent step 状态：
 
 如果让你说下一步：
 
-> 下一步我会在现有短期记忆和状态机基础上做评论切片与 embedding，把入库评论变成可检索的长期记忆。
+> 下一步我会把 Day 14 的相似评论检索包装成 `search_reviews_tool`，让 Agent 能按“退货、质量、物流、售后”等问题主动召回证据 chunk。

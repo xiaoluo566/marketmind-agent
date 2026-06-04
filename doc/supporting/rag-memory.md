@@ -70,6 +70,50 @@ Day 13 已经新增 `backend/app/agent/memory.py`，把短期记忆从概念推�
 
 切片不能打断关键上下文，例如“刚买回来很好，但是用了三天就坏了”不能只保留前半句。
 
+## Day 14 评论索引实现
+
+Day 14 新增 `backend/app/rag/`，把评论长期记忆链路从文档推进到代码：
+
+- `text.py`：评论清洗和切片。
+- `embeddings.py`：embedding provider 抽象和确定性 fake provider。
+- `review_index.py`：`review_chunks` 入库和相似度检索原型。
+
+当前流程：
+
+```text
+reviews.content
+  -> clean_review_text
+  -> split_review_text
+  -> EmbeddingProvider.embed_texts
+  -> review_chunks
+  -> search_similar_reviews top_k
+```
+
+第一版 `DeterministicEmbeddingProvider` 只用于本地测试和流程验证，不代表真实语义召回质量。真实 embedding provider 后续必须实现同一个接口。
+
+### Day 14 入库约束
+
+- `review_chunks.embedding` 仍然固定 `vector(1536)`。
+- 即使是 fake embedding，写库时也必须输出 1536 维。
+- `embedding_model` 和 `embedding_dimensions` 必须写入每条 chunk。
+- provider 维度和 store 维度不一致时直接失败。
+- service 层按 `review_id + task_id + chunk_index + embedding_model + embedding_dimensions` 做幂等 upsert。
+
+### Day 14 检索原型
+
+当前 `search_similar_reviews` 在 Python 中计算 cosine similarity，返回：
+
+- `chunk_id`
+- `review_id`
+- `review_external_id`
+- `content`
+- `similarity`
+- `source_url`
+- `rating`
+- `metadata`
+
+Day 15 做 `search_reviews_tool` 时，可以复用这个 store 的输出契约。后续接真实 PostgreSQL 时，可以把 Python cosine 替换成 pgvector 原生排序，但不要改变工具返回字段。
+
 ## 检索流程
 
 1. Agent 提出检索意图

@@ -206,6 +206,35 @@ Day 7 增量迁移为 `0002_task_queue_id`：
 - RAG 写入 `review_chunks` 和向量
 - Report 模块写入 `reports`
 
+## Day 14 Review Chunk 写入约束
+
+Day 14 新增 `SQLAlchemyReviewChunkStore`，负责把 `reviews` 转成 `review_chunks`：
+
+1. 读取指定 `task_id` 下的评论。
+2. 清洗 `reviews.content`。
+3. 按句子边界切片，默认每片最多 500 字符。
+4. 通过 `EmbeddingProvider` 生成向量。
+5. 写入 `review_chunks`。
+
+幂等规则暂时放在 service 层：
+
+- `review_id`
+- `task_id`
+- `chunk_index`
+- `embedding_model`
+- `embedding_dimensions`
+
+这五个字段组合一致时，重复索引会更新旧 chunk，而不是新增重复记录。
+
+当前 `review_chunks.embedding` 字段固定为 `vector(1536)`，因此 Day 14 的 fake embedding 也必须输出 1536 维。不要为了单元测试写入短维度向量，否则会和 Day 3 的 pgvector 建模约束冲突。
+
+`review_chunks.metadata` 当前建议写入：
+
+- `review_external_id`
+- `source_url`
+- `rating`
+- `source_type`
+
 ## 与其他文档关系
 
 - 状态流转见 `agent-state-machine.md`
