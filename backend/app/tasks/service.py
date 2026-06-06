@@ -1,8 +1,11 @@
+from datetime import datetime
+
 from app.api.schemas.tasks import (
     TaskAcceptedData,
     TaskCreateRequest,
     TaskEventData,
     TaskEventsData,
+    TaskListData,
     TaskStatusData,
 )
 from app.core.ids import new_prefixed_id
@@ -110,6 +113,25 @@ def get_task_status(task_id: str, status_store: TaskStatusStore) -> TaskStatusDa
     return status_store.get(task_id)
 
 
+def list_task_statuses(
+    *,
+    status_store: TaskStatusStore,
+    statuses: list[str] | None,
+    created_after: datetime | None,
+    created_before: datetime | None,
+    limit: int,
+    offset: int,
+) -> TaskListData:
+    items, total = status_store.list(
+        statuses=statuses,
+        created_after=created_after,
+        created_before=created_before,
+        limit=limit,
+        offset=offset,
+    )
+    return TaskListData(items=items, limit=limit, offset=offset, total=total)
+
+
 def list_task_events(task_id: str, event_store: TaskEventStore) -> TaskEventsData:
     return TaskEventsData(task_id=task_id, events=event_store.list_for_task(task_id))
 
@@ -139,5 +161,6 @@ __all__ = [
     "build_task_event",
     "get_task_status",
     "list_task_events",
+    "list_task_statuses",
     "submit_task_request",
 ]

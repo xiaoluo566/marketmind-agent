@@ -1,5 +1,5 @@
 import { agentSteps, evidence, reports, services, taskEvents, tasks } from "./mock-data";
-import type { AgentStep, Task, TaskAccepted, TaskCreateInput, TaskEvent } from "./types";
+import type { AgentStep, Report, Task, TaskAccepted, TaskCreateInput, TaskEvent } from "./types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 const USE_MOCKS = process.env.NEXT_PUBLIC_USE_MOCKS === "true";
@@ -101,7 +101,8 @@ export async function listTasks() {
   if (USE_MOCKS) {
     return tasks;
   }
-  return safeRequest<Task[]>("/api/tasks", tasks);
+  const payload = await request<BackendTaskList>("/api/tasks");
+  return payload.items.map(mapBackendTask);
 }
 
 export async function getTask(taskId: string) {
@@ -137,17 +138,16 @@ export async function listReports() {
   if (USE_MOCKS) {
     return reports;
   }
-  return safeRequest<typeof reports>("/api/reports", reports);
+  const payload = await request<BackendReportList>("/api/reports");
+  return payload.items.map(mapBackendReport);
 }
 
 export async function getReport(reportId: string) {
   if (USE_MOCKS) {
     return reports.find((report) => report.report_id === reportId) ?? reports[0];
   }
-  return safeRequest<(typeof reports)[number]>(
-    `/api/reports/${reportId}`,
-    reports.find((report) => report.report_id === reportId) ?? reports[0],
-  );
+  const report = await request<BackendReportDetail>(`/api/reports/${reportId}`);
+  return mapBackendReportDetail(report);
 }
 
 export async function listEvidence() {
@@ -187,6 +187,13 @@ type BackendTaskStatus = {
   updated_at: string;
 };
 
+type BackendTaskList = {
+  items: BackendTaskStatus[];
+  limit: number;
+  offset: number;
+  total: number;
+};
+
 type BackendTaskEvents = {
   task_id: string;
   events: BackendTaskEvent[];
@@ -222,6 +229,40 @@ type BackendAgentStep = {
   error_code: string | null;
 };
 
+type BackendReportSummary = {
+  report_id: string;
+  task_id: string;
+  task_status: string | null;
+  title: string;
+  summary: string;
+  status: string;
+  risk_level: string;
+  risk_score: number;
+  evidence_count: number;
+  created_at: string;
+  updated_at: string;
+  schema_version: string;
+};
+
+type BackendReportList = {
+  items: BackendReportSummary[];
+  limit: number;
+  offset: number;
+  total: number;
+};
+
+type BackendReportSection = {
+  title: string;
+  body: string;
+  evidence_ids: string[];
+};
+
+type BackendReportDetail = BackendReportSummary & {
+  sections: BackendReportSection[];
+  content_markdown: string;
+  evidence_refs: string[];
+};
+
 function mapBackendTask(task: BackendTaskStatus): Task {
   return {
     task_id: task.task_id,
@@ -243,6 +284,31 @@ function mapBackendTask(task: BackendTaskStatus): Task {
   };
 }
 
+function mapBackendReport(report: BackendReportSummary): Report {
+  return {
+    report_id: report.report_id,
+    task_id: report.task_id,
+    title: report.title,
+    summary: report.summary,
+    risk_level: normalizeRiskLevel(report.risk_level),
+    risk_score: report.risk_score,
+    evidence_count: report.evidence_count,
+    created_at: report.created_at,
+    sections: [],
+  };
+}
+
+function mapBackendReportDetail(report: BackendReportDetail): Report {
+  return {
+    ...mapBackendReport(report),
+    sections: report.sections.map((section) => ({
+      title: section.title,
+      body: section.body,
+      evidence_ids: section.evidence_ids,
+    })),
+  };
+}
+
 function mapBackendAgentStep(step: BackendAgentStep): AgentStep {
   return {
     step_id: step.step_id,
@@ -257,6 +323,13 @@ function mapBackendAgentStep(step: BackendAgentStep): AgentStep {
     observation_summary: step.observation_summary ?? undefined,
     error_code: step.error_code ?? undefined,
   };
+}
+
+function normalizeRiskLevel(level: string): Report["risk_level"] {
+  const supported: Report["risk_level"][] = ["low", "medium", "high", "critical"];
+  return supported.includes(level as Report["risk_level"])
+    ? (level as Report["risk_level"])
+    : "medium";
 }
 
 function mapBackendTaskEvent(event: BackendTaskEvent): TaskEvent {

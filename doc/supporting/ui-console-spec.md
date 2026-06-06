@@ -29,11 +29,11 @@ Day 19 已把控制台的核心任务入口接到真实 FastAPI：
 - 任务详情页通过 `GET /api/tasks/{task_id}/events` 读取事件时间线。
 - AppShell 显示当前 API 模式，避免调试时误把 mock 当成真实接口。
 
-Day 19 仍然保留 fallback 的页面或数据：
+Day 19 结束时仍然保留 fallback 的页面或数据：
 
-- 任务列表：后端 `GET /api/tasks` 尚未实现。
-- Agent steps：后端 `GET /api/tasks/{task_id}/steps` 尚未实现，前端暂时返回空数组。
-- 报告列表和报告详情：后端 `GET /api/reports`、`GET /api/reports/{report_id}` 尚未实现。
+- 任务列表：Day 19 时后端 `GET /api/tasks` 尚未实现；Day 21 已补齐真实接口和前端映射。
+- Agent steps：Day 19 时后端 `GET /api/tasks/{task_id}/steps` 尚未实现，前端暂时返回空数组；Day 20 已补齐真实接口和前端轮询展示。
+- 报告列表和报告详情：Day 19 时后端 `GET /api/reports`、`GET /api/reports/{report_id}` 尚未实现；Day 21 已补齐真实接口和前端映射。
 - evidence 总览：后端 `GET /api/evidence` 尚未实现。
 
 这意味着 Day 20 的优先级不是继续堆静态页面，而是补任务进度刷新和 Agent step 的真实展示。
@@ -58,6 +58,35 @@ Agent step 展示边界：
 - 不展示完整 thought。
 - 不展示完整 prompt 或模型输入。
 - 没有 step 时显示空态，而不是空白区域。
+
+## Day 21 实际接入边界
+
+Day 21 已把历史任务和历史报告从 mock fallback 推进到真实 API：
+
+- 任务列表页通过 `listTasks()` 调用 `GET /api/tasks`。
+- 报告列表页通过 `listReports()` 调用 `GET /api/reports`。
+- 报告详情页通过 `getReport(reportId)` 调用 `GET /api/reports/{report_id}`。
+- 真实 API 模式下，任务列表、报告列表和报告详情成功响应不再回退 mock。
+- mock 模式仍然保留，用于后端未启动时检查页面布局。
+
+历史任务列表接口能力：
+
+- 支持 `status` 筛选。
+- 支持 `created_after` 和 `created_before`。
+- 支持 `limit`、`offset` 和 `total`。
+- 失败任务必须显示，不能因为状态为 `failed` 就被过滤掉。
+
+历史报告列表接口能力：
+
+- 展示 `report_id`、`task_id`、`task_status`、`title`、`summary`。
+- 展示 `risk_level`、`risk_score` 和 `evidence_count`。
+- 支持报告状态、任务状态、创建时间和分页筛选。
+
+报告详情接口能力：
+
+- 返回 `sections`、`content_markdown` 和 `evidence_refs`。
+- `sections` 用于当前 `ReportViewer` 直接渲染。
+- evidence 总览页仍然保留 mock，报告详情还没有把 `GET /api/reports/{report_id}/evidence` 接入 UI。
 
 ### 状态快照
 

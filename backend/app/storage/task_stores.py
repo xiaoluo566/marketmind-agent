@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from contextlib import contextmanager
+from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.schemas.tasks import TaskEventData, TaskStatusData
@@ -51,6 +52,32 @@ class SQLAlchemyTaskStatusStore:
             if task_row is None:
                 return None
             return self._to_data(task_row)
+
+    def list(
+        self,
+        *,
+        statuses: list[str] | None = None,
+        created_after: datetime | None = None,
+        created_before: datetime | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> tuple[list[TaskStatusData], int]:
+        with self._session_scope() as session:
+            filters = _task_filters(
+                statuses=statuses,
+                created_after=created_after,
+                created_before=created_before,
+            )
+            total = session.scalar(select(func.count()).select_from(Task).where(*filters)) or 0
+            stmt = (
+                select(Task)
+                .where(*filters)
+                .order_by(Task.created_at.desc(), Task.id.desc())
+                .limit(limit)
+                .offset(offset)
+            )
+            rows = session.scalars(stmt).all()
+            return [self._to_data(row) for row in rows], int(total)
 
     @contextmanager
     def _session_scope(self):
@@ -240,6 +267,32 @@ class MirroredTaskStatusStore:
             return primary_task
         return self._secondary.get(task_id)
 
+    def list(
+        self,
+        *,
+        statuses: list[str] | None = None,
+        created_after: datetime | None = None,
+        created_before: datetime | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> tuple[list[TaskStatusData], int]:
+        try:
+            return self._secondary.list(
+                statuses=statuses,
+                created_after=created_after,
+                created_before=created_before,
+                limit=limit,
+                offset=offset,
+            )
+        except TaskStatusStoreUnavailableError:
+            return self._primary.list(
+                statuses=statuses,
+                created_after=created_after,
+                created_before=created_before,
+                limit=limit,
+                offset=offset,
+            )
+
 
 class MirroredTaskEventStore:
     def __init__(
@@ -265,3 +318,19 @@ class MirroredTaskEventStore:
         if primary_events:
             return primary_events
         return self._secondary.list_for_task(task_id)
+
+
+def _task_filters(
+    *,
+    statuses: list[str] | None,
+    created_after: datetime | None,
+    created_before: datetime | None,
+):
+    filters = []
+    if statuses:
+        filters.append(Task.status.in_(statuses))
+    if created_after:
+        filters.append(Task.created_at >= created_after)
+    if created_before:
+        filters.append(Task.created_at <= created_before)
+    return filters

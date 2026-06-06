@@ -70,6 +70,18 @@ Day 20 已把“任务卡住了”的第一层排查入口放到任务详情页�
 
 这不是最终 LLMOps 监控，只是 Day 20 的任务级观测闭环。后续 Day 22 还需要补结构化日志、日志等级、trace 搜索和错误分类统计。
 
+## Day 21 历史复盘入口
+
+Day 21 已补齐历史任务和历史报告真实接口，可观测性开始从“当前任务排查”扩展到“历史任务复盘”：
+
+- `GET /api/tasks` 可以查到成功、失败和运行中的历史任务。
+- 历史任务保留 `trace_id`、`error_code`、`error_message`、`created_at`、`updated_at`。
+- 失败任务不会从历史列表消失，便于后续统计失败类型。
+- `GET /api/reports` 可以按报告维度回看历史分析产物。
+- `GET /api/reports/{report_id}` 可以打开旧报告，后续可继续接入 evidence chain。
+
+这为 Day 22 的日志和错误分类提供了入口：日志不是孤立文本，而应该能和 `task_id`、`trace_id`、`report_id`、`agent_run_id` 关联起来。
+
 ## 与其他文档关系
 
 - 任务状态字段见 `data-model.md`

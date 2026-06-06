@@ -83,6 +83,13 @@ class TaskEventsData(BaseModel):
     events: list[TaskEventData]
 
 
+class TaskListData(BaseModel):
+    items: list[TaskStatusData]
+    limit: int
+    offset: int
+    total: int
+
+
 class AgentStepSummaryData(BaseModel):
     step_id: str
     agent_run_id: str

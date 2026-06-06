@@ -13,7 +13,9 @@
 - `GET /api/tasks/{task_id}`：查看任务状态
 - `GET /api/tasks/{task_id}/events`：查看事件流
 - `GET /api/tasks/{task_id}/steps`：查看 Agent 步骤
+- `GET /api/tasks`：查看历史任务
 - `POST /api/tasks/{task_id}/retry`：重试任务
+- `GET /api/reports`：查看历史报告
 - `GET /api/reports/{report_id}`：查看报告
 - `GET /api/reports/{report_id}/evidence`：查看报告证据链
 - `POST /api/uploads`：上传手工数据
@@ -21,7 +23,7 @@
 
 ## 当前实现状态
 
-截至 Day 20，后端和前端真实接入状态如下：
+截至 Day 21，后端和前端真实接入状态如下：
 
 | 接口 | 后端状态 | 前端状态 | 备注 |
 | --- | --- | --- | --- |
@@ -30,15 +32,15 @@
 | `GET /api/tasks/{task_id}/events` | 已实现 | 已真实接入 | 任务详情页事件时间线 |
 | `GET /api/tasks/{task_id}/steps` | 已实现 | 已真实接入 | 返回脱敏 Agent step 摘要，任务详情页轮询刷新 |
 | `GET /api/reports/{report_id}/evidence` | 已实现 | 待接入详情页 | Day 17 已完成后端证据链 API |
-| `GET /api/tasks` | 未实现 | mock fallback | Day 21 历史任务前需要补齐 |
+| `GET /api/tasks` | 已实现 | 已真实接入 | 历史任务列表，支持状态、时间、分页 |
+| `GET /api/reports` | 已实现 | 已真实接入 | 历史报告列表，返回 task_status、risk_score、evidence_count |
+| `GET /api/reports/{report_id}` | 已实现 | 已真实接入 | 报告详情，返回 sections、Markdown 和 evidence refs |
 | `POST /api/tasks/{task_id}/retry` | 未实现 | 未接入 | 失败恢复能力后续实现 |
-| `GET /api/reports` | 未实现 | mock fallback | Day 21 历史报告前需要补齐 |
-| `GET /api/reports/{report_id}` | 未实现 | mock fallback | 报告详情页真实化前需要补齐 |
 | `GET /api/evidence` | 未实现 | mock fallback | 证据总览页后续实现 |
 | `POST /api/uploads` | 未实现 | 未接入 | 手工数据上传后续实现 |
 | `WS /ws/tasks/{task_id}` | 未实现 | 未接入 | 第一版继续使用查询/轮询 |
 
-前端 fallback 只用于后端未实现接口或非核心辅助数据，不应掩盖 `POST /api/tasks`、`GET /api/tasks/{task_id}` 和 `GET /api/tasks/{task_id}/events` 的真实错误。`GET /api/tasks/{task_id}/steps` 失败时前端可降级为空数组，避免进度详情页整体不可用。
+前端 fallback 只用于后端未实现接口或非核心辅助数据，不应掩盖 `POST /api/tasks`、`GET /api/tasks/{task_id}`、`GET /api/tasks/{task_id}/events`、`GET /api/tasks`、`GET /api/reports` 和 `GET /api/reports/{report_id}` 的真实错误。`GET /api/tasks/{task_id}/steps` 失败时前端可降级为空数组，避免进度详情页整体不可用。
 
 ## 接口细化
 
@@ -73,6 +75,44 @@ Day 9 开始把 crawler 成功结果写入 PostgreSQL：`crawl completed` 事件
 失败：
 
 - 队列或 Redis 状态缓存不可用时返回 `QUEUE_UNAVAILABLE`
+
+### `GET /api/tasks`
+
+职责：给历史任务页展示过去创建过的任务，包括成功、失败、运行中和取消的任务。
+
+Day 21 实现范围：
+
+- 历史查询以 PostgreSQL 为事实来源。
+- 支持 `status` 重复查询参数。
+- 支持 `created_after` 和 `created_before`。
+- 支持 `limit` 和 `offset`。
+- 返回 `items`、`limit`、`offset`、`total`。
+- 按 `created_at desc`、`task_id desc` 排序。
+- 失败任务不会从列表中消失。
+
+输出：
+
+- `items`
+- `limit`
+- `offset`
+- `total`
+
+每个 item 使用 `TaskStatusData`，包含：
+
+- `task_id`
+- `status`
+- `trace_id`
+- `target`
+- `mode`
+- `priority`
+- `source_type`
+- `queue_task_id`
+- `error_code`
+- `error_message`
+- `started_at`
+- `finished_at`
+- `created_at`
+- `updated_at`
 
 ### `GET /api/tasks/{task_id}/events`
 
@@ -150,6 +190,53 @@ Day 20 实现范围：
 ### `POST /api/tasks/{task_id}/retry`
 
 职责：只允许重试失败或可恢复状态的任务。重试时必须记录新的 `agent_run_id`，不能覆盖旧记录。
+
+### `GET /api/reports`
+
+职责：给报告列表页展示已经生成的结构化报告。
+
+Day 21 实现范围：
+
+- 查询 `reports` 并关联 `tasks` 取 `task_status`。
+- 支持 `status`、`task_status`、`created_after`、`created_before`、`limit`、`offset`。
+- 返回 `items`、`limit`、`offset`、`total`。
+- 从 `reports.evidence_refs` 计算 `evidence_count`。
+- 从 `content_json.metadata.analysis_scorecard.overall_risk_score` 读取 `risk_score`。
+- 将风险分映射为 `low`、`medium`、`high`、`critical`。
+
+输出 item：
+
+- `report_id`
+- `task_id`
+- `task_status`
+- `title`
+- `summary`
+- `status`
+- `risk_level`
+- `risk_score`
+- `evidence_count`
+- `created_at`
+- `updated_at`
+- `schema_version`
+
+### `GET /api/reports/{report_id}`
+
+职责：给报告详情页返回可渲染的报告结构。
+
+Day 21 实现范围：
+
+- 缺失报告返回 `REPORT_NOT_FOUND`。
+- 返回报告列表字段。
+- 额外返回 `sections`、`content_markdown`、`evidence_refs`。
+- `sections` 从 `content_json.sections` 映射，不从 Markdown 反解析。
+
+`sections` 字段：
+
+- `title`
+- `body`
+- `evidence_ids`
+
+注意：当前前端历史命名仍为 `evidence_ids`，但真实后端值是 `chunk:xxx`、`step:xxx` 这样的 evidence refs。后续报告详情接证据链时需要统一命名。
 
 ### `GET /api/reports/{report_id}/evidence`
 

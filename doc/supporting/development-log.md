@@ -47,8 +47,8 @@
 | --- | --- |
 | 稳定分支 | `main` |
 | 日常开发分支 | `dev` |
-| 当前开发阶段 | Day 20 已完成，准备进入 Day 21 |
-| 当前主链路 | 文档基线、Next.js 控制台骨架、前端真实 API client、真实任务提交表单、任务详情轮询面板、FastAPI health、任务创建 API、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、Agent step 查询 API、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、相似度检索原型、search_reviews_tool、结构化报告生成骨架、报告入库、证据链回查 API、风险机会评分、数据库模型、Alembic 迁移 |
+| 当前开发阶段 | Day 21 已完成，准备进入 Day 22 |
+| 当前主链路 | 文档基线、Next.js 控制台骨架、前端真实 API client、真实任务提交表单、任务详情轮询面板、历史任务列表、历史报告列表、报告详情真实读取、FastAPI health、任务创建 API、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、Agent step 查询 API、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、相似度检索原型、search_reviews_tool、结构化报告生成骨架、报告入库、证据链回查 API、风险机会评分、数据库模型、Alembic 迁移 |
 | 最新开发提交 | 以 `git log -1 --oneline` 为准 |
 | 当前数据库决策 | PostgreSQL + pgvector，review chunk 使用 `vector(1536)` |
 | 当前模型决策 | 默认 `gpt-5.4-mini`，报告模型 `gpt-5.5`，embedding `text-embedding-3-small` |
@@ -99,7 +99,7 @@
 | Day 18 | Done | 评论机会点评分与风险分析 | `dfc2117` |
 | Day 19 | Done | Next.js 接真实 API | `3fab1b3` |
 | Day 20 | Done | 前端任务进度与 Agent step 展示 | `3ff03a8` |
-| Day 21 | Pending | 历史任务和历史报告 | 待记录 |
+| Day 21 | Done | 历史任务和历史报告真实接入 | 待提交 |
 | Day 22 | Pending | 日志、trace、错误分类 | 待记录 |
 | Day 23 | Pending | Docker Compose 一键启动 | 待记录 |
 | Day 24 | Pending | 单元测试、集成测试、固定样例 | 待记录 |
@@ -1393,6 +1393,101 @@ Day 20 的目标是补齐“任务提交后怎么观察运行过程”的缺口�
 
 进入 Day 21，补历史任务和历史报告相关接口，让任务列表和报告列表从 mock fallback 进入真实数据查询，并为报告详情接入真实报告数据做准备。
 
+## Day 21 记录
+
+### Day 20 复查
+
+开始 Day 21 前先复查 Day 20：
+
+- `uv run pytest tests\test_task_steps_api.py tests\test_frontend_task_progress_contract.py`：5 passed。
+- `GET /api/tasks/{task_id}/steps` 已实现，并且返回脱敏 Agent step 摘要。
+- `TaskProgressPanel` 已接入任务状态、事件和 steps 轮询。
+- 文档检查发现 `ui-console-spec.md` 的 Day 19 fallback 说明仍写着 Agent steps 尚未实现，已经改成“Day 19 未实现，Day 20 已补齐”。
+
+复查结论：Day 20 主功能没有代码遗漏，只有一处文档口径需要修正，已在 Day 21 开始前补齐。
+
+### 实际完成
+
+Day 21 的目标是补齐历史任务和历史报告，让系统从“能跑一次任务”变成“能沉淀任务资产和报告资产”。今天完成了 `GET /api/tasks`、`GET /api/reports`、`GET /api/reports/{report_id}`，并让 Next.js 的任务列表、报告列表和报告详情在真实 API 模式下不再使用 mock fallback。
+
+完成内容：
+
+- 新增 `TaskListData`。
+- `TaskStatusStore` 协议新增 `list()`。
+- `InMemoryTaskStatusStore` 支持历史列表查询，服务于测试。
+- `SQLAlchemyTaskStatusStore` 支持按状态、创建时间、limit、offset 查询历史任务。
+- `MirroredTaskStatusStore.list()` 优先读取 PostgreSQL 历史数据。
+- `RedisTaskStatusStore.list()` 明确返回不可用错误，避免误把 Redis TTL 数据当成历史事实来源。
+- 新增 `GET /api/tasks`。
+- 新增 `ReportSectionData`、`ReportSummaryData`、`ReportDetailData`、`ReportListData`。
+- 新增 `GET /api/reports`。
+- 新增 `GET /api/reports/{report_id}`。
+- 报告列表关联 `tasks` 表返回 `task_status`。
+- 报告列表从 `evidence_refs` 计算 `evidence_count`。
+- 报告列表从 `content_json.metadata.analysis_scorecard.overall_risk_score` 读取 `risk_score`。
+- 报告详情把 `content_json.sections` 映射为前端 `sections`。
+- 缺失报告返回 `REPORT_NOT_FOUND` envelope。
+- 前端 `listTasks()` 在真实 API 模式下调用 `GET /api/tasks`。
+- 前端 `listReports()` 在真实 API 模式下调用 `GET /api/reports`。
+- 前端 `getReport()` 在真实 API 模式下调用 `GET /api/reports/{report_id}`。
+- 前端新增 `BackendTaskList`、`BackendReportList`、`BackendReportSummary`、`BackendReportDetail`。
+- 新增 `tests/test_history_api.py`。
+- 新增 `tests/test_frontend_history_contract.py`。
+
+### 当天选择思考
+
+今天优先做历史任务和历史报告，是因为 Day 19 和 Day 20 已经打通了任务提交和任务详情观察，但用户还不能回看过去的任务、失败记录和报告。如果系统只能看当前任务，它仍然更像一次性 Demo；能积累历史记录后，才开始具备“工作台”的形态。
+
+我选择让历史任务查询优先读取 PostgreSQL，而不是 Redis，是因为 Redis 在当前架构里承担实时状态缓存，有 TTL，不适合作为长期历史事实来源。PostgreSQL 里有任务、事件、Agent step、报告和证据链，历史页应该从这里查，才能保证可追踪和可复盘。
+
+我选择先做 `limit/offset/total`，而不是直接上 cursor pagination，是因为当前数据规模还小，offset 更容易测试和理解。但 API 已经保留分页结构，后续如果历史记录变多，可以把内部实现升级为 cursor，而前端只需要适配分页控件。
+
+我没有今天做复杂筛选 UI，是因为 Day 21 的核心风险在 API 是否真实、历史数据是否可查、前端是否还在成功时回退 mock。筛选能力已经先落在后端 query 参数里，前端控件可以在后续 UI polish 或 Day 25 E2E 前补。
+
+### 关键文件
+
+- `backend/app/api/routes/tasks.py`
+- `backend/app/api/routes/reports.py`
+- `backend/app/api/schemas/tasks.py`
+- `backend/app/api/schemas/reports.py`
+- `backend/app/tasks/status_store.py`
+- `backend/app/tasks/service.py`
+- `backend/app/storage/task_stores.py`
+- `frontend/src/lib/api.ts`
+- `tests/test_history_api.py`
+- `tests/test_frontend_history_contract.py`
+- `doc/roadmap/day-21.md`
+- `doc/supporting/api-contract.md`
+- `doc/supporting/ui-console-spec.md`
+- `doc/supporting/interview-defense-dossier.md`
+
+### 验证记录
+
+- `uv run pytest tests\test_history_api.py`：4 passed。
+- `uv run pytest tests\test_frontend_history_contract.py`：2 passed。
+- `uv run pytest tests\test_history_api.py tests\test_frontend_history_contract.py tests\test_tasks_api.py tests\test_report_evidence_chain.py`：24 passed。
+- `uv run pytest`：105 passed。
+- `uv run ruff check backend tests migrations`：通过。
+- `uv run alembic heads`：`0002_task_queue_id (head)`。
+- `cd frontend; npm run lint`：通过。
+- `cd frontend; npm run build`：通过。
+
+### 提交记录
+
+- 待提交。
+
+### 遗留问题
+
+- `POST /api/tasks/{task_id}/retry` 尚未实现。
+- `GET /api/evidence` 仍未实现，证据总览页继续 mock fallback。
+- 报告详情页还没有接入 `GET /api/reports/{report_id}/evidence`。
+- 报告详情前端字段仍叫 `evidence_ids`，但真实后端值是 evidence refs，后续需要统一命名。
+- 历史列表筛选能力已经在 API 层实现，但前端还没有筛选控件。
+
+### 下一步
+
+进入 Day 22，围绕日志、trace、错误分类和可观测性做增强。Day 21 已经让历史任务、报告列表和报告详情进入真实数据链路，Day 22 可以开始把这些链路中的错误和耗时记录得更清楚。
+
 ## Day 08 到 Day 14 记录模板
 
 第二周重点从数据采集进入 Agent 工具和状态机。每天开发后按下面格式补充。
@@ -1420,7 +1515,7 @@ Day 20 的目标是补齐“任务提交后怎么观察运行过程”的缺口�
 | Day 18 | 评论机会点评分与风险分析 | `AnalysisScorecard`、维度风险分、机会分、样本不足降权、Markdown 评分展示 | pytest 90 passed，ruff 通过，alembic head 正常，frontend build 通过 | `dfc2117` |
 | Day 19 | Next.js 接真实 API | `POST /api/tasks` 真实提交、任务状态/事件真实读取、API envelope/error 封装、未实现接口 fallback、新建任务表单 | pytest 94 passed，ruff 通过，alembic head 正常，frontend build/lint 通过 | `3fab1b3` |
 | Day 20 | 前端任务进度与 Agent step 展示 | `GET /api/tasks/{task_id}/steps`、脱敏 step 摘要、任务详情轮询面板、空态和刷新错误展示 | pytest 99 passed，ruff 通过，alembic head 正常，frontend build/lint 通过 | `3ff03a8` |
-| Day 21 | 历史任务和历史报告 | 待记录 | 待记录 | 待记录 |
+| Day 21 | 历史任务和历史报告 | `GET /api/tasks`、`GET /api/reports`、`GET /api/reports/{report_id}`、真实前端列表和详情映射、历史查询契约测试 | pytest 105 passed，ruff 通过，alembic head 正常，frontend build/lint 通过 | 待提交 |
 
 ## Day 22 到 Day 30 记录模板
 

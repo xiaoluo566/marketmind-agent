@@ -1,6 +1,7 @@
+from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, Query, Request, status
 
 from app.api.schemas.tasks import AgentStepSummaryData, TaskAgentStepsData, TaskCreateRequest
 from app.core.exceptions import AppError
@@ -14,10 +15,49 @@ from app.tasks.dependencies import (
 )
 from app.tasks.dispatcher import QueueUnavailableError, TaskQueueDispatcher
 from app.tasks.event_store import TaskEventStore, TaskEventStoreUnavailableError
-from app.tasks.service import get_task_status, list_task_events, submit_task_request
+from app.tasks.service import (
+    get_task_status,
+    list_task_events,
+    list_task_statuses,
+    submit_task_request,
+)
 from app.tasks.status_store import TaskStatusStore, TaskStatusStoreUnavailableError
 
 router = APIRouter()
+
+
+@router.get("/tasks")
+def list_tasks(
+    request: Request,
+    status_store: Annotated[TaskStatusStore, Depends(get_task_status_store)],
+    status_filter: Annotated[list[str] | None, Query(alias="status")] = None,
+    created_after: Annotated[datetime | None, Query()] = None,
+    created_before: Annotated[datetime | None, Query()] = None,
+    limit: Annotated[int, Query(ge=1, le=100)] = 50,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> dict:
+    try:
+        task_list = list_task_statuses(
+            status_store=status_store,
+            statuses=status_filter,
+            created_after=created_after,
+            created_before=created_before,
+            limit=limit,
+            offset=offset,
+        )
+    except TaskStatusStoreUnavailableError as exc:
+        raise AppError(
+            code="QUEUE_UNAVAILABLE",
+            message="task status store is unavailable",
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            details={"reason": str(exc)},
+        ) from exc
+
+    return success_response(
+        data=task_list.model_dump(mode="json"),
+        message="ok",
+        trace_id=request.state.trace_id,
+    )
 
 
 @router.post("/tasks", status_code=status.HTTP_202_ACCEPTED)

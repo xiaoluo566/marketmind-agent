@@ -383,7 +383,7 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 
 ## 当前开发进度怎么讲
 
-截至 Day 20，项目已经完成：
+截至 Day 21，项目已经完成：
 
 - 文档体系、30 天 roadmap、开发日志。
 - Next.js 控制台骨架。
@@ -456,7 +456,12 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 - 前端调用真实 `GET /api/tasks/{task_id}` 和 `GET /api/tasks/{task_id}/events` 展示任务状态和事件。
 - 前端调用真实 `GET /api/tasks/{task_id}/steps` 展示 Agent step 摘要。
 - `TaskProgressPanel` 每 5 秒刷新运行中任务，终态自动停止。
-- 前端对尚未实现的任务列表、报告列表和报告详情接口保留 fallback。
+- 前端调用真实 `GET /api/tasks` 展示历史任务列表。
+- 前端调用真实 `GET /api/reports` 展示历史报告列表。
+- 前端调用真实 `GET /api/reports/{report_id}` 打开报告详情。
+- 历史任务 API 支持状态筛选、时间筛选、limit、offset 和 total。
+- 历史报告 API 支持报告状态、任务状态、时间筛选、limit、offset 和 total。
+- 真实 API 模式下任务列表、报告列表和报告详情成功响应不再回退 mock。
 - 工具调用前后状态落库，Action step 能从 pending/running 更新为 success/failed。
 - Agent 工具失败时，错误码和失败 observation 会写入数据库，不覆盖旧 step。
 - 队列不可用、状态缓存不可用、参数校验失败的统一错误响应。
@@ -467,15 +472,15 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 - 具体电商站点 adapter。
 - 失败截图 artifact。
 - 多轮 LLM planner。
-- Agent step 前端展示。
+- 任务重试接口。
 - 真实 embedding API 接入。
 - pgvector 原生相似度 SQL。
 - 真实 LLM report prompt。
 - 报告详情页前端证据链展示。
-- 前端接真实 API。
+- 历史列表筛选控件。
 - Docker Compose 全链路一键启动。
 
-面试时可以诚实讲：这个项目正在按 30 天里程碑推进，目前已经完成底层任务入口、异步管线、任务事件流、PostgreSQL 持久化、Playwright 最小采集、采集结果入库、Agent 工具契约、最小 ReAct 状态机、结构化输出 guardrails、短期记忆压缩、评论 RAG 索引基础、`search_reviews_tool`、结构化报告生成骨架、报告证据链回查和可解释评分 baseline。下一阶段会补前端真实 API 接入、真实 report prompt 和部署。重点是展示工程化思路和持续推进能力，而不是假装已经做完所有功能。
+面试时可以诚实讲：这个项目正在按 30 天里程碑推进，目前已经完成底层任务入口、异步管线、任务事件流、PostgreSQL 持久化、Playwright 最小采集、采集结果入库、Agent 工具契约、最小 ReAct 状态机、结构化输出 guardrails、短期记忆压缩、评论 RAG 索引基础、`search_reviews_tool`、结构化报告生成骨架、报告证据链回查、可解释评分 baseline、Next.js 真实任务提交、任务详情轮询、历史任务列表、历史报告列表和报告详情真实接入。下一阶段会补日志观测、真实 report prompt、部署和 E2E。重点是展示工程化思路和持续推进能力，而不是假装已经做完所有功能。
 
 ## 2 分钟项目介绍话术
 
@@ -1275,7 +1280,8 @@ API 只负责投递任务。只要 Redis broker 可用，任务会处于 queued�
 - Day 13 到 Day 18 做 RAG 和报告。
 - Day 19 做前端真实任务提交、状态查询和事件读取。
 - Day 20 做前端任务进度轮询和 Agent step 展示。
-- Day 21 之后做历史任务、历史报告、部署和观测。
+- Day 21 做历史任务、历史报告和报告详情真实接入。
+- Day 22 之后做日志、部署、E2E 和 LLMOps 统计。
 
 复杂度不是一次性堆上去，而是按依赖逐步增加。
 
@@ -1287,7 +1293,7 @@ API 只负责投递任务。只要 Redis broker 可用，任务会处于 queued�
 2. Agent 状态可追踪：Agent step 落库和断点续跑。
 3. 评论 RAG 证据链：pgvector 检索 + 报告 evidence refs。
 
-当前已完成第一个，第二个和第三个在后续里程碑。
+截至 Day 21，这三个方向都已经有可展示的工程骨架：异步任务链路已经跑通，Agent step 已落库并能在前端展示摘要，评论 RAG 和报告 evidence refs 已经能生成并回查。后续重点是扩大真实数据源、真实模型接入和观测指标。
 
 ### Q17：如果问你为什么不用 LangChain / LangGraph？
 
@@ -1514,6 +1520,73 @@ Day 20 的处理方式是：
 
 这保证了前端能定位执行过程，但不会把内部推理和完整模型上下文暴露出去。
 
+### Q33：Day 21 为什么要做历史任务和历史报告？
+
+因为这个项目的定位不是“一次性生成报告脚本”，而是“面向电商运营场景的评论洞察与证据链工作台”。如果用户只能看当前正在跑的任务，系统价值会停留在 Demo；如果用户能回看历史任务、失败原因、旧报告和证据链，系统才有复盘和持续使用的价值。
+
+Day 21 做完后，项目从单次链路变成了可积累链路：
+
+- 任务可以回看。
+- 失败任务不会消失。
+- 报告可以从列表重新打开。
+- 报告详情可以继续接证据链。
+- 后续 LLMOps 可以按历史任务统计耗时、失败率和成本。
+
+面试时可以这样讲：
+
+> 我把历史任务和历史报告放在 Day 21，是因为前面已经完成任务提交、进度观察、报告生成和证据链回查。这个时候最重要的不是继续加模型能力，而是把这些结果沉淀下来，形成可复盘的工作台。否则项目会像一次性脚本，不像工程系统。
+
+### Q34：为什么历史任务查询优先读取 PostgreSQL，而不是 Redis？
+
+Redis 在当前系统里的职责是实时状态缓存和事件流缓存，它有 TTL，也可能因为缓存清理丢失历史状态。历史任务列表需要长期可查、可排序、可筛选，所以应该从 PostgreSQL 读取。
+
+Day 21 的处理方式是：
+
+- `GET /api/tasks/{task_id}` 仍可以优先读 Redis，再回退 PostgreSQL。
+- `GET /api/tasks` 作为历史列表，优先读取 PostgreSQL。
+- `RedisTaskStatusStore.list()` 明确返回不可用，不让历史页误用 TTL 数据。
+- `MirroredTaskStatusStore.list()` 通过 secondary PostgreSQL store 查询历史。
+
+面试时可以这样讲：
+
+> 我把 Redis 和 PostgreSQL 的职责分开：Redis 负责当前任务的快速状态读取，PostgreSQL 负责长期历史和审计。这样任务详情页可以快，历史页也不会因为缓存过期而丢数据。
+
+### Q35：为什么真实 API 模式下不再对任务列表和报告列表做 mock fallback？
+
+Day 19 时保留 fallback 是因为对应后端接口还没有实现。如果后端没有接口，前端为了页面可预览可以先回退 mock。但 Day 21 已经补齐 `GET /api/tasks`、`GET /api/reports` 和 `GET /api/reports/{report_id}`，真实模式下再 fallback 会掩盖后端错误。
+
+这类 fallback 的风险是：
+
+- 后端挂了，页面仍显示假数据，开发者误以为链路正常。
+- 接口字段变了，mock 数据无法暴露契约错误。
+- 面试展示时容易被追问“这到底是不是假数据”。
+
+Day 21 的处理方式是：
+
+- `NEXT_PUBLIC_USE_MOCKS=true` 时显式使用 mock。
+- 真实 API 模式下成功响应直接映射后端数据。
+- 真实 API 失败时抛出 `ApiClientError`，不吞掉错误。
+- 用 `tests/test_frontend_history_contract.py` 防止以后把成功路径又改回 fallback。
+
+面试时可以这样讲：
+
+> 我保留 mock 作为显式开发模式，但真实 API 模式不能悄悄回退 mock。否则系统看起来可用，实际后端已经坏了。Day 21 后，任务列表、报告列表和报告详情都必须消费真实接口。
+
+### Q36：为什么 Day 21 没有直接做复杂权限和筛选 UI？
+
+当前项目仍是本地单用户简历项目，Day 21 的核心目标是打通历史数据查询和真实前端映射。复杂权限需要用户体系、项目空间、鉴权中间件和数据隔离策略，如果在历史 API 还没稳定时引入，会让主线过早膨胀。
+
+Day 21 的保留扩展口：
+
+- `tasks` 本身已经有 `user_id`、`project_id`。
+- `reports` 可以通过 `task_id` 关联任务，再做项目过滤。
+- `GET /api/tasks` 已有状态、时间、分页参数。
+- `GET /api/reports` 已有报告状态、任务状态、时间、分页参数。
+
+面试时可以这样讲：
+
+> 我不是忽略权限，而是按阶段控制复杂度。Day 21 先稳定历史查询契约和数据来源，后续加用户/项目过滤时只需要在 store 查询层增加 where 条件，不需要重写前端页面和 API 形状。
+
 ## 面试官可能深挖的技术点
 
 ### 异步任务一致性
@@ -1656,8 +1729,15 @@ Agent step 状态：
 
 ## 目前最适合展示的代码点
 
-截至 Day 20，最适合展示：
+截至 Day 21，最适合展示：
 
+- `backend/app/api/routes/tasks.py`：`GET /api/tasks` 如何支持历史任务查询、状态筛选、时间筛选和分页。
+- `backend/app/api/routes/reports.py`：`GET /api/reports`、`GET /api/reports/{report_id}` 和报告证据链 API。
+- `backend/app/api/schemas/reports.py`：报告列表、报告详情和 section 的前端契约。
+- `backend/app/storage/task_stores.py`：历史任务查询为什么优先走 PostgreSQL，而不是 Redis。
+- `tests/test_history_api.py`：历史任务、失败任务保留、报告列表、报告详情和 404 envelope 测试。
+- `tests/test_frontend_history_contract.py`：前端历史页真实 API 契约测试。
+- `frontend/src/lib/api.ts`：任务列表、报告列表和报告详情的真实 API 映射。
 - `frontend/src/components/task-progress-panel.tsx`：任务详情轮询、手动刷新、终态停止和刷新错误展示。
 - `backend/app/api/routes/tasks.py`：`GET /api/tasks/{task_id}/steps` 如何返回脱敏 Agent step 摘要。
 - `backend/app/api/schemas/tasks.py`：`AgentStepSummaryData` 和 `TaskAgentStepsData`。
@@ -1744,10 +1824,10 @@ Agent step 状态：
 - Day 18：可解释风险/机会评分、样本不足降权和 Markdown 评分展示已完成。
 - Day 19：Next.js 真实任务提交、任务状态查询、任务事件读取和前端错误 envelope 展示已完成。
 - Day 20：任务详情轮询、`GET /api/tasks/{task_id}/steps` 和 Agent step 脱敏摘要展示已完成。
+- Day 21：历史任务、历史报告列表和报告详情真实 API 接入已完成。
 
 中期：
 
-- 历史任务和历史报告真实接口。
 - 真实 embedding provider。
 - pgvector 原生向量排序。
 - 真实 LLM report prompt。
@@ -1771,4 +1851,4 @@ Agent step 状态：
 
 如果让你说下一步：
 
-> 下一步我会在已经可追溯的证据链基础上做评论机会点评分和风险分析，保证评分结论仍然绑定到 evidence refs。
+> 下一步我会补日志、trace、错误分类和更完整的报告证据链前端展示，让历史任务不仅能查到，还能更快定位失败原因和报告证据来源。
