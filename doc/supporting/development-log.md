@@ -96,7 +96,7 @@
 | Day 15 | Done | `search_reviews_tool` 语义检索 | `ac23718` |
 | Day 16 | Done | 报告 schema 与确定性报告生成骨架 | `193da03` |
 | Day 17 | Done | 证据链引用和报告可追溯 | `363dd34` |
-| Day 18 | Done | 评论机会点评分与风险分析 | 待提交 |
+| Day 18 | Done | 评论机会点评分与风险分析 | `dfc2117` |
 | Day 19 | Pending | Next.js 接真实 API | 待记录 |
 | Day 20 | Pending | 前端任务进度与 Agent step 展示 | 待记录 |
 | Day 21 | Pending | 历史任务和历史报告 | 待记录 |
@@ -1221,7 +1221,7 @@ Day 18 的目标是在报告和证据链基础上加入可解释评分，让报�
 
 ### 提交记录
 
-- 待提交：`feat: 实现 Day 18 评论风险机会评分`
+- `dfc2117 feat: 实现 Day 18 评论风险机会评分`
 
 ### 遗留问题
 
@@ -1258,7 +1258,7 @@ Day 18 的目标是在报告和证据链基础上加入可解释评分，让报�
 | Day 15 | `search_reviews_tool` 语义检索 | 工具 schema、依赖注入注册、evidence chunk、空召回降级 | pytest 75 passed，ruff 通过，alembic head 正常，npm build 通过 | `ac23718` |
 | Day 16 | 报告 schema 与确定性报告生成骨架 | `StructuredReport`、证据引用校验、Markdown 渲染、`reports` 入库 | pytest 79 passed，ruff 通过，alembic head 正常，frontend build 通过 | `193da03` |
 | Day 17 | 证据链引用和报告可追溯 | evidence ref 解析、EvidenceChain、Markdown citation、报告证据链 API | pytest 86 passed，ruff 通过，alembic head 正常，frontend build 通过 | `363dd34` |
-| Day 18 | 评论机会点评分与风险分析 | `AnalysisScorecard`、维度风险分、机会分、样本不足降权、Markdown 评分展示 | pytest 90 passed，ruff 通过，alembic head 正常，frontend build 通过 | 待提交 |
+| Day 18 | 评论机会点评分与风险分析 | `AnalysisScorecard`、维度风险分、机会分、样本不足降权、Markdown 评分展示 | pytest 90 passed，ruff 通过，alembic head 正常，frontend build 通过 | `dfc2117` |
 | Day 19 | Next.js 接真实 API | 待记录 | 待记录 | 待记录 |
 | Day 20 | 前端任务进度与 Agent step 展示 | 待记录 | 待记录 | 待记录 |
 | Day 21 | 历史任务和历史报告 | 待记录 | 待记录 | 待记录 |
