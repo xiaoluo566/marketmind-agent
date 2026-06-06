@@ -94,7 +94,7 @@
 | Day 13 | Done | 短期记忆与上下文压缩 | `c552801` |
 | Day 14 | Done | 评论切片与 embedding 写入 | `ed4597d` |
 | Day 15 | Done | `search_reviews_tool` 语义检索 | `ac23718` |
-| Day 16 | Done | 报告 schema 与确定性报告生成骨架 | 待提交 |
+| Day 16 | Done | 报告 schema 与确定性报告生成骨架 | `193da03` |
 | Day 17 | Pending | 证据链引用和报告可追溯 | 待记录 |
 | Day 18 | Pending | 评论机会点评分与风险分析 | 待记录 |
 | Day 19 | Pending | Next.js 接真实 API | 待记录 |
@@ -1080,7 +1080,7 @@ Day 16 的目标是把 Day 15 的 `search_reviews_tool` evidence chunks 转成�
 
 ### 提交记录
 
-- 待提交：`feat: 实现 Day 16 结构化报告生成`
+- `193da03 feat: 实现 Day 16 结构化报告生成`
 
 ### 遗留问题
 
@@ -1115,7 +1115,7 @@ Day 16 的目标是把 Day 15 的 `search_reviews_tool` evidence chunks 转成�
 | Day | 计划主题 | 实际完成 | 验证 | 提交 |
 | --- | --- | --- | --- | --- |
 | Day 15 | `search_reviews_tool` 语义检索 | 工具 schema、依赖注入注册、evidence chunk、空召回降级 | pytest 75 passed，ruff 通过，alembic head 正常，npm build 通过 | `ac23718` |
-| Day 16 | 报告 schema 与确定性报告生成骨架 | `StructuredReport`、证据引用校验、Markdown 渲染、`reports` 入库 | pytest 79 passed，ruff 通过，alembic head 正常，frontend build 通过 | 待提交 |
+| Day 16 | 报告 schema 与确定性报告生成骨架 | `StructuredReport`、证据引用校验、Markdown 渲染、`reports` 入库 | pytest 79 passed，ruff 通过，alembic head 正常，frontend build 通过 | `193da03` |
 | Day 17 | 证据链引用和报告可追溯 | 待记录 | 待记录 | 待记录 |
 | Day 18 | 评论机会点评分与风险分析 | 待记录 | 待记录 | 待记录 |
 | Day 19 | Next.js 接真实 API | 待记录 | 待记录 | 待记录 |
