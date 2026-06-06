@@ -111,15 +111,24 @@ Day 17 新增 `tests/test_report_evidence_chain.py`，当前覆盖：
 - `StructuredReport.to_markdown()` 能渲染“证据链回查”章节。
 - `GET /api/reports/{report_id}/evidence` 能返回统一 envelope。
 - 缺失 report 返回 `REPORT_NOT_FOUND`。
+- 阶段审计补充：`agent_step` evidence metadata 不暴露完整 `tool_input` 和 `tool_output`。
 
 Day 17 当前不覆盖：
 
-- 前端点击跳转。
+- 前端点击跳转到具体来源详情。
 - 报告详情页真实 UI。
 - PDF 导出中的 citation 格式。
 - 多任务并发下的报告证据链性能。
 
 Day 17 的测试重点是保证证据缺失不会被伪装成可用证据，以及 API 返回结构和底层 evidence chain 模型一致。
+
+## 阶段审计补充测试
+
+推主分支前的阶段审计补了三个回归方向：
+
+- `tests/test_tasks_api.py::test_create_task_rejects_unsafe_public_url_targets`：确认 `source_type=public_url` 时拒绝 `file://` 和 localhost / loopback 目标。
+- `tests/test_report_evidence_chain.py::test_report_evidence_api_sanitizes_agent_step_metadata`：确认报告证据链不会把完整 Agent tool input/output 暴露到 API。
+- `tests/test_frontend_history_contract.py::test_report_detail_uses_real_report_evidence_chain`：确认报告详情页使用 `GET /api/reports/{report_id}/evidence`，不再用全局 mock evidence 拼报告证据。
 
 ## Day 18 评分测试边界
 

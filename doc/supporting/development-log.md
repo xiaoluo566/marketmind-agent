@@ -47,8 +47,8 @@
 | --- | --- |
 | 稳定分支 | `main` |
 | 日常开发分支 | `dev` |
-| 当前开发阶段 | Day 21 已完成，准备进入 Day 22 |
-| 当前主链路 | 文档基线、Next.js 控制台骨架、前端真实 API client、真实任务提交表单、任务详情轮询面板、历史任务列表、历史报告列表、报告详情真实读取、FastAPI health、任务创建 API、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、Agent step 查询 API、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、相似度检索原型、search_reviews_tool、结构化报告生成骨架、报告入库、证据链回查 API、风险机会评分、数据库模型、Alembic 迁移 |
+| 当前开发阶段 | Day 1-21 阶段审计与主分支合并准备 |
+| 当前主链路 | 文档基线、Next.js 控制台骨架、前端真实 API client、真实任务提交表单、任务详情轮询面板、历史任务列表、历史报告列表、报告详情真实读取、报告 evidence chain 真实读取、FastAPI health、任务创建 API、public_url 安全校验、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、Agent step 查询 API、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、相似度检索原型、search_reviews_tool、结构化报告生成骨架、报告入库、证据链回查 API、风险机会评分、数据库模型、Alembic 迁移 |
 | 最新开发提交 | 以 `git log -1 --oneline` 为准 |
 | 当前数据库决策 | PostgreSQL + pgvector，review chunk 使用 `vector(1536)` |
 | 当前模型决策 | 默认 `gpt-5.4-mini`，报告模型 `gpt-5.5`，embedding `text-embedding-3-small` |
@@ -1480,13 +1480,81 @@ Day 21 的目标是补齐历史任务和历史报告，让系统从“能跑一�
 
 - `POST /api/tasks/{task_id}/retry` 尚未实现。
 - `GET /api/evidence` 仍未实现，证据总览页继续 mock fallback。
-- 报告详情页还没有接入 `GET /api/reports/{report_id}/evidence`。
 - 报告详情前端字段仍叫 `evidence_ids`，但真实后端值是 evidence refs，后续需要统一命名。
 - 历史列表筛选能力已经在 API 层实现，但前端还没有筛选控件。
 
 ### 下一步
 
 进入 Day 22，围绕日志、trace、错误分类和可观测性做增强。Day 21 已经让历史任务、报告列表和报告详情进入真实数据链路，Day 22 可以开始把这些链路中的错误和耗时记录得更清楚。
+
+## Day 1-21 阶段审计记录
+
+### 审计背景
+
+在继续 Day 22 之前，先按“能否推到 main 作为稳定演示版本”的标准复查 Day 1-21。审计重点不是继续加新功能，而是检查：
+
+- 是否有后端已完成但前端没有真实接入的断层。
+- 是否有文档状态明显落后于代码。
+- 是否有安全边界和工程化文档不一致。
+- 是否有测试绿了但产品链路仍然混用 mock 的情况。
+
+### 发现并修复的问题
+
+问题 1：报告详情页没有消费报告证据链 API。
+
+- 现象：Day 17 已实现 `GET /api/reports/{report_id}/evidence`，Day 21 已实现报告详情真实读取，但报告详情页仍通过 `listEvidence()` 读取全局 evidence fallback。
+- 风险：报告正文是真实数据，证据列表却可能来自 mock 或其他任务，破坏“证据链报告”的核心可信度。
+- 修复：新增 `getReportEvidence(reportId)`，报告详情页改为调用 `GET /api/reports/{report_id}/evidence`。
+- 测试：新增 `tests/test_frontend_history_contract.py::test_report_detail_uses_real_report_evidence_chain`。
+
+问题 2：`public_url` 任务缺少 URL 安全校验。
+
+- 现象：安全文档要求 URL 校验协议和域名，但 `TaskCreateRequest` 之前只校验非空字符串。
+- 风险：后续 crawler 接入真实外部 URL 时，可能被提交 `file://`、localhost、内网地址等目标，形成 SSRF 或本机探测风险。
+- 修复：`source_type=public_url` 时只允许 `http` / `https`，并拒绝 localhost、`.local`、loopback、private、link-local、reserved、multicast、unspecified 地址。
+- 测试：新增 `tests/test_tasks_api.py::test_create_task_rejects_unsafe_public_url_targets`。
+
+问题 3：报告 evidence chain 的 Agent step metadata 暴露过多内部工具数据。
+
+- 现象：Day 20 已经对任务详情的 Agent step 做脱敏，但 Day 17 的 evidence chain 对 `agent_step` 证据返回完整 `tool_input` 和 `tool_output`。
+- 风险：报告详情页接入 evidence chain 后，内部工具参数、模型中间产物或后续敏感字段可能进入前端。
+- 修复：`agent_step` evidence metadata 只返回 `tool_input_keys`、`tool_output_keys`、`error_code`、step 基础状态，不返回完整 `tool_input` / `tool_output`。
+- 测试：新增 `tests/test_report_evidence_chain.py::test_report_evidence_api_sanitizes_agent_step_metadata`。
+
+问题 4：README 当前阶段过期。
+
+- 现象：README 仍写着“架构冻结 + 基础骨架阶段”，不符合 Day 21 后的真实状态。
+- 风险：面试官或未来自己从仓库入口阅读时，会误以为项目只做到 Day 2。
+- 修复：更新 README 当前状态、当前阶段和验证命令。
+
+### 审计后仍然保留的计划项
+
+这些不是本次推 main 前必须修复的问题，而是 Day 22 之后的计划项：
+
+- `POST /api/tasks/{task_id}/retry`：失败任务重试。
+- `GET /api/evidence`：全局证据检索 / 总览页真实接口。
+- 历史任务和历史报告的前端筛选控件。
+- 报告详情字段 `evidence_ids` 与真实 evidence refs 的命名统一。
+- 真实 embedding provider。
+- pgvector 原生 SQL 排序。
+- 真实 LLM report prompt。
+- Docker Compose 全链路一键启动。
+- Playwright E2E。
+
+### 阶段审计验证记录
+
+- `uv run pytest tests\test_tasks_api.py tests\test_report_evidence_chain.py tests\test_frontend_history_contract.py`：23 passed。
+- `uv run ruff check backend tests migrations`：通过。
+- `npm audit --audit-level=high`：0 vulnerabilities。
+- `uvx pip-audit`：No known vulnerabilities found。
+- `uv run pytest --cov=backend --cov-report=term-missing`：108 passed，backend coverage 91%。
+- `git diff --check`：通过。
+- 最终完整门禁：
+  - `uv run pytest`：108 passed。
+  - `uv run ruff check backend tests migrations`：通过。
+  - `uv run alembic heads`：`0002_task_queue_id (head)`。
+  - `cd frontend; npm run lint`：通过。
+  - `cd frontend; npm run build`：通过。
 
 ## Day 08 到 Day 14 记录模板
 

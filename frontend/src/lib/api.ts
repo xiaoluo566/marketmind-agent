@@ -1,5 +1,5 @@
 import { agentSteps, evidence, reports, services, taskEvents, tasks } from "./mock-data";
-import type { AgentStep, Report, Task, TaskAccepted, TaskCreateInput, TaskEvent } from "./types";
+import type { AgentStep, Evidence, Report, Task, TaskAccepted, TaskCreateInput, TaskEvent } from "./types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 const USE_MOCKS = process.env.NEXT_PUBLIC_USE_MOCKS === "true";
@@ -150,6 +150,19 @@ export async function getReport(reportId: string) {
   return mapBackendReportDetail(report);
 }
 
+export async function getReportEvidence(reportId: string) {
+  if (USE_MOCKS) {
+    const report = reports.find((item) => item.report_id === reportId);
+    if (!report) {
+      return evidence;
+    }
+    const evidenceIds = new Set(report.sections.flatMap((section) => section.evidence_ids));
+    return evidence.filter((item) => evidenceIds.has(item.evidence_id));
+  }
+  const payload = await request<BackendReportEvidence>(`/api/reports/${reportId}/evidence`);
+  return payload.sources.map((source) => mapBackendEvidenceSource(source, payload.task_id));
+}
+
 export async function listEvidence() {
   if (USE_MOCKS) {
     return evidence;
@@ -263,6 +276,28 @@ type BackendReportDetail = BackendReportSummary & {
   evidence_refs: string[];
 };
 
+type BackendReportEvidence = {
+  report_id: string;
+  task_id: string;
+  evidence_refs: string[];
+  sources: BackendEvidenceSource[];
+  missing_refs: string[];
+};
+
+type BackendEvidenceSource = {
+  evidence_ref: string;
+  source_type: string;
+  source_id: string;
+  task_id: string | null;
+  available: boolean;
+  title: string | null;
+  content_preview: string | null;
+  source_url: string | null;
+  parent_refs: string[];
+  missing_reason: string | null;
+  metadata: Record<string, unknown>;
+};
+
 function mapBackendTask(task: BackendTaskStatus): Task {
   return {
     task_id: task.task_id,
@@ -309,6 +344,25 @@ function mapBackendReportDetail(report: BackendReportDetail): Report {
   };
 }
 
+function mapBackendEvidenceSource(source: BackendEvidenceSource, taskId: string): Evidence {
+  return {
+    evidence_id: source.evidence_ref,
+    source_type: normalizeEvidenceSourceType(source.source_type),
+    source_url: source.source_url ?? source.evidence_ref,
+    similarity: source.available ? 1 : 0,
+    rating: numericMetadataValue(source.metadata.rating),
+    content: source.content_preview ?? source.missing_reason ?? "Evidence source unavailable.",
+    task_id: source.task_id ?? taskId,
+    metadata: stringifyMetadata({
+      ...source.metadata,
+      available: source.available,
+      missing_reason: source.missing_reason,
+      source_id: source.source_id,
+      parent_refs: source.parent_refs,
+    }),
+  };
+}
+
 function mapBackendAgentStep(step: BackendAgentStep): AgentStep {
   return {
     step_id: step.step_id,
@@ -330,6 +384,39 @@ function normalizeRiskLevel(level: string): Report["risk_level"] {
   return supported.includes(level as Report["risk_level"])
     ? (level as Report["risk_level"])
     : "medium";
+}
+
+function normalizeEvidenceSourceType(sourceType: string): Evidence["source_type"] {
+  const supported: Evidence["source_type"][] = [
+    "review",
+    "review_chunk",
+    "crawler_artifact",
+    "artifact",
+    "agent_step",
+    "missing",
+  ];
+  if (supported.includes(sourceType as Evidence["source_type"])) {
+    return sourceType as Evidence["source_type"];
+  }
+  if (sourceType === "artifact") {
+    return "crawler_artifact";
+  }
+  return "missing";
+}
+
+function numericMetadataValue(value: unknown) {
+  return typeof value === "number" ? value : undefined;
+}
+
+function stringifyMetadata(metadata: Record<string, unknown>): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(metadata)
+      .filter(([, value]) => value !== null && value !== undefined)
+      .map(([key, value]) => [
+        key,
+        Array.isArray(value) || typeof value === "object" ? JSON.stringify(value) : String(value),
+      ]),
+  );
 }
 
 function mapBackendTaskEvent(event: BackendTaskEvent): TaskEvent {

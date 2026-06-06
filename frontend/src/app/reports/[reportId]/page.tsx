@@ -1,6 +1,6 @@
 import { PageHeader } from "@/components/page-header";
 import { ReportViewer } from "@/components/report-viewer";
-import { getReport, listEvidence } from "@/lib/api";
+import { getReport, getReportEvidence } from "@/lib/api";
 
 export default async function ReportDetailPage({
   params,
@@ -8,7 +8,7 @@ export default async function ReportDetailPage({
   params: Promise<{ reportId: string }>;
 }) {
   const { reportId } = await params;
-  const [report, evidence] = await Promise.all([getReport(reportId), listEvidence()]);
+  const [report, evidence] = await Promise.all([getReport(reportId), getReportEvidence(reportId)]);
 
   return (
     <>
@@ -23,4 +23,3 @@ export default async function ReportDetailPage({
     </>
   );
 }
-

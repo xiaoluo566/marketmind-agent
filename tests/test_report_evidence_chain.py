@@ -282,6 +282,38 @@ def test_report_evidence_api_returns_structured_evidence_chain() -> None:
     assert body["data"]["sources"][0]["parent_refs"] == ["review:rev_return"]
 
 
+def test_report_evidence_api_sanitizes_agent_step_metadata() -> None:
+    session_factory = build_session_factory()
+    seed_evidence_records(session_factory)
+    with session_factory() as session:
+        with session.begin():
+            session.add(
+                Report(
+                    id="rpt_step_evidence",
+                    task_id="tsk_evidence_001",
+                    title="Step Evidence Report",
+                    status="draft",
+                    summary="Uses an Agent step as evidence.",
+                    content_markdown="# Step Evidence Report\n",
+                    content_json={},
+                    evidence_refs=["step:stp_search"],
+                    schema_version="report.v1",
+                )
+            )
+    app = create_app()
+    app.dependency_overrides[get_db_session] = build_session_override(session_factory)
+    client = TestClient(app)
+
+    response = client.get("/api/reports/rpt_step_evidence/evidence")
+    sources = response.json()["data"]["sources"]
+    step_source = next(source for source in sources if source["source_type"] == "agent_step")
+
+    assert "tool_input" not in step_source["metadata"]
+    assert "tool_output" not in step_source["metadata"]
+    assert step_source["metadata"]["tool_input_keys"] == ["query"]
+    assert step_source["metadata"]["tool_output_keys"] == ["evidence_refs"]
+
+
 def test_report_evidence_api_returns_not_found_for_missing_report() -> None:
     session_factory = build_session_factory()
     seed_evidence_records(session_factory)

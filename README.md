@@ -7,8 +7,8 @@
 ## 当前状态
 
 - `doc/`：30 天开发计划 + 横向设计文档
-- `backend/`：FastAPI 后端骨架
-- `frontend/`：Next.js 控制台骨架
+- `backend/`：FastAPI 后端、Celery worker、SQLAlchemy 持久化、Playwright 采集、Agent 状态机、RAG 和报告模块
+- `frontend/`：Next.js 控制台，已接入真实任务提交、任务详情轮询、历史任务、历史报告、报告详情和报告证据链
 - `stitch_marketmind_control_center/`：本地 Stitch 原始设计导出，已被 `.gitignore` 忽略，只作为可选视觉参考
 - 本地 Git：已初始化
 - GitHub：私有仓库已创建并已推送初始版本
@@ -31,7 +31,30 @@
 
 ## 当前阶段
 
-现在处于“架构冻结 + 基础骨架”阶段。Day 1 已完成仓库、文档、FastAPI health 和 Next.js 控制台骨架；Day 2 开始在 `dev` 分支上冻结架构边界，再继续接数据库、任务队列和真实任务流。
+当前已完成 Day 1-21 的阶段性开发，并完成一次推主分支前审计。系统已经具备：
+
+- FastAPI 统一 API envelope 和 trace ID。
+- Celery + Redis 长任务分发与任务状态缓存。
+- PostgreSQL / SQLAlchemy 任务、事件、Agent step、评论、review chunk、报告和 artifact 持久化。
+- Playwright 最小采集链路和 HTML artifact 保存。
+- Agent 工具 schema、工具注册、最小 ReAct 状态机和 Agent step 落库。
+- Pydantic Guardrails、结构化输出修复和自愈统计入口。
+- 短期记忆滑动窗口、评论清洗切片、deterministic embedding、review chunk 检索。
+- `search_reviews_tool`、结构化报告生成、证据链回查和风险/机会评分。
+- Next.js 真实任务提交、任务详情轮询、Agent step 摘要、历史任务、历史报告、报告详情和报告 evidence chain 展示。
+
+尚未完成的能力包括任务重试、全局 evidence 检索接口、真实 embedding provider、pgvector 原生排序、真实 LLM report prompt、Docker Compose 一键启动和 Playwright E2E。
+
+## 验证命令
+
+```powershell
+uv run pytest
+uv run ruff check backend tests migrations
+uv run alembic heads
+cd frontend
+npm run lint
+npm run build
+```
 
 ## 开发原则
 

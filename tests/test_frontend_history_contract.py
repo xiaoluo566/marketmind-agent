@@ -35,3 +35,15 @@ def test_frontend_reports_use_real_list_and_detail_contracts() -> None:
     assert "return safeRequest<typeof reports>(\"/api/reports\", reports)" not in api_source
     assert "listReports()" in reports_page_source
     assert "getReport(reportId)" in report_detail_source
+
+
+def test_report_detail_uses_real_report_evidence_chain() -> None:
+    api_source = read_frontend("lib/api.ts")
+    report_detail_source = read_frontend("app/reports/[reportId]/page.tsx")
+
+    assert "type BackendReportEvidence" in api_source
+    assert "export async function getReportEvidence" in api_source
+    assert "request<BackendReportEvidence>(`/api/reports/${reportId}/evidence`)" in api_source
+    assert "mapBackendEvidenceSource" in api_source
+    assert "getReportEvidence(reportId)" in report_detail_source
+    assert "listEvidence()" not in report_detail_source

@@ -250,6 +250,25 @@ def test_create_task_validation_error_uses_api_envelope() -> None:
     assert body["error"]["details"]["errors"]
 
 
+def test_create_task_rejects_unsafe_public_url_targets() -> None:
+    client, _, _, _ = build_client()
+
+    for target in ["file:///etc/passwd", "http://127.0.0.1:8000/admin"]:
+        response = client.post(
+            "/api/tasks",
+            headers={"X-Trace-Id": "trc_invalid_public_url"},
+            json={
+                "target": target,
+                "source_type": "public_url",
+            },
+        )
+
+        assert response.status_code == 422
+        body = response.json()
+        assert body["success"] is False
+        assert body["error"]["code"] == "VALIDATION_FAILED"
+
+
 def test_create_task_queue_unavailable_returns_error_envelope() -> None:
     client, store, event_store, _ = build_client(dispatcher=FailingDispatcher())
 

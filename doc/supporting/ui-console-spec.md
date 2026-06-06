@@ -86,7 +86,9 @@ Day 21 已把历史任务和历史报告从 mock fallback 推进到真实 API：
 
 - 返回 `sections`、`content_markdown` 和 `evidence_refs`。
 - `sections` 用于当前 `ReportViewer` 直接渲染。
-- evidence 总览页仍然保留 mock，报告详情还没有把 `GET /api/reports/{report_id}/evidence` 接入 UI。
+- 报告详情页通过 `getReportEvidence(reportId)` 调用 `GET /api/reports/{report_id}/evidence`。
+- 报告详情页的证据列表来自报告自己的 evidence chain，不再使用全局 mock evidence。
+- evidence 总览页仍然保留 mock，等待后续独立 `GET /api/evidence` 或检索接口。
 
 ### 状态快照
 

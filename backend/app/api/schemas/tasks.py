@@ -1,8 +1,10 @@
 from datetime import datetime
 from enum import StrEnum
-from typing import Any
+from ipaddress import ip_address
+from typing import Any, Self
+from urllib.parse import urlparse
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class TaskMode(StrEnum):
@@ -40,6 +42,20 @@ class TaskCreateRequest(BaseModel):
         if not normalized:
             raise ValueError("target cannot be blank")
         return normalized
+
+    @model_validator(mode="after")
+    def validate_public_url_target(self) -> Self:
+        if self.source_type != TaskSourceType.PUBLIC_URL:
+            return self
+
+        parsed = urlparse(self.target)
+        if parsed.scheme not in {"http", "https"}:
+            raise ValueError("public_url target must use http or https")
+        if not parsed.hostname:
+            raise ValueError("public_url target must include a hostname")
+        if _is_blocked_public_url_host(parsed.hostname):
+            raise ValueError("public_url target host is not allowed")
+        return self
 
 
 class TaskAcceptedData(BaseModel):
@@ -107,3 +123,25 @@ class AgentStepSummaryData(BaseModel):
 class TaskAgentStepsData(BaseModel):
     task_id: str
     steps: list[AgentStepSummaryData]
+
+
+def _is_blocked_public_url_host(hostname: str) -> bool:
+    normalized = hostname.strip().lower().rstrip(".")
+    if normalized in {"localhost", "0", "0.0.0.0"}:
+        return True
+    if normalized.endswith(".localhost") or normalized.endswith(".local"):
+        return True
+    try:
+        address = ip_address(normalized)
+    except ValueError:
+        return False
+    return any(
+        (
+            address.is_private,
+            address.is_loopback,
+            address.is_link_local,
+            address.is_multicast,
+            address.is_reserved,
+            address.is_unspecified,
+        )
+    )

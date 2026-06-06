@@ -229,8 +229,9 @@ class SQLAlchemyEvidenceChainStore:
                 "step_type": step.step_type,
                 "status": step.status,
                 "tool_name": step.tool_name,
-                "tool_input": dict(step.tool_input or {}),
-                "tool_output": dict(step.tool_output or {}),
+                "tool_input_keys": sorted((step.tool_input or {}).keys()),
+                "tool_output_keys": sorted((step.tool_output or {}).keys()),
+                "error_code": _tool_error_code(step.tool_output or {}),
             },
         )
 
@@ -290,3 +291,11 @@ def _preview(value: str, max_length: int = 280) -> str:
     if len(normalized) <= max_length:
         return normalized
     return f"{normalized[: max_length - 3]}..."
+
+
+def _tool_error_code(tool_output: dict) -> str | None:
+    error = tool_output.get("error")
+    if isinstance(error, dict):
+        code = error.get("code")
+        return code if isinstance(code, str) else None
+    return None

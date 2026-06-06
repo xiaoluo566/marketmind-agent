@@ -61,7 +61,7 @@ export type AgentStep = {
 
 export type Evidence = {
   evidence_id: string;
-  source_type: "review" | "crawler_artifact" | "agent_step";
+  source_type: "review" | "review_chunk" | "crawler_artifact" | "artifact" | "agent_step" | "missing";
   source_url: string;
   similarity: number;
   rating?: number;

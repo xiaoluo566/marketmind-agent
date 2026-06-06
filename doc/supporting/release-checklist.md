@@ -6,6 +6,7 @@
 - 数据迁移脚本可执行
 - `.env.example` 已更新
 - README 与文档入口已同步
+- 阶段审计文档已更新
 - 关键指标已记录
 
 ## 发版时
@@ -25,4 +26,3 @@
 ## 与其他文档关系
 
 发版前要同时看 `testing-strategy.md`、`deployment.md`、`milestones-and-acceptance.md`、`demo-script.md`。
-

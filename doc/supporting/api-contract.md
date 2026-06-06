@@ -31,7 +31,7 @@
 | `GET /api/tasks/{task_id}` | 已实现 | 已真实接入 | 任务详情页状态快照 |
 | `GET /api/tasks/{task_id}/events` | 已实现 | 已真实接入 | 任务详情页事件时间线 |
 | `GET /api/tasks/{task_id}/steps` | 已实现 | 已真实接入 | 返回脱敏 Agent step 摘要，任务详情页轮询刷新 |
-| `GET /api/reports/{report_id}/evidence` | 已实现 | 待接入详情页 | Day 17 已完成后端证据链 API |
+| `GET /api/reports/{report_id}/evidence` | 已实现 | 已真实接入报告详情页 | 返回结构化证据链，Agent step metadata 已脱敏 |
 | `GET /api/tasks` | 已实现 | 已真实接入 | 历史任务列表，支持状态、时间、分页 |
 | `GET /api/reports` | 已实现 | 已真实接入 | 历史报告列表，返回 task_status、risk_score、evidence_count |
 | `GET /api/reports/{report_id}` | 已实现 | 已真实接入 | 报告详情，返回 sections、Markdown 和 evidence refs |
@@ -40,7 +40,7 @@
 | `POST /api/uploads` | 未实现 | 未接入 | 手工数据上传后续实现 |
 | `WS /ws/tasks/{task_id}` | 未实现 | 未接入 | 第一版继续使用查询/轮询 |
 
-前端 fallback 只用于后端未实现接口或非核心辅助数据，不应掩盖 `POST /api/tasks`、`GET /api/tasks/{task_id}`、`GET /api/tasks/{task_id}/events`、`GET /api/tasks`、`GET /api/reports` 和 `GET /api/reports/{report_id}` 的真实错误。`GET /api/tasks/{task_id}/steps` 失败时前端可降级为空数组，避免进度详情页整体不可用。
+前端 fallback 只用于后端未实现接口或非核心辅助数据，不应掩盖 `POST /api/tasks`、`GET /api/tasks/{task_id}`、`GET /api/tasks/{task_id}/events`、`GET /api/tasks`、`GET /api/reports`、`GET /api/reports/{report_id}` 和 `GET /api/reports/{report_id}/evidence` 的真实错误。`GET /api/tasks/{task_id}/steps` 失败时前端可降级为空数组，避免进度详情页整体不可用。
 
 ## 接口细化
 
@@ -56,6 +56,12 @@ Day 6 开始补任务进度事件流：API 和 Worker 每次关键状态变化�
 Day 7 已把关键任务状态和事件同步到 PostgreSQL，形成长期审计和恢复层。Redis 仍然承担实时进度读取职责。
 Day 8 开始接入 crawler 最小采集：`public_url` 任务会在 Worker 中进入采集阶段，成功写入 `crawl completed` 事件，失败写入 `crawl failed` 事件并标记任务失败。
 Day 9 开始把 crawler 成功结果写入 PostgreSQL：`crawl completed` 事件的 payload 会追加 `persisted` 字段，包含 `product_id`、`page_id`、`artifact_ids` 和 `review_ids`。
+
+阶段审计补充：
+
+- `source_type=public_url` 时，`target` 必须是 `http` 或 `https`。
+- `public_url` 禁止 localhost、`.local`、loopback、private、link-local、reserved、multicast、unspecified 地址。
+- 这条校验用于降低把后端 crawler 变成内网探测工具的 SSRF 风险。
 
 输入：
 
@@ -236,7 +242,7 @@ Day 21 实现范围：
 - `body`
 - `evidence_ids`
 
-注意：当前前端历史命名仍为 `evidence_ids`，但真实后端值是 `chunk:xxx`、`step:xxx` 这样的 evidence refs。后续报告详情接证据链时需要统一命名。
+注意：当前前端历史命名仍为 `evidence_ids`，但真实后端值是 `chunk:xxx`、`step:xxx` 这样的 evidence refs。报告详情页已经通过 `GET /api/reports/{report_id}/evidence` 回查证据链，后续还需要把字段名统一为 `evidence_refs`。
 
 ### `GET /api/reports/{report_id}/evidence`
 
@@ -248,6 +254,12 @@ Day 17 实现范围：
 - 支持 `chunk:{chunk_id}`、`review:{review_id}`、`artifact:{artifact_id}`、`step:{step_id}`。
 - 每个 evidence source 都返回 `available`、`source_type`、`content_preview`、`source_url`、`parent_refs` 和 `metadata`。
 - 不存在或跨任务的 evidence ref 返回 `available=false`，并写入 `missing_reason`。
+
+阶段审计补充：
+
+- 报告详情页已经调用该接口，不再用全局 `/api/evidence` mock 数据拼报告证据。
+- `agent_step` 类型证据只返回 `tool_input_keys`、`tool_output_keys`、`error_code` 等摘要元数据。
+- `agent_step` 类型证据不返回完整 `tool_input` 和 `tool_output`，避免把内部工具参数或模型中间产物直接暴露到前端。
 
 输出：
 

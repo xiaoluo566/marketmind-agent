@@ -78,7 +78,8 @@ Day 21 已补齐历史任务和历史报告真实接口，可观测性开始从�
 - 历史任务保留 `trace_id`、`error_code`、`error_message`、`created_at`、`updated_at`。
 - 失败任务不会从历史列表消失，便于后续统计失败类型。
 - `GET /api/reports` 可以按报告维度回看历史分析产物。
-- `GET /api/reports/{report_id}` 可以打开旧报告，后续可继续接入 evidence chain。
+- `GET /api/reports/{report_id}` 可以打开旧报告。
+- `GET /api/reports/{report_id}/evidence` 可以在报告详情页回看 evidence chain。
 
 这为 Day 22 的日志和错误分类提供了入口：日志不是孤立文本，而应该能和 `task_id`、`trace_id`、`report_id`、`agent_run_id` 关联起来。
 

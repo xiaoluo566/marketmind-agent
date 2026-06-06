@@ -339,9 +339,9 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 
 这个项目目前推进到 Day 20，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
 
-- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、工具 schema、工具注册机制、最小 ReAct 状态机、Agent step 落库、Agent step 查询 API、结构化输出 guardrails、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、`search_reviews_tool`、结构化报告生成骨架、报告入库、证据链回查 API、评论风险机会评分、前端真实任务提交、任务状态/事件/steps 轮询读取、错误 envelope、测试。
-- 正在做：历史任务和历史报告真实接口。
-- 后续做：真实 embedding provider、pgvector 原生检索、真实 LLM report prompt、部署。
+- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、工具 schema、工具注册机制、最小 ReAct 状态机、Agent step 落库、Agent step 查询 API、结构化输出 guardrails、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、`search_reviews_tool`、结构化报告生成骨架、报告入库、证据链回查 API、评论风险机会评分、前端真实任务提交、任务状态/事件/steps 轮询读取、历史任务、历史报告、报告详情、报告 evidence chain 前端接入、错误 envelope、测试。
+- 正在做：Day 1-21 阶段审计和主分支合并准备。
+- 后续做：任务重试、全局 evidence 检索、真实 embedding provider、pgvector 原生检索、真实 LLM report prompt、部署。
 
 我认为这反而是加分项。因为真实开发中，清楚知道自己完成了什么、没完成什么，比把项目包装得过满更可信。
 
@@ -476,11 +476,10 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 - 真实 embedding API 接入。
 - pgvector 原生相似度 SQL。
 - 真实 LLM report prompt。
-- 报告详情页前端证据链展示。
 - 历史列表筛选控件。
 - Docker Compose 全链路一键启动。
 
-面试时可以诚实讲：这个项目正在按 30 天里程碑推进，目前已经完成底层任务入口、异步管线、任务事件流、PostgreSQL 持久化、Playwright 最小采集、采集结果入库、Agent 工具契约、最小 ReAct 状态机、结构化输出 guardrails、短期记忆压缩、评论 RAG 索引基础、`search_reviews_tool`、结构化报告生成骨架、报告证据链回查、可解释评分 baseline、Next.js 真实任务提交、任务详情轮询、历史任务列表、历史报告列表和报告详情真实接入。下一阶段会补日志观测、真实 report prompt、部署和 E2E。重点是展示工程化思路和持续推进能力，而不是假装已经做完所有功能。
+面试时可以诚实讲：这个项目正在按 30 天里程碑推进，目前已经完成底层任务入口、异步管线、任务事件流、PostgreSQL 持久化、Playwright 最小采集、采集结果入库、Agent 工具契约、最小 ReAct 状态机、结构化输出 guardrails、短期记忆压缩、评论 RAG 索引基础、`search_reviews_tool`、结构化报告生成骨架、报告证据链回查、可解释评分 baseline、Next.js 真实任务提交、任务详情轮询、历史任务列表、历史报告列表、报告详情和报告 evidence chain 真实接入。下一阶段会补日志观测、真实 report prompt、部署和 E2E。重点是展示工程化思路和持续推进能力，而不是假装已经做完所有功能。
 
 ## 2 分钟项目介绍话术
 
@@ -1529,7 +1528,7 @@ Day 21 做完后，项目从单次链路变成了可积累链路：
 - 任务可以回看。
 - 失败任务不会消失。
 - 报告可以从列表重新打开。
-- 报告详情可以继续接证据链。
+- 报告详情可以直接展示 evidence chain。
 - 后续 LLMOps 可以按历史任务统计耗时、失败率和成本。
 
 面试时可以这样讲：
@@ -1831,7 +1830,7 @@ Agent step 状态：
 - 真实 embedding provider。
 - pgvector 原生向量排序。
 - 真实 LLM report prompt。
-- 报告详情页和前端证据链展示。
+- 更完整的报告证据链交互，例如跳转到原始来源、展开 metadata、显示缺失证据原因。
 
 后期：
 
@@ -1851,4 +1850,4 @@ Agent step 状态：
 
 如果让你说下一步：
 
-> 下一步我会补日志、trace、错误分类和更完整的报告证据链前端展示，让历史任务不仅能查到，还能更快定位失败原因和报告证据来源。
+> 下一步我会补日志、trace、错误分类和更完整的证据来源交互，让历史任务不仅能查到，还能更快定位失败原因和报告证据来源。

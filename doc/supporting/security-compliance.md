@@ -7,6 +7,13 @@
 - 不允许任意文件路径读取
 - 上传文件限制大小和类型
 
+### 当前实现状态
+
+- `TaskCreateRequest` 已通过 Pydantic 校验 `source_type=public_url` 的 target。
+- `public_url` 只允许 `http` 和 `https`。
+- `public_url` 拒绝 localhost、`.local`、loopback、private、link-local、reserved、multicast、unspecified 地址。
+- 回归测试：`tests/test_tasks_api.py::test_create_task_rejects_unsafe_public_url_targets`。
+
 ## Secret 管理
 
 - API key 不进 Git
@@ -48,6 +55,7 @@
 - 模型不能直接执行 shell 命令
 - 模型不能直接写数据库
 - 模型输出必须经过 schema
+- 面向前端的 Agent step / evidence chain 只展示摘要和 key 列表，不暴露完整 tool input/output
 
 ## 与其他文档关系
 
