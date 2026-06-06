@@ -84,6 +84,29 @@ Day 10 起工具契约由 `backend/app/agent/tools/` 维护：
 
 Agent 后续只能通过 registry 和 executor 调用工具，不允许直接绕过 schema 调用具体业务函数。
 
+## Day 15 `search_reviews_tool`
+
+Day 15 将评论检索能力接入工具注册表。当前工具注册策略：
+
+- 默认 `build_default_tool_registry()` 只注册 `crawl_product_tool`。
+- 传入 `review_chunk_store` 和 `embedding_provider` 时，额外注册 `search_reviews_tool`。
+
+这样做是为了避免默认工具注册表在测试或无数据库场景下强依赖 RAG 存储。
+
+`search_reviews_tool` 的 Action 语义：
+
+```text
+Thought: 需要确认是否存在退货和售后差评证据
+Action: search_reviews_tool(query="return support", top_k=5, filters.rating_lte=2)
+Observation: 返回相关 review chunks 和 evidence refs
+```
+
+Agent 看到工具结果时必须遵守：
+
+- `results` 非空：只能基于返回 chunk 形成结论。
+- `results` 为空：必须记录证据不足，不能继续编造。
+- 报告后续引用必须使用 `evidence_refs`。
+
 ## Day 11 最小实现
 
 Day 11 已经把状态机从文档推进到代码。当前实现位置：

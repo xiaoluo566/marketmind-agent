@@ -114,6 +114,52 @@ reviews.content
 
 Day 15 做 `search_reviews_tool` 时，可以复用这个 store 的输出契约。后续接真实 PostgreSQL 时，可以把 Python cosine 替换成 pgvector 原生排序，但不要改变工具返回字段。
 
+## Day 15 Agent 检索工具
+
+Day 15 新增 `search_reviews_tool`，把 Day 14 的检索能力包装成 Agent 工具。
+
+工具输入：
+
+- `query`
+- `task_id`
+- `top_k`
+- `min_similarity`
+- `filters.rating_lte`
+- `filters.rating_gte`
+- `filters.source_type`
+
+工具输出：
+
+- `results`
+- `evidence_refs`
+- `no_results_reason`
+- `metadata`
+
+每条 result 都必须携带：
+
+- `chunk_id`
+- `review_id`
+- `review_external_id`
+- `content`
+- `similarity`
+- `source_url`
+- `rating`
+- `evidence_ref`
+
+`evidence_ref` 当前格式为 `chunk:{chunk_id}`。后续报告生成时只能引用这些 evidence refs，不能引用没有召回到的评论。
+
+如果没有结果，工具必须返回：
+
+```json
+{
+  "results": [],
+  "evidence_refs": [],
+  "no_results_reason": "NO_REVIEW_CHUNKS_ABOVE_THRESHOLD"
+}
+```
+
+这条约束的目的不是让工具“看起来成功”，而是给 Agent 一个明确降级信号：证据不足时不要编造结论。
+
 ## 检索流程
 
 1. Agent 提出检索意图

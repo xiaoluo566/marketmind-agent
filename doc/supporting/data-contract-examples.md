@@ -465,6 +465,70 @@ step 2 action: 调用工具 crawl_product_tool，参数：{...}
 }
 ```
 
+## `search_reviews_tool` 输入示例
+
+```json
+{
+  "task_id": "tsk_01HXYZ",
+  "query": "return support",
+  "top_k": 5,
+  "min_similarity": 0.2,
+  "filters": {
+    "rating_lte": 2.0,
+    "rating_gte": null,
+    "source_type": "crawler"
+  }
+}
+```
+
+## `search_reviews_tool` 输出示例
+
+```json
+{
+  "query": "return support",
+  "task_id": "tsk_01HXYZ",
+  "results": [
+    {
+      "chunk_id": "chk_01HXYZ",
+      "review_id": "rev_01HREVIEW",
+      "review_external_id": "rev-return",
+      "content": "The pump failed after three days. Return request and support were ignored.",
+      "similarity": 0.82,
+      "source_url": "https://example.com/product/espresso#rev-return",
+      "rating": 1.0,
+      "evidence_ref": "chunk:chk_01HXYZ",
+      "metadata": {
+        "source_type": "crawler"
+      }
+    }
+  ],
+  "evidence_refs": ["chunk:chk_01HXYZ"],
+  "no_results_reason": null,
+  "metadata": {
+    "top_k": 5,
+    "min_similarity": 0.2,
+    "embedding_model": "fake-embedding-v1",
+    "embedding_dimensions": 1536
+  }
+}
+```
+
+召回为空时：
+
+```json
+{
+  "query": "return support",
+  "task_id": "tsk_01HXYZ",
+  "results": [],
+  "evidence_refs": [],
+  "no_results_reason": "NO_REVIEW_CHUNKS_ABOVE_THRESHOLD",
+  "metadata": {
+    "top_k": 5,
+    "min_similarity": 1.0
+  }
+}
+```
+
 ## 作用
 
 这些示例是给 `api-contract.md`、`data-model.md`、`agent-state-machine.md`、`model-and-data-decisions.md` 和 `testing-strategy.md` 共用的参考样例。

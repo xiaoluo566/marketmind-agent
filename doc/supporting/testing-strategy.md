@@ -62,6 +62,21 @@ Day 14 新增 `tests/test_review_rag_indexing.py`，当前覆盖：
 - pgvector `<=>` 排序结果。
 - 相似度阈值过低时的“证据不足”行为。
 
+## Day 15 工具测试边界
+
+Day 15 新增 `tests/test_search_reviews_tool.py`，当前覆盖：
+
+- 传入 RAG store 和 embedding provider 后，registry 能注册 `search_reviews_tool`。
+- query 命中评论时，工具返回 evidence chunk 和 `chunk:{chunk_id}` 格式的 evidence ref。
+- `rating_lte` 过滤可以保留低分差评。
+- 高 `min_similarity` 导致召回为空时，工具返回空 `results`、空 `evidence_refs` 和 `NO_REVIEW_CHUNKS_ABOVE_THRESHOLD`。
+
+后续 Day 16 - Day 17 报告测试需要验证：
+
+- 报告只能引用 `evidence_refs` 中出现过的 chunk。
+- `no_results_reason` 存在时，报告必须标注证据不足。
+- 不能把 query 本身写成事实。
+
 ## 回归要求
 
 任何 bug 修复都要留下一个能复现旧问题的测试。没有测试的修复，后续很容易被重构再次破坏。

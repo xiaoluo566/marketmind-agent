@@ -47,8 +47,8 @@
 | --- | --- |
 | 稳定分支 | `main` |
 | 日常开发分支 | `dev` |
-| 当前开发阶段 | Day 14 已完成，准备进入 Day 15 |
-| 当前主链路 | 文档基线、Next.js 控制台骨架、FastAPI health、任务创建 API、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、相似度检索原型、数据库模型、Alembic 迁移 |
+| 当前开发阶段 | Day 15 已完成，准备进入 Day 16 |
+| 当前主链路 | 文档基线、Next.js 控制台骨架、FastAPI health、任务创建 API、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、相似度检索原型、search_reviews_tool、数据库模型、Alembic 迁移 |
 | 最新开发提交 | 以 `git log -1 --oneline` 为准 |
 | 当前数据库决策 | PostgreSQL + pgvector，review chunk 使用 `vector(1536)` |
 | 当前模型决策 | 默认 `gpt-5.4-mini`，报告模型 `gpt-5.5`，embedding `text-embedding-3-small` |
@@ -93,7 +93,7 @@
 | Day 12 | Done | Pydantic Guardrails 与 self-heal | `5b1c0cf` |
 | Day 13 | Done | 短期记忆与上下文压缩 | `c552801` |
 | Day 14 | Done | 评论切片与 embedding 写入 | `ed4597d` |
-| Day 15 | Pending | `search_reviews_tool` 语义检索 | 待记录 |
+| Day 15 | Done | `search_reviews_tool` 语义检索 | 待提交 |
 | Day 16 | Pending | 报告 schema 与报告生成 | 待记录 |
 | Day 17 | Pending | 证据链引用和报告可追溯 | 待记录 |
 | Day 18 | Pending | 评论机会点评分与风险分析 | 待记录 |
@@ -962,6 +962,68 @@ Day 14 的目标是把 Day 9 已入库的原始评论变成可检索的长期记
 
 进入 Day 15，把 Day 14 的 review chunk 检索能力包装成 Agent 可调用工具，并补充工具 schema、错误分类和 evidence refs。
 
+## Day 15 记录
+
+### 实际完成
+
+Day 15 的目标是把 Day 14 的 RAG 检索能力变成 Agent 可调用工具。今天完成了 `search_reviews_tool` 的输入输出 schema、依赖注入注册、证据片段输出和空召回降级逻辑。
+
+完成内容：
+
+- 新增 `SearchReviewsFilter`，支持评分和来源过滤。
+- 新增 `SearchReviewsToolInput`，包含 `query`、`task_id`、`top_k`、`min_similarity` 和 `filters`。
+- 新增 `ReviewEvidenceChunk`，规范工具返回的证据片段。
+- 新增 `SearchReviewsToolOutput`，包含 `results`、`evidence_refs`、`no_results_reason` 和 metadata。
+- 新增 `build_search_reviews_tool_spec`。
+- 新增 `run_search_reviews_tool`。
+- `build_default_tool_registry` 支持可选注入 `review_chunk_store` 和 `embedding_provider`。
+- 默认不传 RAG 依赖时仍只注册 `crawl_product_tool`，避免无数据库场景被 RAG 依赖卡住。
+- 工具返回 evidence ref，格式为 `chunk:{chunk_id}`。
+- 召回为空时返回 `NO_REVIEW_CHUNKS_ABOVE_THRESHOLD`，不编造证据。
+- 新增 `tests/test_search_reviews_tool.py`，覆盖注册、召回和空结果降级。
+
+### 当天选择思考
+
+今天优先做 `search_reviews_tool`，是因为 Day 14 只是完成了 RAG 数据层。Agent 仍然不能主动使用这份评论索引。只有把检索包装成标准工具，后续 ReAct 状态机才能把“需要查退货差评”变成一次可落库、可回放、可失败降级的 Action。
+
+我选择把 `search_reviews_tool` 做成依赖注入注册，而不是默认总是注册，是因为搜索工具需要 `review_chunk_store` 和 `embedding_provider`。如果默认 registry 强依赖数据库，会破坏 Day 10 的工具单元测试和无 RAG 环境下的 crawler 工具使用。
+
+我把 `min_similarity`、评分过滤和 `no_results_reason` 放在工具层，是为了让“证据不足”成为确定性输出，而不是交给模型自由判断。这样后续报告生成可以直接根据 `evidence_refs` 和 `no_results_reason` 决定是否下结论。
+
+### 关键文件
+
+- `backend/app/agent/tools/builtin.py`
+- `tests/test_search_reviews_tool.py`
+- `doc/roadmap/day-15.md`
+- `doc/supporting/rag-memory.md`
+- `doc/supporting/agent-state-machine.md`
+- `doc/supporting/data-contract-examples.md`
+- `doc/supporting/testing-strategy.md`
+- `doc/supporting/interview-defense-dossier.md`
+
+### 验证记录
+
+- `uv run pytest tests\test_search_reviews_tool.py`：3 passed
+- `uv run pytest tests\test_agent_tools.py tests\test_review_rag_indexing.py tests\test_search_reviews_tool.py`：14 passed
+- `uv run pytest`：75 passed
+- `uv run ruff check backend tests migrations`：通过
+- `uv run alembic heads`：`0002_task_queue_id (head)`
+- `npm run build`：通过
+
+### 提交记录
+
+- 待提交
+
+### 遗留问题
+
+- 当前工具底层仍使用 Day 14 的 fake embedding 和 Python cosine 检索。
+- 还没有把 `search_reviews_tool` 接入真实多轮 planner。
+- Day 16 报告生成必须强制只引用 `evidence_refs`，不能引用 query 本身。
+
+### 下一步
+
+进入 Day 16，定义报告 schema 和报告生成输入，把 `search_reviews_tool` 的 evidence chunks 转成可校验的报告结构。
+
 ## Day 08 到 Day 14 记录模板
 
 第二周重点从数据采集进入 Agent 工具和状态机。每天开发后按下面格式补充。
@@ -975,6 +1037,7 @@ Day 14 的目标是把 Day 9 已入库的原始评论变成可检索的长期记
 | Day 12 | Pydantic Guardrails 与 self-heal | 结构化输出守门、JSON repair prompt、run 指标累计 | pytest + ruff + build 通过 | `5b1c0cf` |
 | Day 13 | 短期记忆与上下文压缩 | 短期记忆 snapshot、滑动窗口摘要、证据 ID 保留、从 Agent step 恢复、状态机接入记忆 | pytest 67 passed，ruff 通过，alembic head 正常，npm build 通过 | `c552801` |
 | Day 14 | 评论切片与 embedding 写入 | 评论清洗、切片、fake embedding、review chunk 幂等入库、相似度检索原型 | pytest 72 passed，ruff 通过，alembic head 正常，npm build 通过 | `ed4597d` |
+| Day 15 | `search_reviews_tool` 语义检索 | 工具 schema、依赖注入注册、evidence chunk、空召回降级 | pytest 75 passed，ruff 通过，alembic head 正常，npm build 通过 | 待提交 |
 
 ## Day 15 到 Day 21 记录模板
 
@@ -982,7 +1045,7 @@ Day 14 的目标是把 Day 9 已入库的原始评论变成可检索的长期记
 
 | Day | 计划主题 | 实际完成 | 验证 | 提交 |
 | --- | --- | --- | --- | --- |
-| Day 15 | `search_reviews_tool` 语义检索 | 待记录 | 待记录 | 待记录 |
+| Day 15 | `search_reviews_tool` 语义检索 | 工具 schema、依赖注入注册、evidence chunk、空召回降级 | pytest 75 passed，ruff 通过，alembic head 正常，npm build 通过 | 待提交 |
 | Day 16 | 报告 schema 与报告生成 | 待记录 | 待记录 | 待记录 |
 | Day 17 | 证据链引用和报告可追溯 | 待记录 | 待记录 | 待记录 |
 | Day 18 | 评论机会点评分与风险分析 | 待记录 | 待记录 | 待记录 |

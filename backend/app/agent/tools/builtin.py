@@ -9,6 +9,8 @@ from app.agent.tools.registry import ToolRegistry
 from app.agent.tools.schemas import ToolArtifact, ToolInvocationContext, ToolSpec
 from app.crawler import CrawlErrorCode, CrawlRequest, crawl_product_page
 from app.crawler.schemas import CrawlReview
+from app.rag.embeddings import EmbeddingProvider
+from app.rag.review_index import SQLAlchemyReviewChunkStore
 
 
 class CrawlProductToolInput(BaseModel):
@@ -36,9 +38,55 @@ class CrawlProductToolOutput(BaseModel):
     metadata: dict = Field(default_factory=dict)
 
 
-def build_default_tool_registry() -> ToolRegistry:
+class SearchReviewsFilter(BaseModel):
+    rating_lte: float | None = Field(default=None, ge=0, le=5)
+    rating_gte: float | None = Field(default=None, ge=0, le=5)
+    source_type: str | None = None
+
+
+class ReviewEvidenceChunk(BaseModel):
+    chunk_id: str
+    review_id: str
+    review_external_id: str | None = None
+    content: str
+    similarity: float = Field(ge=0, le=1)
+    source_url: str | None = None
+    rating: float | None = None
+    evidence_ref: str
+    metadata: dict = Field(default_factory=dict)
+
+
+class SearchReviewsToolInput(BaseModel):
+    query: str = Field(min_length=1)
+    task_id: str | None = None
+    top_k: int = Field(default=5, ge=1, le=20)
+    min_similarity: float = Field(default=0.0, ge=0, le=1)
+    filters: SearchReviewsFilter = Field(default_factory=SearchReviewsFilter)
+
+
+class SearchReviewsToolOutput(BaseModel):
+    query: str
+    task_id: str
+    results: list[ReviewEvidenceChunk] = Field(default_factory=list)
+    evidence_refs: list[str] = Field(default_factory=list)
+    no_results_reason: str | None = None
+    metadata: dict = Field(default_factory=dict)
+
+
+def build_default_tool_registry(
+    *,
+    review_chunk_store: SQLAlchemyReviewChunkStore | None = None,
+    embedding_provider: EmbeddingProvider | None = None,
+) -> ToolRegistry:
     registry = ToolRegistry()
     registry.register(build_crawl_product_tool_spec())
+    if review_chunk_store is not None and embedding_provider is not None:
+        registry.register(
+            build_search_reviews_tool_spec(
+                review_chunk_store=review_chunk_store,
+                embedding_provider=embedding_provider,
+            )
+        )
     return registry
 
 
@@ -97,3 +145,106 @@ def run_crawl_product_tool(
             "fetched_at": result.fetched_at.isoformat(),
         },
     )
+
+
+def build_search_reviews_tool_spec(
+    *,
+    review_chunk_store: SQLAlchemyReviewChunkStore,
+    embedding_provider: EmbeddingProvider,
+) -> ToolSpec:
+    def handler(
+        payload: SearchReviewsToolInput,
+        context: ToolInvocationContext,
+    ) -> SearchReviewsToolOutput:
+        return run_search_reviews_tool(
+            payload,
+            context,
+            review_chunk_store=review_chunk_store,
+            embedding_provider=embedding_provider,
+        )
+
+    return ToolSpec(
+        name="search_reviews_tool",
+        description="Search indexed review chunks for evidence related to a product risk query.",
+        input_schema=SearchReviewsToolInput,
+        output_schema=SearchReviewsToolOutput,
+        handler=handler,
+        version="v1",
+        idempotent=True,
+        retryable=False,
+        timeout_ms=15_000,
+        error_codes=(
+            "NO_REVIEW_CHUNKS_ABOVE_THRESHOLD",
+            "REVIEW_INDEX_UNAVAILABLE",
+        ),
+    )
+
+
+def run_search_reviews_tool(
+    payload: SearchReviewsToolInput,
+    context: ToolInvocationContext,
+    *,
+    review_chunk_store: SQLAlchemyReviewChunkStore,
+    embedding_provider: EmbeddingProvider,
+) -> SearchReviewsToolOutput:
+    task_id = payload.task_id or context.task_id
+    raw_results = review_chunk_store.search_similar_reviews(
+        task_id=task_id,
+        query=payload.query,
+        embedding_provider=embedding_provider,
+        top_k=payload.top_k,
+    )
+    filtered_results = [
+        result
+        for result in raw_results
+        if result.similarity >= payload.min_similarity
+        and _matches_rating_filter(result.rating, payload.filters)
+        and _matches_source_type(result.metadata, payload.filters)
+    ]
+    evidence_chunks = [
+        ReviewEvidenceChunk(
+            chunk_id=result.chunk_id,
+            review_id=result.review_id,
+            review_external_id=result.review_external_id,
+            content=result.content,
+            similarity=result.similarity,
+            source_url=result.source_url,
+            rating=result.rating,
+            evidence_ref=f"chunk:{result.chunk_id}",
+            metadata=result.metadata,
+        )
+        for result in filtered_results
+    ]
+    evidence_refs = [chunk.evidence_ref for chunk in evidence_chunks]
+    no_results_reason = None
+    if not evidence_chunks:
+        no_results_reason = "NO_REVIEW_CHUNKS_ABOVE_THRESHOLD"
+
+    return SearchReviewsToolOutput(
+        query=payload.query,
+        task_id=task_id,
+        results=evidence_chunks,
+        evidence_refs=evidence_refs,
+        no_results_reason=no_results_reason,
+        metadata={
+            "top_k": payload.top_k,
+            "min_similarity": payload.min_similarity,
+            "embedding_model": embedding_provider.model_name,
+            "embedding_dimensions": embedding_provider.dimensions,
+            "filters": payload.filters.model_dump(mode="json"),
+        },
+    )
+
+
+def _matches_rating_filter(rating: float | None, filters: SearchReviewsFilter) -> bool:
+    if filters.rating_lte is not None and (rating is None or rating > filters.rating_lte):
+        return False
+    if filters.rating_gte is not None and (rating is None or rating < filters.rating_gte):
+        return False
+    return True
+
+
+def _matches_source_type(metadata: dict, filters: SearchReviewsFilter) -> bool:
+    if filters.source_type is None:
+        return True
+    return metadata.get("source_type") == filters.source_type

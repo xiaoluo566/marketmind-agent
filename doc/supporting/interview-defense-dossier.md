@@ -108,6 +108,12 @@ Day 14 做评论切片、fake embedding 和 `review_chunks` 入库，是因为�
 
 > Day 14 我开始做长期记忆。这里我没有直接接真实 embedding API，而是先用 fake provider 把清洗、切片、维度约束、幂等写入和检索返回格式跑通。因为真实 API 是可替换外部依赖，先把数据链路稳定下来更重要。
 
+Day 15 做 `search_reviews_tool`，是因为 Day 14 的 RAG 检索还只是后端能力，Agent 无法直接通过标准工具调用它。今天我把检索封装成 Pydantic schema 约束的工具：输入包含 query、top_k、min_similarity 和 filters，输出包含 evidence chunks、evidence refs 和 no_results_reason。召回为空时工具明确返回证据不足，不允许模型自己补结论。
+
+面试时可以这样讲：
+
+> Day 15 我把 RAG 检索接进 Agent 工具层。重点不是让模型直接读数据库，而是让模型提出检索意图，后端工具负责过滤、召回和证据引用。这样报告后续只能基于 evidence refs 生成，能减少幻觉。
+
 ### Day 8 之后追加模板
 
 ```markdown
@@ -301,11 +307,11 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 
 ### 7. 我对“不要夸大进度”的思考
 
-这个项目目前推进到 Day 14，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
+这个项目目前推进到 Day 15，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
 
-- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、工具 schema、工具注册机制、最小 ReAct 状态机、Agent step 落库、结构化输出 guardrails、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、错误 envelope、测试。
-- 正在做：把 RAG 检索包装成 Agent tool。
-- 后续做：真实 embedding provider、pgvector 原生检索、报告、前端真实接入、部署。
+- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、工具 schema、工具注册机制、最小 ReAct 状态机、Agent step 落库、结构化输出 guardrails、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、`search_reviews_tool`、错误 envelope、测试。
+- 正在做：报告 schema 和报告生成。
+- 后续做：真实 embedding provider、pgvector 原生检索、证据链报告、前端真实接入、部署。
 
 我认为这反而是加分项。因为真实开发中，清楚知道自己完成了什么、没完成什么，比把项目包装得过满更可信。
 
@@ -347,7 +353,7 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 
 ## 当前开发进度怎么讲
 
-截至 Day 14，项目已经完成：
+截至 Day 15，项目已经完成：
 
 - 文档体系、30 天 roadmap、开发日志。
 - Next.js 控制台骨架。
@@ -392,6 +398,10 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 - `SQLAlchemyReviewChunkStore`，把 reviews 写入 `review_chunks`。
 - `ReviewChunkIndexResult`，记录 review_count、chunk_count、embedding_model、embedding_dimensions。
 - `search_similar_reviews`，返回 chunk、review 来源、评分和 similarity。
+- `search_reviews_tool`，让 Agent 通过标准工具检索评论证据。
+- `SearchReviewsToolInput` 和 `SearchReviewsToolOutput`，约束检索输入输出。
+- `ReviewEvidenceChunk`，统一证据片段格式。
+- `no_results_reason`，让召回为空时明确标注证据不足。
 - 工具调用前后状态落库，Action step 能从 pending/running 更新为 success/failed。
 - Agent 工具失败时，错误码和失败 observation 会写入数据库，不覆盖旧 step。
 - 队列不可用、状态缓存不可用、参数校验失败的统一错误响应。
@@ -405,12 +415,11 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 - Agent step 前端展示。
 - 真实 embedding API 接入。
 - pgvector 原生相似度 SQL。
-- `search_reviews_tool`。
 - 报告生成。
 - 前端接真实 API。
 - Docker Compose 全链路一键启动。
 
-面试时可以诚实讲：这个项目正在按 30 天里程碑推进，目前已经完成底层任务入口、异步管线、任务事件流、PostgreSQL 持久化、Playwright 最小采集、采集结果入库、Agent 工具契约、最小 ReAct 状态机、结构化输出 guardrails、短期记忆压缩和评论 RAG 索引基础。下一阶段会把相似评论检索包装成 Agent tool，并继续补真实 embedding provider、报告和证据链。重点是展示工程化思路和持续推进能力，而不是假装已经做完所有功能。
+面试时可以诚实讲：这个项目正在按 30 天里程碑推进，目前已经完成底层任务入口、异步管线、任务事件流、PostgreSQL 持久化、Playwright 最小采集、采集结果入库、Agent 工具契约、最小 ReAct 状态机、结构化输出 guardrails、短期记忆压缩、评论 RAG 索引基础和 `search_reviews_tool`。下一阶段会补报告 schema、证据链报告和真实 provider。重点是展示工程化思路和持续推进能力，而不是假装已经做完所有功能。
 
 ## 2 分钟项目介绍话术
 
@@ -994,6 +1003,28 @@ Day 14 的路线图包含 embedding 生成流程，但最终实现没有直接�
 
 > Day 14 我没有为了“看起来接了模型”而直接调用 embedding API。我的判断是：先把数据链路做成可测试、可替换，再接真实 provider。这样真实 API 出问题时，边界会很清楚，不会和切片或入库问题混在一起。
 
+### 问题 15：Day 15 为什么把 RAG 检索封装成工具，而不是让模型直接读数据库
+
+现象：
+
+Day 14 已经有 `search_similar_reviews`，理论上可以让 planner 直接调用 store 或把检索结果塞进 prompt。但 Day 15 仍然专门做了 `search_reviews_tool`。
+
+思考：
+
+Agent 不能直接操作数据库或绕过 schema。否则模型输出、数据库查询、过滤规则和证据引用会混在一起，后续很难测试和回放。工具层应该负责把不稳定的模型意图转成确定性的后端行为。
+
+解决：
+
+- 用 `SearchReviewsToolInput` 限制 query、top_k、min_similarity 和 filters。
+- 用 `SearchReviewsToolOutput` 统一返回 evidence chunks。
+- evidence ref 使用 `chunk:{chunk_id}`。
+- 召回为空时返回 `NO_REVIEW_CHUNKS_ABOVE_THRESHOLD`。
+- 工具通过依赖注入注册，避免默认 registry 强依赖数据库。
+
+面试表达：
+
+> 我不会让模型直接拼 SQL 或直接读数据库。模型只表达“我要找什么证据”，后端工具负责检索、过滤、证据 ID 和空结果降级。这样 Agent 的每一步都能被状态机记录，也能被测试验证。
+
 ## 高频面试问题与回答
 
 ### Q1：你这个项目和普通“调用大模型生成报告”的项目有什么区别？
@@ -1271,6 +1302,17 @@ RAG 是使用长期记忆的一种检索增强流程：先根据问题召回相�
 
 面试时要诚实说：当前 fake provider 只保证流程和接口，真实召回质量要等接入 `text-embedding-3-small` 或兼容 embedding 服务后评估。
 
+### Q23：`search_reviews_tool` 如何避免模型幻觉？
+
+它本身不让模型直接下结论，而是返回结构化证据：
+
+- 每条结果有 `chunk_id`、`review_id`、`source_url`、`rating`。
+- 每条结果有 `evidence_ref`。
+- 工具输出有 `evidence_refs` 汇总。
+- 召回为空时有 `no_results_reason`。
+
+后续报告生成时，prompt 和 schema 必须要求结论绑定 `evidence_refs`。如果 `evidence_refs` 为空，就只能写证据不足，不能把 query 或模型常识写成事实。
+
 ## 面试官可能深挖的技术点
 
 ### 异步任务一致性
@@ -1413,7 +1455,7 @@ Agent step 状态：
 
 ## 目前最适合展示的代码点
 
-截至 Day 14，最适合展示：
+截至 Day 15，最适合展示：
 
 - `backend/app/api/routes/tasks.py`：API 如何接收任务、投递队列、统一错误。
 - `backend/app/tasks/service.py`：任务状态创建和入队流程。
@@ -1436,6 +1478,7 @@ Agent step 状态：
 - `backend/app/rag/text.py`：评论清洗和按句子边界切片。
 - `backend/app/rag/embeddings.py`：embedding provider 抽象和确定性 fake provider。
 - `backend/app/rag/review_index.py`：review chunk 入库、幂等更新和 top_k 检索原型。
+- `backend/app/agent/tools/builtin.py`：`search_reviews_tool` schema、依赖注入注册和证据输出。
 - `backend/app/storage/models.py`：数据库模型设计。
 - `migrations/versions/0002_task_queue_id.py`：任务队列 ID 持久化迁移。
 - `tests/test_task_persistence.py`：任务和事件持久化测试。
@@ -1448,6 +1491,7 @@ Agent step 状态：
 - `tests/test_structured_output_guardrails.py`：坏 JSON 修复、修复失败、repair retry 和指标累计测试。
 - `tests/test_short_term_memory.py`：短期记忆窗口、摘要压缩、证据引用、从 step 恢复和状态机接入测试。
 - `tests/test_review_rag_indexing.py`：评论清洗、切片、fake embedding、入库幂等和相似检索测试。
+- `tests/test_search_reviews_tool.py`：RAG 工具注册、证据返回和空召回降级测试。
 
 ## 如果被问“你在项目中学到了什么”
 
@@ -1473,10 +1517,10 @@ Agent step 状态：
 - Day 12：Pydantic guardrails 和 self-heal 已完成。
 - Day 13：短期记忆滑动窗口和上下文压缩已完成。
 - Day 14：评论切片、fake embedding、review chunk 入库和相似检索原型已完成。
+- Day 15：`search_reviews_tool` 和 evidence chunk 输出已完成。
 
 中期：
 
-- `search_reviews_tool`。
 - 真实 embedding provider。
 - pgvector 原生向量排序。
 - 报告 schema 和报告生成。
@@ -1501,4 +1545,4 @@ Agent step 状态：
 
 如果让你说下一步：
 
-> 下一步我会把 Day 14 的相似评论检索包装成 `search_reviews_tool`，让 Agent 能按“退货、质量、物流、售后”等问题主动召回证据 chunk。
+> 下一步我会做报告 schema 和报告生成，让报告结论只能引用 `search_reviews_tool` 返回的 evidence refs。
