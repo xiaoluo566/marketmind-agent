@@ -99,7 +99,7 @@
 | Day 18 | Done | 评论机会点评分与风险分析 | `dfc2117` |
 | Day 19 | Done | Next.js 接真实 API | `3fab1b3` |
 | Day 20 | Done | 前端任务进度与 Agent step 展示 | `3ff03a8` |
-| Day 21 | Done | 历史任务和历史报告真实接入 | 待提交 |
+| Day 21 | Done | 历史任务和历史报告真实接入 | `ca09e3a` |
 | Day 22 | Pending | 日志、trace、错误分类 | 待记录 |
 | Day 23 | Pending | Docker Compose 一键启动 | 待记录 |
 | Day 24 | Pending | 单元测试、集成测试、固定样例 | 待记录 |
@@ -1474,7 +1474,7 @@ Day 21 的目标是补齐历史任务和历史报告，让系统从“能跑一�
 
 ### 提交记录
 
-- 待提交。
+- `ca09e3a feat: 实现 Day 21 历史任务与报告真实接入`
 
 ### 遗留问题
 
@@ -1515,7 +1515,7 @@ Day 21 的目标是补齐历史任务和历史报告，让系统从“能跑一�
 | Day 18 | 评论机会点评分与风险分析 | `AnalysisScorecard`、维度风险分、机会分、样本不足降权、Markdown 评分展示 | pytest 90 passed，ruff 通过，alembic head 正常，frontend build 通过 | `dfc2117` |
 | Day 19 | Next.js 接真实 API | `POST /api/tasks` 真实提交、任务状态/事件真实读取、API envelope/error 封装、未实现接口 fallback、新建任务表单 | pytest 94 passed，ruff 通过，alembic head 正常，frontend build/lint 通过 | `3fab1b3` |
 | Day 20 | 前端任务进度与 Agent step 展示 | `GET /api/tasks/{task_id}/steps`、脱敏 step 摘要、任务详情轮询面板、空态和刷新错误展示 | pytest 99 passed，ruff 通过，alembic head 正常，frontend build/lint 通过 | `3ff03a8` |
-| Day 21 | 历史任务和历史报告 | `GET /api/tasks`、`GET /api/reports`、`GET /api/reports/{report_id}`、真实前端列表和详情映射、历史查询契约测试 | pytest 105 passed，ruff 通过，alembic head 正常，frontend build/lint 通过 | 待提交 |
+| Day 21 | 历史任务和历史报告 | `GET /api/tasks`、`GET /api/reports`、`GET /api/reports/{report_id}`、真实前端列表和详情映射、历史查询契约测试 | pytest 105 passed，ruff 通过，alembic head 正常，frontend build/lint 通过 | `ca09e3a` |
 
 ## Day 22 到 Day 30 记录模板
 
