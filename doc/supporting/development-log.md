@@ -97,7 +97,7 @@
 | Day 16 | Done | 报告 schema 与确定性报告生成骨架 | `193da03` |
 | Day 17 | Done | 证据链引用和报告可追溯 | `363dd34` |
 | Day 18 | Done | 评论机会点评分与风险分析 | `dfc2117` |
-| Day 19 | Done | Next.js 接真实 API | 待提交 |
+| Day 19 | Done | Next.js 接真实 API | `3fab1b3` |
 | Day 20 | Pending | 前端任务进度与 Agent step 展示 | 待记录 |
 | Day 21 | Pending | 历史任务和历史报告 | 待记录 |
 | Day 22 | Pending | 日志、trace、错误分类 | 待记录 |
@@ -1294,7 +1294,7 @@ Day 19 的目标是把 Next.js 控制台从 mock-first 页面推进到真实 Fas
 
 ### 提交记录
 
-- 待提交：`feat: 实现 Day 19 前端真实 API 接入`
+- `3fab1b3 feat: 实现 Day 19 前端真实 API 接入`
 
 ### 遗留问题
 
@@ -1333,7 +1333,7 @@ Day 19 的目标是把 Next.js 控制台从 mock-first 页面推进到真实 Fas
 | Day 16 | 报告 schema 与确定性报告生成骨架 | `StructuredReport`、证据引用校验、Markdown 渲染、`reports` 入库 | pytest 79 passed，ruff 通过，alembic head 正常，frontend build 通过 | `193da03` |
 | Day 17 | 证据链引用和报告可追溯 | evidence ref 解析、EvidenceChain、Markdown citation、报告证据链 API | pytest 86 passed，ruff 通过，alembic head 正常，frontend build 通过 | `363dd34` |
 | Day 18 | 评论机会点评分与风险分析 | `AnalysisScorecard`、维度风险分、机会分、样本不足降权、Markdown 评分展示 | pytest 90 passed，ruff 通过，alembic head 正常，frontend build 通过 | `dfc2117` |
-| Day 19 | Next.js 接真实 API | `POST /api/tasks` 真实提交、任务状态/事件真实读取、API envelope/error 封装、未实现接口 fallback、新建任务表单 | pytest 94 passed，ruff 通过，alembic head 正常，frontend build/lint 通过 | 待提交 |
+| Day 19 | Next.js 接真实 API | `POST /api/tasks` 真实提交、任务状态/事件真实读取、API envelope/error 封装、未实现接口 fallback、新建任务表单 | pytest 94 passed，ruff 通过，alembic head 正常，frontend build/lint 通过 | `3fab1b3` |
 | Day 20 | 前端任务进度与 Agent step 展示 | 待记录 | 待记录 | 待记录 |
 | Day 21 | 历史任务和历史报告 | 待记录 | 待记录 | 待记录 |
 
