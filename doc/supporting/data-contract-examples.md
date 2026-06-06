@@ -529,6 +529,95 @@ step 2 action: 调用工具 crawl_product_tool，参数：{...}
 }
 ```
 
+## 结构化报告输入示例
+
+Day 16 起，报告生成模块不直接消费自然语言长上下文，而是消费已经结构化的 observations 和 evidence snippets。
+
+```json
+{
+  "task_id": "tsk_01HXYZ",
+  "product_name": "Portable Espresso Maker",
+  "observations": [
+    "Crawler extracted 3 low-rating reviews.",
+    "search_reviews_tool returned evidence for return support and logistics."
+  ],
+  "requested_focus": ["return support", "logistics"],
+  "evidence_snippets": [
+    {
+      "evidence_ref": "chunk:chk_return",
+      "content": "The pump failed after three days and support ignored the return request.",
+      "similarity": 0.86,
+      "rating": 1.0,
+      "source_url": "https://example.com/product/espresso#rev-return",
+      "metadata": {
+        "query": "return support"
+      }
+    }
+  ]
+}
+```
+
+## 结构化报告 JSON 示例
+
+```json
+{
+  "task_id": "tsk_01HXYZ",
+  "title": "Portable Espresso Maker 证据链分析报告",
+  "summary": "基于 1 条可引用评论证据，Portable Espresso Maker 当前需要重点关注：return support。",
+  "status": "draft",
+  "schema_version": "report.v1",
+  "evidence_refs": ["chunk:chk_return"],
+  "sections": [
+    {
+      "section_id": "customer_pain_points",
+      "heading": "用户痛点",
+      "claim": "最高相关证据显示用户痛点集中在：The pump failed after three days and support ignored the return request.",
+      "evidence_refs": ["chunk:chk_return"],
+      "severity": "high",
+      "recommendation": "优先把该痛点拆成可验证的产品改进假设。",
+      "metadata": {}
+    }
+  ],
+  "metadata": {
+    "requested_focus": ["return support"],
+    "generator": "deterministic.report.v1"
+  }
+}
+```
+
+核心约束：
+
+- `sections[*].evidence_refs` 必须是顶层 `evidence_refs` 的子集。
+- `evidence_refs` 为空时，`status` 必须表达证据不足，不能输出确定性风险结论。
+- `schema_version` 当前为 `report.v1`。
+
+## 结构化报告 Markdown 示例
+
+```markdown
+# Portable Espresso Maker 证据链分析报告
+
+- 状态：`draft`
+- Schema：`report.v1`
+
+## 摘要
+
+基于 1 条可引用评论证据，Portable Espresso Maker 当前需要重点关注：return support。
+
+## 用户痛点
+
+最高相关证据显示用户痛点集中在：The pump failed after three days and support ignored the return request.
+
+- 风险等级：`high`
+- 证据引用：`chunk:chk_return`
+- 建议动作：优先把该痛点拆成可验证的产品改进假设。
+
+## 证据摘录
+
+### chunk:chk_return
+
+The pump failed after three days and support ignored the return request.
+```
+
 ## 作用
 
 这些示例是给 `api-contract.md`、`data-model.md`、`agent-state-machine.md`、`model-and-data-decisions.md` 和 `testing-strategy.md` 共用的参考样例。

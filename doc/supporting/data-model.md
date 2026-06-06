@@ -235,6 +235,41 @@ Day 14 新增 `SQLAlchemyReviewChunkStore`，负责把 `reviews` 转成 `review_
 - `rating`
 - `source_type`
 
+## Day 16 Report 写入约束
+
+Day 16 新增 `backend/app/reporting/`，复用 Day 3 已创建的 `reports` 表，不新增迁移。
+
+`reports` 字段使用方式：
+
+| 字段 | Day 16 用途 |
+| --- | --- |
+| `task_id` | 报告归属任务，必须已存在 |
+| `title` | 报告标题，当前由 product name 生成 |
+| `status` | `draft`、`insufficient_evidence` 或预留 `failed` |
+| `summary` | 结构化报告摘要 |
+| `content_json` | 完整 `StructuredReport` JSON |
+| `content_markdown` | 前端和导出使用的 Markdown 草案 |
+| `evidence_refs` | 报告顶层证据引用列表 |
+| `schema_version` | 当前固定为 `report.v1` |
+
+Day 16 的报告入库规则：
+
+1. `SQLAlchemyReportStore.save_report()` 入库前先确认 `task_id` 存在。
+2. `StructuredReport` 负责校验章节 evidence refs。
+3. `content_json` 保存完整结构，供后续前端详情页和 API 返回。
+4. `content_markdown` 保存渲染结果，供前端预览和后续导出。
+5. `evidence_refs` 单独冗余一份，方便列表页、证据链检查和后续查询。
+
+当前第一版每次保存创建一条新报告。后续 Day 21 做历史报告时，可以增加报告版本展示策略，但不需要改变 Day 16 的基础字段。
+
+无证据报告必须写入：
+
+- `status = insufficient_evidence`
+- `evidence_refs = []`
+- `content_json.sections[*].evidence_refs = []`
+
+这样前端和面试展示时可以明确说明：系统宁愿输出证据不足，也不会生成没有来源的结论。
+
 ## 与其他文档关系
 
 - 状态流转见 `agent-state-machine.md`

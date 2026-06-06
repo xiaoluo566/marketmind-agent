@@ -160,6 +160,36 @@ Day 15 新增 `search_reviews_tool`，把 Day 14 的检索能力包装成 Agent 
 
 这条约束的目的不是让工具“看起来成功”，而是给 Agent 一个明确降级信号：证据不足时不要编造结论。
 
+## Day 16 报告生成交接
+
+Day 16 新增报告模块后，RAG 检索结果进入报告的路径变成：
+
+```text
+search_reviews_tool.results -> EvidenceSnippet -> ReportGenerationInput -> StructuredReport
+```
+
+交接规则：
+
+- `results[*].evidence_ref` 进入 `EvidenceSnippet.evidence_ref`。
+- `results[*].content` 进入 `EvidenceSnippet.content`。
+- `results[*].similarity`、`rating`、`source_url` 和 `metadata` 原样保留。
+- `SearchReviewsToolOutput.evidence_refs` 进入 `StructuredReport.evidence_refs`。
+- 报告章节只能引用这些 evidence refs。
+
+如果 `search_reviews_tool` 返回空结果：
+
+```json
+{
+  "results": [],
+  "evidence_refs": [],
+  "no_results_reason": "NO_REVIEW_CHUNKS_ABOVE_THRESHOLD"
+}
+```
+
+报告模块必须输出 `insufficient_evidence`，不能把 query 写成事实，也不能引用不存在的 `chunk:{chunk_id}`。
+
+Day 16 当前采用确定性报告生成器，不代表最终报告文案质量。它的作用是先固定证据链约束，后续 LLM report prompt 只能在这个 schema 内生成。
+
 ## 检索流程
 
 1. Agent 提出检索意图

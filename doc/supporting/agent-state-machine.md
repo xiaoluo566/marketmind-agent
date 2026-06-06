@@ -107,6 +107,33 @@ Agent 看到工具结果时必须遵守：
 - `results` 为空：必须记录证据不足，不能继续编造。
 - 报告后续引用必须使用 `evidence_refs`。
 
+## Day 16 报告生成接入边界
+
+Day 16 新增 `backend/app/reporting/`，但还没有把 worker 主流程替换成“采集 -> 检索 -> 报告”的完整 Agent runner。当前报告模块是独立可测试组件，后续状态机接入时建议按下面边界推进：
+
+```text
+search_reviews_tool output
+  -> EvidenceSnippet[]
+  -> ReportGenerationInput
+  -> StructuredReportGenerator / report prompt
+  -> StructuredReport
+  -> SQLAlchemyReportStore
+```
+
+状态机接入报告时必须记录：
+
+- 生成报告前的 Thought：为什么现在证据足够或不足。
+- 报告生成 Action：输入的 `task_id`、`requested_focus` 和 evidence refs。
+- 报告生成 Observation：`report_id`、`status`、`schema_version` 和 evidence refs。
+
+Day 16 已经完成的硬边界：
+
+- `StructuredReport` 校验章节 evidence refs。
+- 无证据时输出 `insufficient_evidence`。
+- 报告 JSON 和 Markdown 可写入 `reports` 表。
+
+Day 17 继续补的是 evidence refs 到 review chunk / tool output 的可追溯展示，而不是重新设计报告 schema。
+
 ## Day 11 最小实现
 
 Day 11 已经把状态机从文档推进到代码。当前实现位置：

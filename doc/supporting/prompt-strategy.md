@@ -65,6 +65,50 @@ Day 13 第一版短期记忆摘要先采用确定性摘要，不调用大模型�
 
 第一版暂时不用 LLM summary 的原因是：短期记忆的核心风险是上下文预算失控和证据 ID 丢失，先用确定性摘要更容易测试和回归。等 Day 14 - Day 17 评论切片、检索和报告证据链稳定后，再考虑把 summary prompt 版本化。
 
+## Day 16 report prompt 规则
+
+Day 16 第一版报告生成先采用确定性生成器 `deterministic.report.v1`，不调用大模型。
+
+这样做的原因：
+
+- 当前阶段最重要的是报告 schema、证据引用和入库边界。
+- LLM 文案质量不是 Day 16 的主要风险，非法 evidence ref 才是主要风险。
+- 确定性生成器可以稳定测试“有证据”和“无证据”两条路径。
+
+后续接入真实报告模型时，推荐 prompt 名称：
+
+- `report.evidence_chain.v1`
+
+该 prompt 必须遵守：
+
+- 输入只能使用 `ReportGenerationInput` 中的 observations、requested_focus 和 evidence snippets。
+- 输出必须匹配 `StructuredReport`。
+- 每个章节的 `evidence_refs` 必须来自输入 evidence snippets。
+- 如果输入 evidence snippets 为空，只能输出 `insufficient_evidence`。
+- 不允许把 query、requested_focus 或模型常识当作事实证据。
+- 不允许生成不存在的 `chunk:{chunk_id}`。
+- 输出 JSON 必须先经过 Pydantic 校验，再写入 `reports` 表。
+
+推荐 report prompt 输入摘要结构：
+
+```text
+Task: tsk_01HXYZ
+Product: Portable Espresso Maker
+Requested focus: return support, logistics
+Observations:
+- Crawler extracted 3 low-rating reviews.
+Evidence snippets:
+- evidence_ref=chunk:chk_return rating=1.0 similarity=0.86 content="The pump failed after three days..."
+```
+
+推荐 report prompt 输出 schema：
+
+```text
+StructuredReport(report.v1)
+```
+
+Day 16 的确定性生成器可以视为未来 LLM report prompt 的 golden baseline：LLM 可以写得更自然，但不能降低证据引用约束。
+
 ## 版本管理建议
 
 - prompt 不要直接散落在代码里

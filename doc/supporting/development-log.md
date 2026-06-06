@@ -47,8 +47,8 @@
 | --- | --- |
 | 稳定分支 | `main` |
 | 日常开发分支 | `dev` |
-| 当前开发阶段 | Day 15 已完成，准备进入 Day 16 |
-| 当前主链路 | 文档基线、Next.js 控制台骨架、FastAPI health、任务创建 API、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、相似度检索原型、search_reviews_tool、数据库模型、Alembic 迁移 |
+| 当前开发阶段 | Day 16 已完成，准备进入 Day 17 |
+| 当前主链路 | 文档基线、Next.js 控制台骨架、FastAPI health、任务创建 API、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、相似度检索原型、search_reviews_tool、结构化报告生成骨架、报告入库、数据库模型、Alembic 迁移 |
 | 最新开发提交 | 以 `git log -1 --oneline` 为准 |
 | 当前数据库决策 | PostgreSQL + pgvector，review chunk 使用 `vector(1536)` |
 | 当前模型决策 | 默认 `gpt-5.4-mini`，报告模型 `gpt-5.5`，embedding `text-embedding-3-small` |
@@ -94,7 +94,7 @@
 | Day 13 | Done | 短期记忆与上下文压缩 | `c552801` |
 | Day 14 | Done | 评论切片与 embedding 写入 | `ed4597d` |
 | Day 15 | Done | `search_reviews_tool` 语义检索 | `ac23718` |
-| Day 16 | Pending | 报告 schema 与报告生成 | 待记录 |
+| Day 16 | Done | 报告 schema 与确定性报告生成骨架 | 待提交 |
 | Day 17 | Pending | 证据链引用和报告可追溯 | 待记录 |
 | Day 18 | Pending | 评论机会点评分与风险分析 | 待记录 |
 | Day 19 | Pending | Next.js 接真实 API | 待记录 |
@@ -1024,6 +1024,75 @@ Day 15 的目标是把 Day 14 的 RAG 检索能力变成 Agent 可调用工具�
 
 进入 Day 16，定义报告 schema 和报告生成输入，把 `search_reviews_tool` 的 evidence chunks 转成可校验的报告结构。
 
+## Day 16 记录
+
+### 实际完成
+
+Day 16 的目标是把 Day 15 的 `search_reviews_tool` evidence chunks 转成可入库、可展示、可校验的报告结构。今天完成了报告 schema、确定性报告生成器、Markdown 渲染和 `reports` 表持久化。
+
+完成内容：
+
+- 新增 `backend/app/reporting/` 模块。
+- 新增 `ReportFinding`，定义报告章节、结论、风险等级、建议和 evidence refs。
+- 新增 `StructuredReport`，定义报告顶层结构、状态、schema version 和 metadata。
+- `StructuredReport` 增加校验：章节引用的 evidence refs 必须存在于报告顶层 `evidence_refs`。
+- `StructuredReport.to_markdown()` 输出标题、摘要、章节、风险等级、证据引用和证据摘录。
+- 新增 `EvidenceSnippet` 和 `ReportGenerationInput`。
+- 新增 `StructuredReportGenerator`。
+- 有 evidence snippets 时生成 `draft` 报告，并输出用户痛点、风险判断、机会判断三个章节。
+- 无 evidence snippets 时生成 `insufficient_evidence` 报告，明确写“证据不足”，不编造证据。
+- 新增 `SQLAlchemyReportStore.save_report()`，把 `content_json`、`content_markdown`、`evidence_refs` 和 `schema_version` 写入 `reports` 表。
+- 新增 `tests/test_report_generation.py`，覆盖证据引用校验、无证据降级、Markdown 输出和报告入库。
+
+### 当天选择思考
+
+今天没有直接接真实大模型报告生成，是因为当前最重要的问题不是“报告写得像不像人”，而是“报告能不能被系统证明”。如果 schema、evidence refs 和入库格式不稳定，后续即使模型写得很好，前端和面试讲解也很难解释结论来源。
+
+我选择先做确定性生成器，是为了把报告模块变成可测试的工程组件。它生成的文字不一定是最终版本，但它能固定输入输出、证据约束和无证据降级路径。后续接 LLM 时，只要让模型输出同一个 `StructuredReport` schema，就可以复用 Day 16 的校验和入库逻辑。
+
+我把证据引用校验放在 Pydantic schema 里，而不是只依赖 prompt，是因为 prompt 是软约束，Pydantic 是硬边界。只要章节引用不存在的 `chunk:{chunk_id}`，报告在对象创建阶段就会失败，避免脏报告进入数据库。
+
+我复用 Day 3 的 `reports` 表，没有新增迁移，是因为 `reports` 里已经有 `content_json`、`content_markdown`、`evidence_refs` 和 `schema_version`。这也证明前期数据模型预留是有效的，不需要为了 Day 16 再改数据库结构。
+
+### 关键文件
+
+- `backend/app/reporting/__init__.py`
+- `backend/app/reporting/schemas.py`
+- `backend/app/reporting/generator.py`
+- `backend/app/reporting/stores.py`
+- `tests/test_report_generation.py`
+- `doc/roadmap/day-16.md`
+- `doc/supporting/data-contract-examples.md`
+- `doc/supporting/prompt-strategy.md`
+- `doc/supporting/data-model.md`
+- `doc/supporting/rag-memory.md`
+- `doc/supporting/testing-strategy.md`
+- `doc/supporting/interview-defense-dossier.md`
+
+### 验证记录
+
+- `uv run pytest tests\test_report_generation.py`：4 passed
+- `uv run pytest tests\test_report_generation.py tests\test_search_reviews_tool.py tests\test_review_rag_indexing.py`：12 passed
+- `uv run pytest`：79 passed
+- `uv run ruff check backend tests migrations`：通过
+- `uv run alembic heads`：`0002_task_queue_id (head)`
+- `cd frontend; npm run build`：通过
+
+### 提交记录
+
+- 待提交：`feat: 实现 Day 16 结构化报告生成`
+
+### 遗留问题
+
+- 当前是确定性报告骨架，还没有接真实 LLM report prompt。
+- 报告还没有接入 worker 主流程。
+- 报告还没有 API 路由和前端详情页。
+- Day 17 需要继续做证据链引用强化和报告可追溯展示。
+
+### 下一步
+
+进入 Day 17，把报告 evidence refs 和原始 review chunk / tool output 的追溯关系继续补强，并为后续前端报告详情页准备稳定 API 契约。
+
 ## Day 08 到 Day 14 记录模板
 
 第二周重点从数据采集进入 Agent 工具和状态机。每天开发后按下面格式补充。
@@ -1046,7 +1115,7 @@ Day 15 的目标是把 Day 14 的 RAG 检索能力变成 Agent 可调用工具�
 | Day | 计划主题 | 实际完成 | 验证 | 提交 |
 | --- | --- | --- | --- | --- |
 | Day 15 | `search_reviews_tool` 语义检索 | 工具 schema、依赖注入注册、evidence chunk、空召回降级 | pytest 75 passed，ruff 通过，alembic head 正常，npm build 通过 | `ac23718` |
-| Day 16 | 报告 schema 与报告生成 | 待记录 | 待记录 | 待记录 |
+| Day 16 | 报告 schema 与确定性报告生成骨架 | `StructuredReport`、证据引用校验、Markdown 渲染、`reports` 入库 | pytest 79 passed，ruff 通过，alembic head 正常，frontend build 通过 | 待提交 |
 | Day 17 | 证据链引用和报告可追溯 | 待记录 | 待记录 | 待记录 |
 | Day 18 | 评论机会点评分与风险分析 | 待记录 | 待记录 | 待记录 |
 | Day 19 | Next.js 接真实 API | 待记录 | 待记录 | 待记录 |

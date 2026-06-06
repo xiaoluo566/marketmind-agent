@@ -77,6 +77,27 @@ Day 15 新增 `tests/test_search_reviews_tool.py`，当前覆盖：
 - `no_results_reason` 存在时，报告必须标注证据不足。
 - 不能把 query 本身写成事实。
 
+## Day 16 报告生成测试边界
+
+Day 16 新增 `tests/test_report_generation.py`，当前覆盖：
+
+- `StructuredReport` 拒绝章节引用未知 evidence ref。
+- 没有 evidence snippets 时，生成 `insufficient_evidence` 报告。
+- 无证据报告不编造 evidence refs，并在 claim 中明确“证据不足”。
+- 有 evidence snippets 时，报告章节能绑定已知 evidence refs。
+- `StructuredReport.to_markdown()` 能输出标题、摘要、章节、风险等级和证据引用。
+- `SQLAlchemyReportStore` 能把报告 JSON、Markdown、evidence refs 和 schema version 写入 `reports` 表。
+
+Day 16 当前不覆盖：
+
+- 真实 LLM report prompt 输出。
+- 多版本报告覆盖策略。
+- 报告 API 路由。
+- 前端报告详情页。
+- PDF / Markdown 文件导出。
+
+这些内容分别放到 Day 17 - Day 21 和第四周处理。Day 16 的测试重点是防止“无证据也生成结论”和“章节引用不存在证据”这两个高风险问题。
+
 ## 回归要求
 
 任何 bug 修复都要留下一个能复现旧问题的测试。没有测试的修复，后续很容易被重构再次破坏。
