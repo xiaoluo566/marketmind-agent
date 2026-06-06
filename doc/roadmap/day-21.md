@@ -11,6 +11,7 @@ Day 21 解决 Day 20 后仍然存在的“只能看当前任务、不能积累�
 1. 后端补齐 `GET /api/tasks`，让历史任务从 PostgreSQL 查询出来，支持状态筛选、时间筛选和分页。
 2. 后端补齐 `GET /api/reports` 与 `GET /api/reports/{report_id}`，让报告列表和详情页能消费真实报告数据。
 3. 前端 `listTasks()`、`listReports()`、`getReport()` 在真实 API 模式下不再使用 mock fallback，而是映射后端返回的统一 envelope。
+4. 阶段审计后补齐报告详情页的 evidence chain 真实接入，避免真实报告正文混用全局 mock evidence。
 
 ## 前置依赖
 
@@ -61,7 +62,9 @@ Day 21 解决 Day 20 后仍然存在的“只能看当前任务、不能积累�
 - `frontend/src/lib/api.ts` 新增 `BackendReportList`、`BackendReportSummary`、`BackendReportDetail`、`BackendReportSection`。
 - `listReports()` 在真实 API 模式下调用 `GET /api/reports`。
 - `getReport()` 在真实 API 模式下调用 `GET /api/reports/{report_id}`。
+- `getReportEvidence()` 在真实 API 模式下调用 `GET /api/reports/{report_id}/evidence`。
 - 新增 `mapBackendReport()` 和 `mapBackendReportDetail()`。
+- 新增 `mapBackendEvidenceSource()`，把后端 evidence chain 映射成前端 `Evidence[]`。
 - 新增 `normalizeRiskLevel()`，避免后端异常 risk level 破坏页面类型。
 - 新增 `tests/test_frontend_history_contract.py`。
 
@@ -217,12 +220,29 @@ Query 参数：
 实现位置：
 
 - `frontend/src/lib/api.ts`
+- `frontend/src/app/reports/[reportId]/page.tsx`
 
 关键点：
 
 - mock 模式仍然可以用于离线看页面。
 - 真实模式成功时不再吞掉错误后回退 mock。
 - 报告详情接口失败时应暴露 `ApiClientError`，避免用户误以为报告存在。
+- 报告详情页读取报告正文时，也读取该报告自己的 evidence chain。
+- 报告详情页不再用全局 `/api/evidence` mock 数据拼接证据列表。
+
+### 5. 阶段审计补充
+
+Day 1-21 阶段审计时发现三个和 Day 21 强相关的问题，并已补齐：
+
+- 报告详情页没有消费 `GET /api/reports/{report_id}/evidence`，已新增 `getReportEvidence(reportId)`。
+- `public_url` 任务缺少协议和内网地址校验，已在 `TaskCreateRequest` 增加 SSRF 基础防护。
+- `agent_step` evidence metadata 暴露完整 `tool_input` / `tool_output`，已改成只暴露 `tool_input_keys`、`tool_output_keys`、`error_code` 等摘要字段。
+
+对应测试：
+
+- `tests/test_frontend_history_contract.py::test_report_detail_uses_real_report_evidence_chain`
+- `tests/test_tasks_api.py::test_create_task_rejects_unsafe_public_url_targets`
+- `tests/test_report_evidence_chain.py::test_report_evidence_api_sanitizes_agent_step_metadata`
 
 ## 当天选择思考
 
@@ -248,6 +268,9 @@ Query 参数：
 - `GET /api/tasks` 支持状态筛选、时间筛选、分页。
 - `GET /api/reports` 返回报告列表。
 - `GET /api/reports/{report_id}` 返回可渲染 sections。
+- `GET /api/reports/{report_id}/evidence` 已在报告详情页真实接入。
+- `public_url` 拒绝 `file://`、localhost、内网、loopback、link-local 等不安全目标。
+- Agent step evidence metadata 不暴露完整 tool input/output。
 - 前端真实 API 模式下任务列表、报告列表、报告详情不再使用 mock fallback。
 
 ## 风险与回退
@@ -265,7 +288,6 @@ Query 参数：
 
 - `POST /api/tasks/{task_id}/retry` 尚未实现。
 - `GET /api/evidence` 仍未实现，证据总览页继续 mock fallback。
-- 报告详情页还没有直接接入 `GET /api/reports/{report_id}/evidence`。
 - 前端报告 section 字段仍叫 `evidence_ids`，真实后端实际返回 evidence refs，后续需要统一命名。
 - 历史列表页面还没有 UI 筛选控件，目前筛选能力先落在 API 层。
 
