@@ -618,6 +618,109 @@ Day 16 起，报告生成模块不直接消费自然语言长上下文，而是�
 The pump failed after three days and support ignored the return request.
 ```
 
+## Evidence chain 示例
+
+Day 17 起，报告详情可以通过 evidence chain 回查来源。`evidence_ref` 不只是一段 Markdown 文本，而是可被后端解析的引用协议。
+
+```json
+{
+  "task_id": "tsk_01HXYZ",
+  "evidence_refs": ["chunk:chk_return", "artifact:art_html", "step:stp_search"],
+  "missing_refs": [],
+  "sources": [
+    {
+      "evidence_ref": "chunk:chk_return",
+      "source_type": "review_chunk",
+      "source_id": "chk_return",
+      "task_id": "tsk_01HXYZ",
+      "available": true,
+      "title": "Review chunk #0",
+      "content_preview": "The pump failed after three days and support ignored the return request.",
+      "source_url": "https://example.com/product/espresso#return-001",
+      "parent_refs": ["review:rev_return"],
+      "missing_reason": null,
+      "metadata": {
+        "chunk_index": 0,
+        "rating": 1.0,
+        "source_type": "crawler",
+        "embedding_model": "fake-embedding-v1",
+        "embedding_dimensions": 1536
+      }
+    },
+    {
+      "evidence_ref": "artifact:art_html",
+      "source_type": "artifact",
+      "source_id": "art_html",
+      "task_id": "tsk_01HXYZ",
+      "available": true,
+      "title": "crawler_html",
+      "content_preview": "data/artifacts/crawler/tsk_01HXYZ/page.html",
+      "source_url": "https://example.com/product/espresso",
+      "parent_refs": [],
+      "missing_reason": null,
+      "metadata": {
+        "artifact_type": "crawler_html",
+        "mime_type": "text/html",
+        "checksum": "checksum-html"
+      }
+    }
+  ]
+}
+```
+
+缺失证据示例：
+
+```json
+{
+  "evidence_refs": ["chunk:missing"],
+  "missing_refs": ["chunk:missing"],
+  "sources": [
+    {
+      "evidence_ref": "chunk:missing",
+      "source_type": "missing",
+      "source_id": "missing",
+      "available": false,
+      "missing_reason": "EVIDENCE_NOT_FOUND"
+    }
+  ]
+}
+```
+
+## `GET /api/reports/{report_id}/evidence` 输出示例
+
+```json
+{
+  "success": true,
+  "data": {
+    "report_id": "rpt_01HXYZ",
+    "task_id": "tsk_01HXYZ",
+    "evidence_refs": ["chunk:chk_return"],
+    "missing_refs": [],
+    "sources": [
+      {
+        "evidence_ref": "chunk:chk_return",
+        "source_type": "review_chunk",
+        "source_id": "chk_return",
+        "task_id": "tsk_01HXYZ",
+        "available": true,
+        "title": "Review chunk #0",
+        "content_preview": "The pump failed after three days and support ignored the return request.",
+        "source_url": "https://example.com/product/espresso#return-001",
+        "parent_refs": ["review:rev_return"],
+        "missing_reason": null,
+        "metadata": {
+          "rating": 1.0,
+          "source_type": "crawler"
+        }
+      }
+    ]
+  },
+  "error": null,
+  "message": "ok",
+  "trace_id": "trc_01HXYZ"
+}
+```
+
 ## 作用
 
 这些示例是给 `api-contract.md`、`data-model.md`、`agent-state-machine.md`、`model-and-data-decisions.md` 和 `testing-strategy.md` 共用的参考样例。

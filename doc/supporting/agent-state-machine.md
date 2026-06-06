@@ -134,6 +134,37 @@ Day 16 已经完成的硬边界：
 
 Day 17 继续补的是 evidence refs 到 review chunk / tool output 的可追溯展示，而不是重新设计报告 schema。
 
+## Day 17 证据链回查
+
+Day 17 新增 `EvidenceChain`，把报告中的 evidence refs 解析为可展示来源：
+
+```text
+StructuredReport.evidence_refs
+  -> SQLAlchemyEvidenceChainStore.resolve
+  -> EvidenceChain.sources
+  -> StructuredReport.metadata.evidence_chain
+  -> GET /api/reports/{report_id}/evidence
+```
+
+状态机后续生成报告时，建议在 report observation 里记录：
+
+- `report_id`
+- `evidence_refs`
+- `missing_refs`
+- `schema_version`
+
+如果 `missing_refs` 非空，Agent 不应该把报告标记成完全可信，而应该提示证据链不完整。Day 17 当前已经支持缺失证据结构化返回：
+
+```json
+{
+  "evidence_ref": "chunk:missing",
+  "available": false,
+  "missing_reason": "EVIDENCE_NOT_FOUND"
+}
+```
+
+这让报告可追溯能力不依赖前端 Markdown，也不依赖人工检查数据库。
+
 ## Day 11 最小实现
 
 Day 11 已经把状态机从文档推进到代码。当前实现位置：

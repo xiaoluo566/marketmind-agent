@@ -47,8 +47,8 @@
 | --- | --- |
 | 稳定分支 | `main` |
 | 日常开发分支 | `dev` |
-| 当前开发阶段 | Day 16 已完成，准备进入 Day 17 |
-| 当前主链路 | 文档基线、Next.js 控制台骨架、FastAPI health、任务创建 API、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、相似度检索原型、search_reviews_tool、结构化报告生成骨架、报告入库、数据库模型、Alembic 迁移 |
+| 当前开发阶段 | Day 17 已完成，准备进入 Day 18 |
+| 当前主链路 | 文档基线、Next.js 控制台骨架、FastAPI health、任务创建 API、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、相似度检索原型、search_reviews_tool、结构化报告生成骨架、报告入库、证据链回查 API、数据库模型、Alembic 迁移 |
 | 最新开发提交 | 以 `git log -1 --oneline` 为准 |
 | 当前数据库决策 | PostgreSQL + pgvector，review chunk 使用 `vector(1536)` |
 | 当前模型决策 | 默认 `gpt-5.4-mini`，报告模型 `gpt-5.5`，embedding `text-embedding-3-small` |
@@ -95,7 +95,7 @@
 | Day 14 | Done | 评论切片与 embedding 写入 | `ed4597d` |
 | Day 15 | Done | `search_reviews_tool` 语义检索 | `ac23718` |
 | Day 16 | Done | 报告 schema 与确定性报告生成骨架 | `193da03` |
-| Day 17 | Pending | 证据链引用和报告可追溯 | 待记录 |
+| Day 17 | Done | 证据链引用和报告可追溯 | 待提交 |
 | Day 18 | Pending | 评论机会点评分与风险分析 | 待记录 |
 | Day 19 | Pending | Next.js 接真实 API | 待记录 |
 | Day 20 | Pending | 前端任务进度与 Agent step 展示 | 待记录 |
@@ -1093,6 +1093,80 @@ Day 16 的目标是把 Day 15 的 `search_reviews_tool` evidence chunks 转成�
 
 进入 Day 17，把报告 evidence refs 和原始 review chunk / tool output 的追溯关系继续补强，并为后续前端报告详情页准备稳定 API 契约。
 
+## Day 17 记录
+
+### 实际完成
+
+Day 17 的目标是把 Day 16 的报告 evidence refs 变成可回查证据链。今天完成了 evidence ref 解析、数据库回查、报告 citation 绑定、Markdown 证据链渲染和报告证据链 API。
+
+完成内容：
+
+- 新增 `backend/app/reporting/evidence.py`。
+- 新增 `EvidenceRef`，定义 evidence ref 解析结果。
+- 新增 `EvidenceSource`，定义单条证据来源结构。
+- 新增 `EvidenceChain`，定义报告证据链整体输出。
+- 新增 `parse_evidence_ref()`，支持 `chunk`、`review`、`artifact`、`step` 四类引用。
+- 新增 `SQLAlchemyEvidenceChainStore.resolve()`，根据 `task_id` 和 evidence refs 回查来源。
+- `chunk:{chunk_id}` 可以回查到 `review_chunks`，并追溯 parent `review:{review_id}`。
+- `review:{review_id}` 可以回查到 `reviews`，并追溯 parent `product:{product_id}`。
+- `artifact:{artifact_id}` 可以回查到 `artifacts`。
+- `step:{step_id}` 可以回查到 `agent_steps`，并追溯 parent `agent_run:{run_id}`。
+- 缺失或跨任务证据返回 `available=false` 和 `missing_reason`。
+- 新增 `attach_evidence_chain()`，把 evidence chain 以 JSON 形式放入 `StructuredReport.metadata`。
+- `StructuredReport.to_markdown()` 新增“证据链回查”章节。
+- 新增 `backend/app/api/routes/reports.py`。
+- 新增 `GET /api/reports/{report_id}/evidence`。
+- `backend/app/api/router.py` 注册 reports 路由。
+- 新增 `tests/test_report_evidence_chain.py`，覆盖 evidence ref 解析、回查、缺失降级、Markdown citation 和 API envelope。
+
+### 当天选择思考
+
+今天优先做证据链回查，是因为 Day 16 只能保证“报告章节引用了合法 evidence ref”，但还不能回答“这个 evidence ref 背后到底是哪条评论、哪个 artifact、哪个 Agent step”。如果报告只停留在 `chunk:xxx` 字符串，前端展示和面试讲解都会缺少说服力。
+
+我选择把证据链设计成结构化 `EvidenceChain`，而不是只在 Markdown 里渲染链接，是因为 Markdown 只是展示层。真正的事实来源应该是 JSON，这样 API、前端、测试和后续 PDF 导出都能复用同一份证据结构。
+
+我暂时没有新增 `report_evidence_links` 表，是因为现有 `reports.evidence_refs` 已经能回查到 `review_chunks`、`reviews`、`artifacts` 和 `agent_steps`。Day 17 先验证引用协议和 API 契约，等 Day 21 做历史报告和版本管理时，再判断是否需要独立关联表。
+
+### 关键文件
+
+- `backend/app/reporting/evidence.py`
+- `backend/app/reporting/schemas.py`
+- `backend/app/reporting/__init__.py`
+- `backend/app/api/routes/reports.py`
+- `backend/app/api/router.py`
+- `tests/test_report_evidence_chain.py`
+- `doc/roadmap/day-17.md`
+- `doc/supporting/api-contract.md`
+- `doc/supporting/data-contract-examples.md`
+- `doc/supporting/data-model.md`
+- `doc/supporting/agent-state-machine.md`
+- `doc/supporting/testing-strategy.md`
+- `doc/supporting/interview-defense-dossier.md`
+
+### 验证记录
+
+- `uv run pytest tests\test_report_evidence_chain.py`：7 passed
+- `uv run pytest tests\test_report_evidence_chain.py tests\test_report_generation.py tests\test_search_reviews_tool.py tests\test_tasks_api.py`：25 passed
+- `uv run pytest`：86 passed
+- `uv run ruff check backend tests migrations`：通过
+- `uv run alembic heads`：`0002_task_queue_id (head)`
+- `cd frontend; npm run build`：通过
+
+### 提交记录
+
+- 待提交：`feat: 实现 Day 17 报告证据链回查`
+
+### 遗留问题
+
+- 前端还没有消费 `GET /api/reports/{report_id}/evidence`。
+- 报告详情页还没有点击跳转到证据来源。
+- 当前 evidence chain 通过现有表动态解析，尚未独立快照成关联表。
+- 报告仍未接入完整 worker 主流程。
+
+### 下一步
+
+进入 Day 18，基于已经可追溯的 evidence chain 做评论机会点评分与风险分析，避免评分结论脱离证据。
+
 ## Day 08 到 Day 14 记录模板
 
 第二周重点从数据采集进入 Agent 工具和状态机。每天开发后按下面格式补充。
@@ -1116,7 +1190,7 @@ Day 16 的目标是把 Day 15 的 `search_reviews_tool` evidence chunks 转成�
 | --- | --- | --- | --- | --- |
 | Day 15 | `search_reviews_tool` 语义检索 | 工具 schema、依赖注入注册、evidence chunk、空召回降级 | pytest 75 passed，ruff 通过，alembic head 正常，npm build 通过 | `ac23718` |
 | Day 16 | 报告 schema 与确定性报告生成骨架 | `StructuredReport`、证据引用校验、Markdown 渲染、`reports` 入库 | pytest 79 passed，ruff 通过，alembic head 正常，frontend build 通过 | `193da03` |
-| Day 17 | 证据链引用和报告可追溯 | 待记录 | 待记录 | 待记录 |
+| Day 17 | 证据链引用和报告可追溯 | evidence ref 解析、EvidenceChain、Markdown citation、报告证据链 API | pytest 86 passed，ruff 通过，alembic head 正常，frontend build 通过 | 待提交 |
 | Day 18 | 评论机会点评分与风险分析 | 待记录 | 待记录 | 待记录 |
 | Day 19 | Next.js 接真实 API | 待记录 | 待记录 | 待记录 |
 | Day 20 | 前端任务进度与 Agent step 展示 | 待记录 | 待记录 | 待记录 |

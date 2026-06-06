@@ -270,6 +270,32 @@ Day 16 的报告入库规则：
 
 这样前端和面试展示时可以明确说明：系统宁愿输出证据不足，也不会生成没有来源的结论。
 
+## Day 17 Evidence Chain 回查约束
+
+Day 17 新增 `backend/app/reporting/evidence.py`，不新增数据库表。第一版证据链通过已有表和 `reports.evidence_refs` 解析：
+
+| evidence ref | 回查表 | 返回 source_type | parent_refs |
+| --- | --- | --- | --- |
+| `chunk:{chunk_id}` | `review_chunks` | `review_chunk` | `review:{review_id}` |
+| `review:{review_id}` | `reviews` | `review` | `product:{product_id}` |
+| `artifact:{artifact_id}` | `artifacts` | `artifact` | 空 |
+| `step:{step_id}` | `agent_steps` | `agent_step` | `agent_run:{run_id}` |
+
+回查规则：
+
+1. 每个 evidence ref 必须先通过 `parse_evidence_ref()` 校验格式。
+2. 只支持 `chunk`、`review`、`artifact`、`step` 四种类型。
+3. 所有回查必须检查 `task_id`，不存在或跨任务引用统一返回 `available=false`。
+4. 缺失证据必须返回 `missing_reason`，不能编造 `content_preview`。
+5. `EvidenceChain.missing_refs` 汇总所有不可用引用，方便前端提示报告证据不完整。
+
+为什么暂时不新增 `report_evidence_links` 表：
+
+- Day 16 已经把报告顶层 `evidence_refs` 冗余到 `reports`。
+- 当前四类证据都能通过现有表直接解析。
+- Day 17 的目标是先打通回查协议和 API，不急着引入新关联表。
+- 后续 Day 21 做历史报告、报告版本和列表查询时，再评估是否需要把 evidence chain 快照独立成表。
+
 ## 与其他文档关系
 
 - 状态流转见 `agent-state-machine.md`

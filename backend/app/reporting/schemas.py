@@ -89,6 +89,26 @@ class StructuredReport(BaseModel):
         else:
             lines.extend(["## 证据摘录", "", "证据不足：当前没有可引用的评论证据。", ""])
 
+        evidence_chain = self.metadata.get("evidence_chain")
+        if evidence_chain:
+            lines.extend(["## 证据链回查", ""])
+            for source in evidence_chain.get("sources", []):
+                lines.extend(
+                    [
+                        f"### {source.get('evidence_ref', 'unknown')}",
+                        "",
+                        f"- 类型：`{source.get('source_type', 'unknown')}`",
+                        f"- 可用：`{source.get('available', False)}`",
+                        f"- 来源：{source.get('source_url') or 'unknown'}",
+                        f"- 父级引用：{_format_evidence_refs(source.get('parent_refs', []))}",
+                    ]
+                )
+                if source.get("content_preview"):
+                    lines.extend(["", str(source["content_preview"])])
+                if source.get("missing_reason"):
+                    lines.append(f"- 缺失原因：`{source['missing_reason']}`")
+                lines.append("")
+
         return "\n".join(lines).strip() + "\n"
 
 

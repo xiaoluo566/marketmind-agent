@@ -120,6 +120,12 @@ Day 16 做报告 schema 和确定性报告生成骨架，是因为 Day 15 已经
 
 > Day 16 我先做报告结构，而不是先做文案生成。因为这个项目的价值不是让模型写一篇看起来像报告的文章，而是让每个结论都能追溯到具体评论 chunk。确定性生成器是一个可测试的 baseline，后续接 LLM 时仍然必须输出同一个 schema，并通过 Pydantic 证据引用校验。
 
+Day 17 做证据链回查，是因为 Day 16 只能保证报告引用了合法 `evidence_refs`，但还不能让用户看到这些 ref 背后的原始评论、采集 artifact 或 Agent step。今天我新增 `EvidenceChain`、`EvidenceSource` 和 `SQLAlchemyEvidenceChainStore`，把 `chunk:{id}`、`review:{id}`、`artifact:{id}`、`step:{id}` 解析成可展示来源，并提供 `GET /api/reports/{report_id}/evidence` 给前端后续消费。
+
+面试时可以这样讲：
+
+> Day 17 我把“证据 ID”升级成“证据链”。报告里不只是出现 `chunk:xxx`，而是能通过 API 回查到原始 review chunk、父级 review、artifact 或 Agent step。这样报告可信度不是靠口头解释，而是有结构化数据和测试支撑。
+
 ### Day 8 之后追加模板
 
 ```markdown
@@ -313,10 +319,10 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 
 ### 7. 我对“不要夸大进度”的思考
 
-这个项目目前推进到 Day 16，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
+这个项目目前推进到 Day 17，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
 
-- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、工具 schema、工具注册机制、最小 ReAct 状态机、Agent step 落库、结构化输出 guardrails、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、`search_reviews_tool`、结构化报告生成骨架、报告入库、错误 envelope、测试。
-- 正在做：证据链引用强化和报告可追溯。
+- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、工具 schema、工具注册机制、最小 ReAct 状态机、Agent step 落库、结构化输出 guardrails、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、`search_reviews_tool`、结构化报告生成骨架、报告入库、证据链回查 API、错误 envelope、测试。
+- 正在做：评论机会点评分与风险分析。
 - 后续做：真实 embedding provider、pgvector 原生检索、真实 LLM report prompt、前端真实接入、部署。
 
 我认为这反而是加分项。因为真实开发中，清楚知道自己完成了什么、没完成什么，比把项目包装得过满更可信。
@@ -359,7 +365,7 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 
 ## 当前开发进度怎么讲
 
-截至 Day 16，项目已经完成：
+截至 Day 17，项目已经完成：
 
 - 文档体系、30 天 roadmap、开发日志。
 - Next.js 控制台骨架。
@@ -414,6 +420,12 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 - 无证据时生成 `insufficient_evidence` 报告，不编造结论。
 - `StructuredReport.to_markdown()`，输出前端可展示的 Markdown 草案。
 - `SQLAlchemyReportStore`，把报告 JSON、Markdown、evidence refs 和 schema version 写入 `reports` 表。
+- `EvidenceRef`、`EvidenceSource` 和 `EvidenceChain`，用于结构化表达证据链。
+- `parse_evidence_ref()`，解析 `chunk`、`review`、`artifact`、`step` 四类引用。
+- `SQLAlchemyEvidenceChainStore`，根据 `task_id` 回查 review chunk、review、artifact 和 agent step。
+- `attach_evidence_chain()`，把 evidence chain 绑定到报告 metadata。
+- 报告 Markdown 的“证据链回查”章节。
+- `GET /api/reports/{report_id}/evidence`，返回报告 evidence chain。
 - 工具调用前后状态落库，Action step 能从 pending/running 更新为 success/failed。
 - Agent 工具失败时，错误码和失败 observation 会写入数据库，不覆盖旧 step。
 - 队列不可用、状态缓存不可用、参数校验失败的统一错误响应。
@@ -428,11 +440,11 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 - 真实 embedding API 接入。
 - pgvector 原生相似度 SQL。
 - 真实 LLM report prompt。
-- 报告 API 路由。
+- 报告详情页前端证据链展示。
 - 前端接真实 API。
 - Docker Compose 全链路一键启动。
 
-面试时可以诚实讲：这个项目正在按 30 天里程碑推进，目前已经完成底层任务入口、异步管线、任务事件流、PostgreSQL 持久化、Playwright 最小采集、采集结果入库、Agent 工具契约、最小 ReAct 状态机、结构化输出 guardrails、短期记忆压缩、评论 RAG 索引基础、`search_reviews_tool` 和结构化报告生成骨架。下一阶段会补证据链追溯、真实 report prompt、前端真实接入和部署。重点是展示工程化思路和持续推进能力，而不是假装已经做完所有功能。
+面试时可以诚实讲：这个项目正在按 30 天里程碑推进，目前已经完成底层任务入口、异步管线、任务事件流、PostgreSQL 持久化、Playwright 最小采集、采集结果入库、Agent 工具契约、最小 ReAct 状态机、结构化输出 guardrails、短期记忆压缩、评论 RAG 索引基础、`search_reviews_tool`、结构化报告生成骨架和报告证据链回查。下一阶段会补评论机会点评分、真实 report prompt、前端真实接入和部署。重点是展示工程化思路和持续推进能力，而不是假装已经做完所有功能。
 
 ## 2 分钟项目介绍话术
 
@@ -1358,6 +1370,37 @@ Day 16 在 `StructuredReport` 里做了 schema 级校验：每个章节的 `evid
 
 这比只在 prompt 里写“请引用证据”更可靠，因为 prompt 是软约束，schema 校验是硬边界。
 
+### Q26：Day 17 为什么没有新建 `report_evidence_links` 表？
+
+因为 Day 17 的目标是先打通 evidence ref 协议和回查能力，而不是过早固定更多表结构。
+
+当前已有：
+
+- `reports.evidence_refs`
+- `review_chunks`
+- `reviews`
+- `artifacts`
+- `agent_steps`
+
+这些表已经足够解析 `chunk:{id}`、`review:{id}`、`artifact:{id}`、`step:{id}`。如果现在立刻加关联表，会增加迁移和同步成本，但还没有历史报告版本、报告列表筛选、证据快照冻结这些明确需求。
+
+面试时可以这样讲：
+
+> 我没有为了“看起来复杂”而加表。Day 17 先用应用层 evidence ref 协议把回查跑通，并通过 API 和测试验证。如果后续 Day 21 做历史报告版本，需要冻结每次报告的证据快照，那时再引入 `report_evidence_links` 或 evidence snapshot 表更合理。
+
+### Q27：证据缺失怎么办？
+
+证据缺失不能静默忽略，也不能伪造 content。
+
+Day 17 的处理是：
+
+- 返回 `available=false`。
+- 写入 `missing_reason`。
+- 在 `EvidenceChain.missing_refs` 里汇总缺失 ID。
+- Markdown 的“证据链回查”章节也会显示缺失原因。
+
+这样前端可以提示“报告证据链不完整”，Agent 后续也可以决定重新检索或重新采集。
+
 ## 面试官可能深挖的技术点
 
 ### 异步任务一致性
@@ -1500,7 +1543,7 @@ Agent step 状态：
 
 ## 目前最适合展示的代码点
 
-截至 Day 16，最适合展示：
+截至 Day 17，最适合展示：
 
 - `backend/app/api/routes/tasks.py`：API 如何接收任务、投递队列、统一错误。
 - `backend/app/tasks/service.py`：任务状态创建和入队流程。
@@ -1527,6 +1570,8 @@ Agent step 状态：
 - `backend/app/reporting/schemas.py`：`StructuredReport`、`ReportFinding` 和证据引用校验。
 - `backend/app/reporting/generator.py`：确定性报告生成骨架和无证据降级。
 - `backend/app/reporting/stores.py`：报告 JSON、Markdown、evidence refs 和 schema version 入库。
+- `backend/app/reporting/evidence.py`：evidence ref 解析、EvidenceChain、缺失证据降级和来源回查。
+- `backend/app/api/routes/reports.py`：报告证据链 API。
 - `backend/app/storage/models.py`：数据库模型设计。
 - `migrations/versions/0002_task_queue_id.py`：任务队列 ID 持久化迁移。
 - `tests/test_task_persistence.py`：任务和事件持久化测试。
@@ -1541,6 +1586,7 @@ Agent step 状态：
 - `tests/test_review_rag_indexing.py`：评论清洗、切片、fake embedding、入库幂等和相似检索测试。
 - `tests/test_search_reviews_tool.py`：RAG 工具注册、证据返回和空召回降级测试。
 - `tests/test_report_generation.py`：报告 evidence refs 校验、证据不足降级、Markdown 渲染和报告入库测试。
+- `tests/test_report_evidence_chain.py`：证据链解析、回查、缺失降级、Markdown citation 和 API envelope 测试。
 
 ## 如果被问“你在项目中学到了什么”
 
@@ -1568,17 +1614,18 @@ Agent step 状态：
 - Day 14：评论切片、fake embedding、review chunk 入库和相似检索原型已完成。
 - Day 15：`search_reviews_tool` 和 evidence chunk 输出已完成。
 - Day 16：结构化报告 schema、确定性报告生成、Markdown 渲染和 `reports` 入库已完成。
+- Day 17：证据链回查、Markdown citation 和 `GET /api/reports/{report_id}/evidence` 已完成。
 
 中期：
 
+- 评论机会点评分与风险分析。
 - 真实 embedding provider。
 - pgvector 原生向量排序。
 - 真实 LLM report prompt。
-- 报告 API 路由和前端详情页。
+- 报告详情页和前端证据链展示。
 
 后期：
 
-- 证据链引用。
 - 前端真实 API 接入。
 - Docker Compose。
 - LLMOps 指标和 50 次任务复盘。
@@ -1595,4 +1642,4 @@ Agent step 状态：
 
 如果让你说下一步：
 
-> 下一步我会强化报告证据链追溯，把 `StructuredReport` 里的 evidence refs 继续关联到 review chunk、tool output 和前端展示。
+> 下一步我会在已经可追溯的证据链基础上做评论机会点评分和风险分析，保证评分结论仍然绑定到 evidence refs。

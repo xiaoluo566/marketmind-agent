@@ -15,6 +15,7 @@
 - `GET /api/tasks/{task_id}/steps`：查看 Agent 步骤
 - `POST /api/tasks/{task_id}/retry`：重试任务
 - `GET /api/reports/{report_id}`：查看报告
+- `GET /api/reports/{report_id}/evidence`：查看报告证据链
 - `POST /api/uploads`：上传手工数据
 - `WS /ws/tasks/{task_id}`：实时进度推送
 
@@ -105,6 +106,29 @@ Day 8 事件来源：
 
 职责：只允许重试失败或可恢复状态的任务。重试时必须记录新的 `agent_run_id`，不能覆盖旧记录。
 
+### `GET /api/reports/{report_id}/evidence`
+
+职责：根据报告记录中的 `evidence_refs` 回查结构化证据链，供前端报告详情页展示“这条结论来自哪里”。
+
+Day 17 实现范围：
+
+- 查询 `reports` 表获取 `task_id` 和 `evidence_refs`。
+- 支持 `chunk:{chunk_id}`、`review:{review_id}`、`artifact:{artifact_id}`、`step:{step_id}`。
+- 每个 evidence source 都返回 `available`、`source_type`、`content_preview`、`source_url`、`parent_refs` 和 `metadata`。
+- 不存在或跨任务的 evidence ref 返回 `available=false`，并写入 `missing_reason`。
+
+输出：
+
+- `report_id`
+- `task_id`
+- `evidence_refs`
+- `sources`
+- `missing_refs`
+
+失败：
+
+- `REPORT_NOT_FOUND`：报告不存在。
+
 ## 响应建议
 
 - `success`
@@ -128,6 +152,7 @@ Day 8 事件来源：
 - `TASK_NOT_RETRYABLE`
 - `QUEUE_UNAVAILABLE`
 - `EVENT_STORE_UNAVAILABLE`
+- `REPORT_NOT_FOUND`
 - `VALIDATION_FAILED`
 - `INTERNAL_ERROR`
 

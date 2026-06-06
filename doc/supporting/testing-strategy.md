@@ -98,6 +98,29 @@ Day 16 当前不覆盖：
 
 这些内容分别放到 Day 17 - Day 21 和第四周处理。Day 16 的测试重点是防止“无证据也生成结论”和“章节引用不存在证据”这两个高风险问题。
 
+## Day 17 证据链测试边界
+
+Day 17 新增 `tests/test_report_evidence_chain.py`，当前覆盖：
+
+- `parse_evidence_ref()` 能解析 `chunk:{id}`。
+- malformed ref 和不支持类型会抛错。
+- `SQLAlchemyEvidenceChainStore` 能回查 review chunk、artifact 和 agent step。
+- `chunk:{chunk_id}` 能追溯到 parent `review:{review_id}`。
+- 缺失证据返回 `available=false` 和 `missing_reason=EVIDENCE_NOT_FOUND`。
+- `attach_evidence_chain()` 返回新报告，不原地修改旧报告。
+- `StructuredReport.to_markdown()` 能渲染“证据链回查”章节。
+- `GET /api/reports/{report_id}/evidence` 能返回统一 envelope。
+- 缺失 report 返回 `REPORT_NOT_FOUND`。
+
+Day 17 当前不覆盖：
+
+- 前端点击跳转。
+- 报告详情页真实 UI。
+- PDF 导出中的 citation 格式。
+- 多任务并发下的报告证据链性能。
+
+Day 17 的测试重点是保证证据缺失不会被伪装成可用证据，以及 API 返回结构和底层 evidence chain 模型一致。
+
 ## 回归要求
 
 任何 bug 修复都要留下一个能复现旧问题的测试。没有测试的修复，后续很容易被重构再次破坏。
