@@ -18,12 +18,13 @@
 - `GET /api/reports`：查看历史报告
 - `GET /api/reports/{report_id}`：查看报告
 - `GET /api/reports/{report_id}/evidence`：查看报告证据链
+- `GET /api/observability/errors`：按 `trace_id` 或 `task_id` 查询结构化错误
 - `POST /api/uploads`：上传手工数据
 - `WS /ws/tasks/{task_id}`：实时进度推送
 
 ## 当前实现状态
 
-截至 Day 21，后端和前端真实接入状态如下：
+截至 Day 22，后端和前端真实接入状态如下：
 
 | 接口 | 后端状态 | 前端状态 | 备注 |
 | --- | --- | --- | --- |
@@ -35,6 +36,7 @@
 | `GET /api/tasks` | 已实现 | 已真实接入 | 历史任务列表，支持状态、时间、分页 |
 | `GET /api/reports` | 已实现 | 已真实接入 | 历史报告列表，返回 task_status、risk_score、evidence_count |
 | `GET /api/reports/{report_id}` | 已实现 | 已真实接入 | 报告详情，返回 sections、Markdown 和 evidence refs |
+| `GET /api/observability/errors` | 已实现 | 未接入 UI | Day 22 调试接口，支持按 trace_id 或 task_id 查询结构化错误 |
 | `POST /api/tasks/{task_id}/retry` | 未实现 | 未接入 | 失败恢复能力后续实现 |
 | `GET /api/evidence` | 未实现 | mock fallback | 证据总览页后续实现 |
 | `POST /api/uploads` | 未实现 | 未接入 | 手工数据上传后续实现 |
@@ -273,6 +275,45 @@ Day 17 实现范围：
 
 - `REPORT_NOT_FOUND`：报告不存在。
 
+### `GET /api/observability/errors`
+
+职责：给调试页和本地排障提供结构化错误查询入口。该接口查询 `error_logs`，不替代任务事件流；任务生命周期仍通过 `GET /api/tasks/{task_id}/events` 查看。
+
+Day 22 实现范围：
+
+- 支持按 `trace_id` 查询同一请求链路的错误。
+- 支持按 `task_id` 查询同一业务任务的错误。
+- 支持 `trace_id + task_id` 组合过滤。
+- 缺少筛选条件时返回 `OBSERVABILITY_FILTER_REQUIRED`。
+- 返回统一 envelope。
+
+查询参数：
+
+- `trace_id`：可选。
+- `task_id`：可选。
+- `limit`：默认 50，范围 1-100。
+
+输出：
+
+- `items`
+- `limit`
+- `total`
+
+每个 item：
+
+- `error_id`
+- `task_id`
+- `trace_id`
+- `layer`
+- `error_code`
+- `message`
+- `details`
+- `created_at`
+
+失败：
+
+- `OBSERVABILITY_FILTER_REQUIRED`：缺少 `trace_id` 和 `task_id`。
+
 ## 响应建议
 
 - `success`
@@ -297,6 +338,7 @@ Day 17 实现范围：
 - `QUEUE_UNAVAILABLE`
 - `EVENT_STORE_UNAVAILABLE`
 - `REPORT_NOT_FOUND`
+- `OBSERVABILITY_FILTER_REQUIRED`
 - `VALIDATION_FAILED`
 - `INTERNAL_ERROR`
 

@@ -1670,14 +1670,25 @@ Agent step 状态：
 - trace ID middleware。
 - 统一 response envelope。
 - 错误 envelope。
+- 结构化 JSON 日志入口。
+- `error_logs` 持久化错误表。
+- API 请求耗时响应头 `X-Request-Duration-Ms`。
+- `GET /api/observability/errors` 按 `trace_id` / `task_id` 查询错误。
 
 后续会补：
 
-- Loguru。
-- structured logging。
-- task events。
-- agent steps。
+- 前端 LLMOps / 调试页。
+- 错误码聚合统计。
+- Loguru 或 OpenTelemetry sink。
 - LLMOps metrics。
+
+Day 22 的自我思考：
+
+> 我没有一上来接完整 OpenTelemetry，是因为项目当前还处于本地工程化和演示阶段，没有集中日志平台和容器化监控后端。直接引入 OTel 会增加很多配置复杂度，但并不能马上提升排障能力。所以我先抽象 `log_observability_event()`，把日志字段统一；同时把关键失败写入 PostgreSQL 的 `error_logs`，让任务失败能按 `trace_id` 和 `task_id` 查。这样后续接 Loguru、ELK 或 OTel 时，只需要替换日志 sink，而不用改业务代码。
+
+如果面试官问“为什么 `task_events` 之外还要有 `error_logs`”，可以回答：
+
+> `task_events` 是业务生命周期，回答“任务走到哪一步了”；`error_logs` 是排障事实，回答“哪一层为什么失败”。比如 `crawl failed` 是一个任务事件，而 `layer=crawler, error_code=ACCESS_BLOCKED, duration_ms=42` 是可复盘、可统计、可告警的错误记录。两张表粒度不同，不能互相替代。
 
 ## 项目亮点怎么写进简历
 
@@ -1728,9 +1739,16 @@ Agent step 状态：
 
 ## 目前最适合展示的代码点
 
-截至 Day 21，最适合展示：
+截至 Day 22，最适合展示：
 
 - `backend/app/api/routes/tasks.py`：`GET /api/tasks` 如何支持历史任务查询、状态筛选、时间筛选和分页。
+- `backend/app/observability/error_store.py`：`ErrorLayer`、`ErrorLogData`、内存和 SQLAlchemy 双实现。
+- `backend/app/observability/sanitization.py`：结构化日志 details 的递归脱敏。
+- `backend/app/api/routes/observability.py`：按 `trace_id` / `task_id` 查询错误日志，且禁止无条件全量查询。
+- `backend/app/core/exceptions.py`：API 统一错误 envelope 和错误日志写入如何连接。
+- `backend/app/core/middleware.py`：`trace_id` 继承、请求耗时响应头和结构化请求日志。
+- `backend/app/worker/tasks.py`：Crawler / Database 失败如何写入分类错误。
+- `tests/test_observability.py`：错误日志持久化、脱敏、Worker 失败写入和查询 API 测试。
 - `backend/app/api/routes/reports.py`：`GET /api/reports`、`GET /api/reports/{report_id}` 和报告证据链 API。
 - `backend/app/api/schemas/reports.py`：报告列表、报告详情和 section 的前端契约。
 - `backend/app/storage/task_stores.py`：历史任务查询为什么优先走 PostgreSQL，而不是 Redis。
@@ -1824,6 +1842,7 @@ Agent step 状态：
 - Day 19：Next.js 真实任务提交、任务状态查询、任务事件读取和前端错误 envelope 展示已完成。
 - Day 20：任务详情轮询、`GET /api/tasks/{task_id}/steps` 和 Agent step 脱敏摘要展示已完成。
 - Day 21：历史任务、历史报告列表和报告详情真实 API 接入已完成。
+- Day 22：结构化日志、错误分类、`error_logs` 持久化和错误查询 API 已完成。
 
 中期：
 

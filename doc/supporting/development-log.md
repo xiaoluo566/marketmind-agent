@@ -1591,7 +1591,7 @@ Day 21 的目标是补齐历史任务和历史报告，让系统从“能跑一�
 
 | Day | 计划主题 | 实际完成 | 验证 | 提交 |
 | --- | --- | --- | --- | --- |
-| Day 22 | 日志、trace、错误分类 | 待记录 | 待记录 | 待记录 |
+| Day 22 | 日志、trace、错误分类 | 结构化 JSON 日志入口、敏感字段脱敏、`ErrorLogStore`、API 错误写入、Worker/Crawler 分类错误、`GET /api/observability/errors` | `uv run pytest` 114 passed，ruff 通过，alembic head 正常，frontend lint/build 通过 | 待提交 |
 | Day 23 | Docker Compose 一键启动 | 待记录 | 待记录 | 待记录 |
 | Day 24 | 单元测试、集成测试、固定样例 | 待记录 | 待记录 | 待记录 |
 | Day 25 | E2E 与关键用户流验证 | 待记录 | 待记录 | 待记录 |
@@ -1600,6 +1600,54 @@ Day 21 的目标是补齐历史任务和历史报告，让系统从“能跑一�
 | Day 28 | Demo 脚本、简历素材、截图 | 待记录 | 待记录 | 待记录 |
 | Day 29 | 回归修复和发布准备 | 待记录 | 待记录 | 待记录 |
 | Day 30 | 里程碑封版和总结 | 待记录 | 待记录 | 待记录 |
+
+## Day 22 开发记录
+
+### 背景
+
+Day 20 和 Day 21 已经让任务详情、历史任务、历史报告进入真实数据链路，但仍有一个工程化缺口：任务失败后只能看业务事件和错误 envelope，缺少一个能按 `trace_id` / `task_id` 查询的结构化错误记录。
+
+Day 22 因此选择先做“可排障闭环”，而不是直接做复杂 LLMOps 面板。
+
+### 实际完成
+
+- 新增 `backend/app/observability/logging.py`，统一结构化日志字段。
+- 新增 `backend/app/observability/sanitization.py`，递归脱敏敏感 key。
+- 新增 `backend/app/observability/error_store.py`，提供 `ErrorLayer`、`ErrorLogData`、`InMemoryErrorLogStore` 和 `SQLAlchemyErrorLogStore`。
+- 修改 `backend/app/core/middleware.py`，保留 `X-Trace-Id` 并新增 `X-Request-Duration-Ms`。
+- 修改 `backend/app/core/exceptions.py`，将 API 统一异常写入 `error_logs`。
+- 修改 `backend/app/worker/tasks.py`，将 Crawler 失败写入 `layer=crawler`，持久化失败写入 `layer=database`。
+- 新增 `backend/app/api/routes/observability.py`，提供 `GET /api/observability/errors`。
+- 更新 `doc/roadmap/day-22.md`、`observability.md`、`api-contract.md`、`data-model.md` 和面试文档。
+
+### 当天为什么这样选
+
+可观测性有很多层：日志、指标、trace、告警、dashboard。当前项目最缺的是“失败后能复盘”，所以第一步优先做三件事：
+
+1. 日志字段统一，后续好接 Loguru / OTel。
+2. 关键失败入库，方便历史任务复盘。
+3. 查询接口成型，后续前端可以直接接调试页。
+
+暂时不接完整 OpenTelemetry，是为了控制复杂度。没有部署、没有集中日志平台、没有服务网格时，OTel 的配置成本会大于收益。
+
+### 当前验证
+
+- `uv run pytest tests\test_observability.py`：6 passed。
+- `uv run pytest tests\test_tasks_api.py tests\test_celery_worker.py tests\test_task_persistence.py tests\test_health.py`：25 passed。
+- `uv run pytest tests\test_observability.py tests\test_tasks_api.py tests\test_celery_worker.py tests\test_task_persistence.py tests\test_health.py`：29 passed。
+- `uv run ruff check backend tests\test_observability.py`：通过。
+- `uv run pytest`：114 passed。
+- `uv run ruff check backend tests migrations`：通过。
+- `uv run alembic heads`：`0002_task_queue_id (head)`。
+- `cd frontend; npm run lint`：通过。
+- `cd frontend; npm run build`：通过。
+
+### 遗留问题
+
+- 错误日志查询接口还没有前端 UI。
+- 错误日志还没有按 `error_code` 聚合统计。
+- `POST /api/tasks/{task_id}/retry` 尚未实现，错误分类还没有和自动恢复策略打通。
+- 当前结构化日志仍输出到应用日志流，后续可以接 Loguru、OpenTelemetry、ELK 或 Grafana Loki。
 
 ## 30 天后优化记录
 

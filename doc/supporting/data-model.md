@@ -82,6 +82,17 @@
 - `trace_id`
 - `created_at`
 
+### `error_logs`
+
+- `id`
+- `task_id`
+- `trace_id`
+- `layer`
+- `error_code`
+- `message`
+- `details`
+- `created_at`
+
 ### `reviews`
 
 - `id`
@@ -113,6 +124,7 @@
 - 一个 `agent_run` 对应多条 `agent_steps`
 - 一个 `product` 可以关联多个 `reviews`
 - 一个 `review` 可以拆成多个 `review_chunks`
+- 一个 `task` 可以关联多条 `error_logs`
 
 ## 设计要求
 
@@ -205,6 +217,7 @@ Day 7 增量迁移为 `0002_task_queue_id`：
 - Day 9 起 `SQLAlchemyCrawlResultStore` 负责把采集成功结果映射到这些表，并在 service 层用 `task_id + source_url`、`task_id + artifact_type + checksum` 和评论外部 ID 做第一版幂等控制。
 - RAG 写入 `review_chunks` 和向量
 - Report 模块写入 `reports`
+- Observability 模块写入 `error_logs`
 
 ## Day 14 Review Chunk 写入约束
 
@@ -325,6 +338,42 @@ reports.content_markdown -> ## 维度评分
 - 每个 `DimensionScore.evidence_refs` 必须能回到 Day 17 的 evidence chain。
 - 样本不足必须写入 `LOW_SAMPLE_SIZE`。
 - 无证据时 `status=insufficient_evidence`，整体分数为 0。
+
+## Day 22 Error Log 写入约束
+
+Day 22 开始正式使用 Day 3 已创建的 `error_logs` 表，不新增迁移。
+
+字段使用方式：
+
+| 字段 | Day 22 用途 |
+| --- | --- |
+| `id` | 错误日志 ID，前缀 `err_` |
+| `task_id` | 可选，能归属到任务时必须写入 |
+| `trace_id` | 可选，API 和 Worker 链路优先写入 |
+| `layer` | 错误所在层，例如 `api`、`crawler`、`database` |
+| `error_code` | 机器可读错误码 |
+| `message` | 人类可读摘要 |
+| `details` | 脱敏后的结构化细节 |
+| `created_at` | 错误发生时间 |
+
+当前写入来源：
+
+- API 统一异常处理器：写入 `layer=api`。
+- Worker Crawler 失败：写入 `layer=crawler`。
+- Crawler 结果持久化失败：写入 `layer=database`。
+
+查询入口：
+
+```text
+GET /api/observability/errors?trace_id=trc_xxx
+GET /api/observability/errors?task_id=tsk_xxx
+```
+
+约束：
+
+- `details` 必须经过 `sanitize_details()` 递归脱敏。
+- 不允许无筛选条件查询全部错误。
+- `task_events` 继续记录业务生命周期，`error_logs` 记录排障事实，两者不要混用。
 
 ## 与其他文档关系
 

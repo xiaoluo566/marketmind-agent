@@ -1,6 +1,7 @@
 from functools import lru_cache
 
 from app.core.config import get_settings
+from app.observability.error_store import ErrorLogStore, SQLAlchemyErrorLogStore
 from app.storage.agent_stores import SQLAlchemyAgentRunStore
 from app.storage.crawl_stores import SQLAlchemyCrawlResultStore
 from app.storage.database import SessionLocal
@@ -56,3 +57,8 @@ def get_crawl_result_store() -> SQLAlchemyCrawlResultStore:
 @lru_cache
 def get_agent_run_store() -> SQLAlchemyAgentRunStore:
     return SQLAlchemyAgentRunStore(session_factory=SessionLocal)
+
+
+@lru_cache
+def get_error_log_store() -> ErrorLogStore:
+    return SQLAlchemyErrorLogStore(session_factory=SessionLocal)

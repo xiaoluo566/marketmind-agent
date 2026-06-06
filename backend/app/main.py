@@ -10,6 +10,7 @@ from app.core.exceptions import (
     request_validation_exception_handler,
 )
 from app.core.middleware import TraceIdMiddleware
+from app.tasks.dependencies import get_error_log_store
 
 
 def create_app() -> FastAPI:
@@ -19,6 +20,7 @@ def create_app() -> FastAPI:
     app.add_exception_handler(AppError, app_error_handler)
     app.add_exception_handler(RequestValidationError, request_validation_exception_handler)
     app.add_exception_handler(HTTPException, http_exception_handler)
+    app.state.error_log_store_factory = get_error_log_store
     app.include_router(api_router, prefix=settings.api_prefix)
     return app
 

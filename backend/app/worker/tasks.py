@@ -1,12 +1,16 @@
 import asyncio
+from time import perf_counter
 
 from app.api.schemas.tasks import TaskStatusData
 from app.core.config import get_settings
 from app.crawler import CrawlError, CrawlRequest, crawl_product_page
+from app.observability.error_store import ErrorLayer, ErrorLogData, ErrorLogStore
+from app.observability.logging import log_observability_event
 from app.storage.crawl_stores import CrawlResultStore
 from app.storage.statuses import TaskStatus
 from app.tasks.dependencies import (
     get_crawl_result_store,
+    get_error_log_store,
     get_task_event_store,
     get_task_status_store,
 )
@@ -25,6 +29,7 @@ def process_research_task(task_id: str, payload: dict, trace_id: str) -> dict:
         status_store=get_task_status_store(),
         event_store=get_task_event_store(),
         crawl_result_store=get_crawl_result_store(),
+        error_log_store=get_error_log_store(),
     )
 
 
@@ -35,7 +40,9 @@ def run_research_task(
     status_store: TaskStatusStore,
     event_store: TaskEventStore,
     crawl_result_store: CrawlResultStore | None = None,
+    error_log_store: ErrorLogStore | None = None,
 ) -> dict:
+    task_started_at = perf_counter()
     current_task = status_store.get(task_id)
     if current_task is None:
         current_task = TaskStatusData(
@@ -59,6 +66,12 @@ def run_research_task(
         }
     )
     status_store.save(running_task)
+    _log_worker_event(
+        event="worker.task.running",
+        message="task running",
+        task_id=task_id,
+        trace_id=trace_id,
+    )
     event_store.append(
         build_task_event(
             task_id=task_id,
@@ -72,6 +85,7 @@ def run_research_task(
 
     crawl_result_payload: dict = {}
     if _should_crawl(payload):
+        crawl_started_at = perf_counter()
         event_store.append(
             build_task_event(
                 task_id=task_id,
@@ -85,6 +99,7 @@ def run_research_task(
         try:
             crawl_result = asyncio.run(crawl_product_page(_build_crawl_request(task_id, payload)))
         except CrawlError as exc:
+            duration_ms = _duration_ms(crawl_started_at)
             failed_task = running_task.model_copy(
                 update={
                     "status": TaskStatus.FAILED.value,
@@ -105,9 +120,23 @@ def run_research_task(
                         "error_code": exc.code.value,
                         "reason": str(exc),
                         "details": exc.details,
+                        "duration_ms": duration_ms,
                     },
                     trace_id=trace_id,
                 )
+            )
+            _record_worker_error(
+                error_log_store=error_log_store,
+                layer=ErrorLayer.CRAWLER,
+                task_id=task_id,
+                trace_id=trace_id,
+                error_code=exc.code.value,
+                message=str(exc),
+                details={
+                    "stage": "crawl",
+                    "duration_ms": duration_ms,
+                    "crawler_details": exc.details,
+                },
             )
             return {
                 "task_id": task_id,
@@ -131,12 +160,14 @@ def run_research_task(
         }
         persisted_crawl = None
         if crawl_result_store is not None:
+            persist_started_at = perf_counter()
             try:
                 persisted_crawl = crawl_result_store.persist_success(
                     task_id=task_id,
                     result=crawl_result,
                 )
             except Exception as exc:
+                duration_ms = _duration_ms(persist_started_at)
                 failed_task = running_task.model_copy(
                     update={
                         "status": TaskStatus.FAILED.value,
@@ -156,9 +187,23 @@ def run_research_task(
                         payload={
                             "error_code": "CRAWL_PERSISTENCE_FAILED",
                             "reason": str(exc),
+                            "duration_ms": duration_ms,
                         },
                         trace_id=trace_id,
                     )
+                )
+                _record_worker_error(
+                    error_log_store=error_log_store,
+                    layer=ErrorLayer.DATABASE,
+                    task_id=task_id,
+                    trace_id=trace_id,
+                    error_code="CRAWL_PERSISTENCE_FAILED",
+                    message="crawl persistence failed",
+                    details={
+                        "stage": "crawl_persistence",
+                        "duration_ms": duration_ms,
+                        "reason": str(exc),
+                    },
                 )
                 return {
                     "task_id": task_id,
@@ -179,7 +224,7 @@ def run_research_task(
                 status=TaskStatus.RUNNING.value,
                 event_type="crawler",
                 message="crawl completed",
-                payload=crawl_result_payload,
+                payload={**crawl_result_payload, "duration_ms": _duration_ms(crawl_started_at)},
                 trace_id=trace_id,
             )
         )
@@ -192,6 +237,13 @@ def run_research_task(
         }
     )
     status_store.save(completed_task)
+    _log_worker_event(
+        event="worker.task.completed",
+        message="task completed",
+        task_id=task_id,
+        trace_id=trace_id,
+        duration_ms=_duration_ms(task_started_at),
+    )
     event_store.append(
         build_task_event(
             task_id=task_id,
@@ -248,3 +300,70 @@ def _read_bool_option(value: object, *, default: bool) -> bool:
     if isinstance(value, str):
         return value.strip().lower() in {"1", "true", "yes", "on"}
     return bool(value)
+
+
+def _duration_ms(started_at: float) -> int:
+    return max(0, int((perf_counter() - started_at) * 1000))
+
+
+def _record_worker_error(
+    *,
+    error_log_store: ErrorLogStore | None,
+    layer: ErrorLayer,
+    task_id: str,
+    trace_id: str,
+    error_code: str,
+    message: str,
+    details: dict,
+) -> None:
+    detail_duration = details.get("duration_ms")
+    duration_ms = detail_duration if isinstance(detail_duration, int) else None
+    _log_worker_event(
+        level="ERROR",
+        event="worker.error",
+        message=message,
+        task_id=task_id,
+        trace_id=trace_id,
+        duration_ms=duration_ms,
+        error_code=error_code,
+        layer=layer,
+        details=details,
+    )
+    if error_log_store is None:
+        return
+    error_log_store.append(
+        ErrorLogData(
+            task_id=task_id,
+            trace_id=trace_id,
+            layer=layer,
+            error_code=error_code,
+            message=message,
+            details=details,
+        )
+    )
+
+
+def _log_worker_event(
+    *,
+    event: str,
+    message: str,
+    task_id: str,
+    trace_id: str,
+    level: str = "INFO",
+    duration_ms: int | None = None,
+    error_code: str | None = None,
+    layer: ErrorLayer = ErrorLayer.WORKER,
+    details: dict | None = None,
+) -> None:
+    log_observability_event(
+        level=level,
+        service="marketmind-worker",
+        event=event,
+        message=message,
+        trace_id=trace_id,
+        task_id=task_id,
+        duration_ms=duration_ms,
+        error_code=error_code,
+        layer=layer.value,
+        details=details,
+    )
