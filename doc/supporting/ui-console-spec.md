@@ -19,6 +19,25 @@
 
 前端实时进度页不直接解析日志，而是消费后端的结构化任务状态和事件流。
 
+## Day 19 实际接入边界
+
+Day 19 已把控制台的核心任务入口接到真实 FastAPI：
+
+- `frontend/src/components/new-research-form.tsx` 调用 `POST /api/tasks` 创建任务。
+- 创建成功后跳转到 `/tasks/{task_id}`。
+- 任务详情页通过 `GET /api/tasks/{task_id}` 读取状态快照。
+- 任务详情页通过 `GET /api/tasks/{task_id}/events` 读取事件时间线。
+- AppShell 显示当前 API 模式，避免调试时误把 mock 当成真实接口。
+
+Day 19 仍然保留 fallback 的页面或数据：
+
+- 任务列表：后端 `GET /api/tasks` 尚未实现。
+- Agent steps：后端 `GET /api/tasks/{task_id}/steps` 尚未实现，前端暂时返回空数组。
+- 报告列表和报告详情：后端 `GET /api/reports`、`GET /api/reports/{report_id}` 尚未实现。
+- evidence 总览：后端 `GET /api/evidence` 尚未实现。
+
+这意味着 Day 20 的优先级不是继续堆静态页面，而是补任务进度刷新和 Agent step 的真实展示。
+
 ### 状态快照
 
 `GET /api/tasks/{task_id}` 返回的数据建议用于任务详情页的顶部摘要：

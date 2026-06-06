@@ -1,7 +1,55 @@
 import { agentSteps, evidence, reports, services, taskEvents, tasks } from "./mock-data";
+import type { Task, TaskAccepted, TaskCreateInput, TaskEvent } from "./types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
-const USE_MOCKS = process.env.NEXT_PUBLIC_USE_MOCKS !== "false";
+const USE_MOCKS = process.env.NEXT_PUBLIC_USE_MOCKS === "true";
+
+export type ApiEnvelope<T> = {
+  success: boolean;
+  data: T | null;
+  error: {
+    code: string;
+    message?: string;
+    details?: Record<string, unknown>;
+  } | null;
+  message: string;
+  trace_id: string;
+};
+
+type ApiClientErrorOptions = {
+  code: string;
+  status: number;
+  traceId?: string;
+  details?: Record<string, unknown>;
+};
+
+export class ApiClientError extends Error {
+  code: string;
+  status: number;
+  traceId?: string;
+  details?: Record<string, unknown>;
+
+  constructor(message: string, options: ApiClientErrorOptions) {
+    super(message);
+    this.name = "ApiClientError";
+    this.code = options.code;
+    this.status = options.status;
+    this.traceId = options.traceId;
+    this.details = options.details;
+  }
+}
+
+export function isRealApiEnabled() {
+  return !USE_MOCKS;
+}
+
+export function getApiModeLabel() {
+  return isRealApiEnabled() ? "Real API" : "Mock";
+}
+
+export function getApiBaseUrl() {
+  return API_BASE_URL;
+}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -12,34 +60,64 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     },
     cache: "no-store",
   });
+  const envelope = (await response.json()) as ApiEnvelope<T>;
 
-  if (!response.ok) {
-    throw new Error(`API request failed: ${response.status}`);
+  if (!response.ok || !envelope.success || envelope.error) {
+    throw new ApiClientError(envelope.error?.message ?? envelope.message, {
+      code: envelope.error?.code ?? "API_REQUEST_FAILED",
+      status: response.status,
+      traceId: envelope.trace_id,
+      details: envelope.error?.details,
+    });
   }
 
-  const envelope = await response.json();
-  return envelope.data as T;
+  if (envelope.data === null) {
+    throw new ApiClientError("API response did not include data", {
+      code: "EMPTY_RESPONSE_DATA",
+      status: response.status,
+      traceId: envelope.trace_id,
+    });
+  }
+
+  return envelope.data;
+}
+
+async function safeRequest<T>(path: string, fallback: T): Promise<T> {
+  try {
+    return await request<T>(path);
+  } catch {
+    return fallback;
+  }
+}
+
+export async function createTask(payload: TaskCreateInput) {
+  return request<TaskAccepted>("/api/tasks", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }
 
 export async function listTasks() {
   if (USE_MOCKS) {
     return tasks;
   }
-  return request<typeof tasks>("/api/tasks");
+  return safeRequest<Task[]>("/api/tasks", tasks);
 }
 
 export async function getTask(taskId: string) {
   if (USE_MOCKS) {
     return tasks.find((task) => task.task_id === taskId) ?? tasks[0];
   }
-  return request<(typeof tasks)[number]>(`/api/tasks/${taskId}`);
+  const task = await request<BackendTaskStatus>(`/api/tasks/${taskId}`);
+  return mapBackendTask(task);
 }
 
 export async function getTaskEvents(taskId: string) {
   if (USE_MOCKS) {
     return taskEvents.filter((event) => event.task_id === taskId);
   }
-  return request<typeof taskEvents>(`/api/tasks/${taskId}/events`);
+  const payload = await request<BackendTaskEvents>(`/api/tasks/${taskId}/events`);
+  return payload.events.map(mapBackendTaskEvent);
 }
 
 export async function getTaskSteps(taskId: string) {
@@ -47,31 +125,174 @@ export async function getTaskSteps(taskId: string) {
     const runId = taskId.replace("tsk", "run");
     return agentSteps.filter((step) => step.agent_run_id === runId);
   }
-  return request<typeof agentSteps>(`/api/tasks/${taskId}/steps`);
+  try {
+    return await request<typeof agentSteps>(`/api/tasks/${taskId}/steps`);
+  } catch {
+    return [];
+  }
 }
 
 export async function listReports() {
   if (USE_MOCKS) {
     return reports;
   }
-  return request<typeof reports>("/api/reports");
+  return safeRequest<typeof reports>("/api/reports", reports);
 }
 
 export async function getReport(reportId: string) {
   if (USE_MOCKS) {
     return reports.find((report) => report.report_id === reportId) ?? reports[0];
   }
-  return request<(typeof reports)[number]>(`/api/reports/${reportId}`);
+  return safeRequest<(typeof reports)[number]>(
+    `/api/reports/${reportId}`,
+    reports.find((report) => report.report_id === reportId) ?? reports[0],
+  );
 }
 
 export async function listEvidence() {
   if (USE_MOCKS) {
     return evidence;
   }
-  return request<typeof evidence>("/api/evidence");
+  return safeRequest<typeof evidence>("/api/evidence", evidence);
 }
 
 export async function listServices() {
-  return services;
+  return services.map((service) =>
+    service.name === "API"
+      ? {
+          ...service,
+          status: isRealApiEnabled() ? "healthy" : service.status,
+          detail: isRealApiEnabled() ? API_BASE_URL : service.detail,
+        }
+      : service,
+  );
 }
 
+type BackendTaskStatus = {
+  task_id: string;
+  status: string;
+  trace_id: string;
+  target: string;
+  mode: string;
+  priority: "low" | "normal" | "high";
+  source_type: "demo_dataset" | "manual_upload" | "public_url";
+  options: Record<string, unknown>;
+  queue_task_id: string | null;
+  error_code: string | null;
+  error_message: string | null;
+  started_at: string | null;
+  finished_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type BackendTaskEvents = {
+  task_id: string;
+  events: BackendTaskEvent[];
+};
+
+type BackendTaskEvent = {
+  event_id: string;
+  task_id: string;
+  status: string;
+  event_type: string;
+  message: string;
+  payload: Record<string, unknown>;
+  trace_id: string | null;
+  created_at: string;
+};
+
+function mapBackendTask(task: BackendTaskStatus): Task {
+  return {
+    task_id: task.task_id,
+    title: buildTaskTitle(task.target),
+    target: task.target,
+    mode: task.mode,
+    status: normalizeTaskStatus(task.status),
+    priority: task.priority,
+    source_type: task.source_type,
+    created_at: task.created_at,
+    updated_at: task.updated_at,
+    started_at: task.started_at ?? undefined,
+    finished_at: task.finished_at ?? undefined,
+    duration_ms: durationMs(task.started_at, task.finished_at),
+    trace_id: task.trace_id,
+    queue_task_id: task.queue_task_id,
+    error_code: task.error_code,
+    error_message: task.error_message,
+  };
+}
+
+function mapBackendTaskEvent(event: BackendTaskEvent): TaskEvent {
+  return {
+    event_id: event.event_id,
+    task_id: event.task_id,
+    module: inferEventModule(event.event_type),
+    event_type: event.event_type,
+    status: normalizeTaskStatus(event.status),
+    message: event.message,
+    created_at: event.created_at,
+    trace_id: event.trace_id,
+    payload: event.payload,
+  };
+}
+
+function buildTaskTitle(target: string) {
+  if (target.startsWith("demo://")) {
+    return target.replace("demo://", "Demo dataset: ");
+  }
+  try {
+    const url = new URL(target);
+    return url.hostname;
+  } catch {
+    return target.slice(0, 80);
+  }
+}
+
+function normalizeTaskStatus(status: string): Task["status"] {
+  const supported: Task["status"][] = [
+    "received",
+    "queued",
+    "running",
+    "crawling",
+    "reasoning",
+    "retrieving",
+    "reporting",
+    "waiting_retry",
+    "completed",
+    "failed",
+    "cancelled",
+  ];
+  return supported.includes(status as Task["status"]) ? (status as Task["status"]) : "running";
+}
+
+function inferEventModule(eventType: string): TaskEvent["module"] {
+  if (eventType.includes("crawler")) {
+    return "crawler";
+  }
+  if (eventType.includes("agent")) {
+    return "agent";
+  }
+  if (eventType.includes("rag")) {
+    return "rag";
+  }
+  if (eventType.includes("report")) {
+    return "report";
+  }
+  if (eventType.includes("worker")) {
+    return "worker";
+  }
+  return "api";
+}
+
+function durationMs(startedAt?: string | null, finishedAt?: string | null) {
+  if (!startedAt) {
+    return undefined;
+  }
+  const start = new Date(startedAt).getTime();
+  const end = finishedAt ? new Date(finishedAt).getTime() : Date.now();
+  if (Number.isNaN(start) || Number.isNaN(end) || end < start) {
+    return undefined;
+  }
+  return end - start;
+}

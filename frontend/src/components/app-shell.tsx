@@ -14,6 +14,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { getApiBaseUrl, getApiModeLabel, isRealApiEnabled } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -27,6 +28,8 @@ const navItems = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const realApiEnabled = isRealApiEnabled();
+  const apiModeLabel = getApiModeLabel();
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-950">
@@ -71,13 +74,20 @@ export function AppShell({ children }: { children: ReactNode }) {
               <div>
                 <p className="text-sm font-semibold text-slate-950">Local Dev</p>
                 <p className="font-mono text-[11px] uppercase tracking-wide text-slate-500">
-                  API mock client active
+                  {realApiEnabled ? getApiBaseUrl() : "API mock client active"}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className="hidden rounded border border-violet-200 bg-violet-50 px-2 py-1 font-mono text-[11px] font-semibold uppercase text-violet-700 sm:inline-flex">
-                Mock
+              <span
+                className={cn(
+                  "hidden rounded border px-2 py-1 font-mono text-[11px] font-semibold uppercase sm:inline-flex",
+                  realApiEnabled
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                    : "border-violet-200 bg-violet-50 text-violet-700",
+                )}
+              >
+                {apiModeLabel}
               </span>
               <span className="hidden rounded border border-slate-200 bg-slate-50 px-2 py-1 font-mono text-[11px] font-semibold uppercase text-slate-600 sm:inline-flex">
                 OpenAI-compatible

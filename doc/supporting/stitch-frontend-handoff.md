@@ -90,6 +90,23 @@
 
 详细字段以 `api-contract.md` 和 `data-contract-examples.md` 为准。
 
+## Day 19 接入状态
+
+Day 19 已经在 `frontend/` 中完成第一批真实 API 接入：
+
+- 任务提交页已经使用正式 Next.js 客户端组件，不再是静态表单。
+- `POST /api/tasks`、`GET /api/tasks/{task_id}` 和 `GET /api/tasks/{task_id}/events` 已接入真实 FastAPI。
+- `frontend/.env.example` 默认使用 `NEXT_PUBLIC_USE_MOCKS=false`。
+- AppShell 会显示当前是 `Real API` 还是 `Mock`。
+
+Stitch 后续如果重新生成页面，需要注意：
+
+- 不要覆盖 `frontend/src/lib/api.ts` 中的真实 API client。
+- 不要把 `NewResearchForm` 改回静态按钮。
+- 不要在页面里硬编码 `localhost`，应继续使用 `NEXT_PUBLIC_API_BASE_URL`。
+- 不要在前端补写 crawler、Agent、RAG 或 prompt 逻辑。
+- 对后端尚未实现的接口，可以保留 mock 展示，但必须在代码或文档中标注为 fallback。
+
 ## Stitch 生成代码交接要求
 
 你从 Stitch 导出后，最好提供以下内容：

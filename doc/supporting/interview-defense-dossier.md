@@ -132,6 +132,12 @@ Day 18 做评论机会点评分和风险分析，是因为 Day 17 已经解决�
 
 > Day 18 我没有让模型直接打分，而是先做可解释的规则评分 baseline。每个维度分数都绑定 evidence refs，并说明样本数、平均评分、相似度和降权原因。这样评分不是黑盒，也不会被误解成销量预测。
 
+Day 19 做 Next.js 前端真实 API 接入，是因为后端能力已经积累到可以通过控制台演示的阶段。如果前端仍然只展示 mock 数据，项目虽然有后端工程深度，但面试演示时还需要依赖命令行和测试用例，不利于说明“这是一个可操作系统”。今天我把 `POST /api/tasks`、`GET /api/tasks/{task_id}` 和 `GET /api/tasks/{task_id}/events` 接到真实 FastAPI，同时把尚未实现的任务列表、Agent steps、报告列表和报告详情保留 fallback。
+
+面试时可以这样讲：
+
+> Day 19 我没有把所有页面都强行改成真实 API，而是按后端成熟度分层接入。任务创建、任务状态和事件流已经稳定，所以前端真实调用；列表、steps 和报告详情接口还没完成，所以保留 mock fallback。这样做的好处是演示链路可以先跑起来，同时不会在前端伪造后端尚未具备的能力。
+
 ### Day 8 之后追加模板
 
 ```markdown
@@ -325,10 +331,10 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 
 ### 7. 我对“不要夸大进度”的思考
 
-这个项目目前推进到 Day 18，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
+这个项目目前推进到 Day 19，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
 
-- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、工具 schema、工具注册机制、最小 ReAct 状态机、Agent step 落库、结构化输出 guardrails、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、`search_reviews_tool`、结构化报告生成骨架、报告入库、证据链回查 API、评论风险机会评分、错误 envelope、测试。
-- 正在做：Next.js 接真实 API。
+- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、工具 schema、工具注册机制、最小 ReAct 状态机、Agent step 落库、结构化输出 guardrails、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、`search_reviews_tool`、结构化报告生成骨架、报告入库、证据链回查 API、评论风险机会评分、前端真实任务提交和任务状态/事件读取、错误 envelope、测试。
+- 正在做：前端任务进度刷新和 Agent step 展示。
 - 后续做：真实 embedding provider、pgvector 原生检索、真实 LLM report prompt、部署。
 
 我认为这反而是加分项。因为真实开发中，清楚知道自己完成了什么、没完成什么，比把项目包装得过满更可信。
@@ -371,10 +377,12 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 
 ## 当前开发进度怎么讲
 
-截至 Day 18，项目已经完成：
+截至 Day 19，项目已经完成：
 
 - 文档体系、30 天 roadmap、开发日志。
 - Next.js 控制台骨架。
+- Next.js 真实任务提交表单。
+- 前端 API client、统一 envelope 解析和错误码展示。
 - FastAPI 后端骨架。
 - 统一 API envelope 和 trace ID middleware。
 - SQLAlchemy 2.0 数据模型和 Alembic 初始迁移。
@@ -437,6 +445,9 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 - 样本不足降权和 `LOW_SAMPLE_SIZE`。
 - `attach_scorecard_to_report()`，把 scorecard 绑定到报告 metadata。
 - 报告 Markdown 的“维度评分”章节。
+- 前端调用真实 `POST /api/tasks` 创建任务，并在成功后跳转 `/tasks/{task_id}`。
+- 前端调用真实 `GET /api/tasks/{task_id}` 和 `GET /api/tasks/{task_id}/events` 展示任务状态和事件。
+- 前端对尚未实现的任务列表、Agent steps、报告列表和报告详情接口保留 fallback。
 - 工具调用前后状态落库，Action step 能从 pending/running 更新为 success/failed。
 - Agent 工具失败时，错误码和失败 observation 会写入数据库，不覆盖旧 step。
 - 队列不可用、状态缓存不可用、参数校验失败的统一错误响应。
@@ -1253,7 +1264,8 @@ API 只负责投递任务。只要 Redis broker 可用，任务会处于 queued�
 - Day 1 到 Day 6 先做基础设施和任务可观测性。
 - Day 7 到 Day 12 做联调、采集、状态机和工具。
 - Day 13 到 Day 18 做 RAG 和报告。
-- Day 19 之后做前端真实接入和部署。
+- Day 19 做前端真实任务提交、状态查询和事件读取。
+- Day 20 之后做前端进度细节、历史报告、部署和观测。
 
 复杂度不是一次性堆上去，而是按依赖逐步增加。
 
@@ -1440,6 +1452,29 @@ Day 17 的处理是：
 
 Day 18 用确定性规则先建立 baseline：关键词决定维度，rating 和 similarity 影响风险，样本数不足就降权。后续即使用 LLM，也只能辅助解释或分类，不能绕过 evidence refs 和 schema。
 
+### Q30：Day 19 为什么没有一次性删除所有 mock？
+
+因为前端真实接入不等于“所有页面都必须立刻真实化”。Day 19 的后端稳定接口是：
+
+- `POST /api/tasks`
+- `GET /api/tasks/{task_id}`
+- `GET /api/tasks/{task_id}/events`
+- `GET /api/reports/{report_id}/evidence`
+
+但这些接口还没有完成：
+
+- `GET /api/tasks`
+- `GET /api/tasks/{task_id}/steps`
+- `GET /api/reports`
+- `GET /api/reports/{report_id}`
+- `GET /api/evidence`
+
+所以 Day 19 的策略是：核心链路真实接入，未实现接口显式 fallback。这样做比“全删 mock 然后页面大片报错”更适合工程迭代，也比“前端伪造不存在的后端能力”更诚实。
+
+面试时可以这样讲：
+
+> 我把 mock 当成开发兜底，不当成产品能力。任务创建、状态和事件已经有真实后端，所以前端真实调用；列表、steps 和报告详情还没后端接口，所以保留 fallback，并在文档里标记为 Day 20/Day 21 的工作。这个选择体现的是接口成熟度驱动前端接入，而不是为了演示效果硬拼假数据。
+
 ## 面试官可能深挖的技术点
 
 ### 异步任务一致性
@@ -1582,8 +1617,13 @@ Agent step 状态：
 
 ## 目前最适合展示的代码点
 
-截至 Day 18，最适合展示：
+截至 Day 19，最适合展示：
 
+- `frontend/src/lib/api.ts`：前端真实 API client、统一 envelope 解析、`ApiClientError` 和 fallback 边界。
+- `frontend/src/components/new-research-form.tsx`：真实任务提交表单，成功后跳转任务详情。
+- `frontend/src/app/research/new/page.tsx`：新建任务页面从静态 mock 表单切换为客户端提交组件。
+- `frontend/src/components/app-shell.tsx`：控制台显示真实 API / mock 模式，降低联调误判。
+- `tests/test_frontend_api_integration_contract.py`：前端真实接入的契约测试。
 - `backend/app/api/routes/tasks.py`：API 如何接收任务、投递队列、统一错误。
 - `backend/app/tasks/service.py`：任务状态创建和入队流程。
 - `backend/app/tasks/dispatcher.py`：Celery 分发器抽象。
@@ -1657,10 +1697,11 @@ Agent step 状态：
 - Day 16：结构化报告 schema、确定性报告生成、Markdown 渲染和 `reports` 入库已完成。
 - Day 17：证据链回查、Markdown citation 和 `GET /api/reports/{report_id}/evidence` 已完成。
 - Day 18：可解释风险/机会评分、样本不足降权和 Markdown 评分展示已完成。
+- Day 19：Next.js 真实任务提交、任务状态查询、任务事件读取和前端错误 envelope 展示已完成。
 
 中期：
 
-- Next.js 接真实 API。
+- 前端任务进度轮询和 Agent step 展示。
 - 真实 embedding provider。
 - pgvector 原生向量排序。
 - 真实 LLM report prompt。
@@ -1668,7 +1709,7 @@ Agent step 状态：
 
 后期：
 
-- 前端真实 API 接入。
+- 前端历史报告和证据链详情完善。
 - Docker Compose。
 - LLMOps 指标和 50 次任务复盘。
 

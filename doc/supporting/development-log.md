@@ -47,8 +47,8 @@
 | --- | --- |
 | 稳定分支 | `main` |
 | 日常开发分支 | `dev` |
-| 当前开发阶段 | Day 18 已完成，准备进入 Day 19 |
-| 当前主链路 | 文档基线、Next.js 控制台骨架、FastAPI health、任务创建 API、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、相似度检索原型、search_reviews_tool、结构化报告生成骨架、报告入库、证据链回查 API、风险机会评分、数据库模型、Alembic 迁移 |
+| 当前开发阶段 | Day 19 已完成，准备进入 Day 20 |
+| 当前主链路 | 文档基线、Next.js 控制台骨架、前端真实 API client、真实任务提交表单、FastAPI health、任务创建 API、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、相似度检索原型、search_reviews_tool、结构化报告生成骨架、报告入库、证据链回查 API、风险机会评分、数据库模型、Alembic 迁移 |
 | 最新开发提交 | 以 `git log -1 --oneline` 为准 |
 | 当前数据库决策 | PostgreSQL + pgvector，review chunk 使用 `vector(1536)` |
 | 当前模型决策 | 默认 `gpt-5.4-mini`，报告模型 `gpt-5.5`，embedding `text-embedding-3-small` |
@@ -97,7 +97,7 @@
 | Day 16 | Done | 报告 schema 与确定性报告生成骨架 | `193da03` |
 | Day 17 | Done | 证据链引用和报告可追溯 | `363dd34` |
 | Day 18 | Done | 评论机会点评分与风险分析 | `dfc2117` |
-| Day 19 | Pending | Next.js 接真实 API | 待记录 |
+| Day 19 | Done | Next.js 接真实 API | 待提交 |
 | Day 20 | Pending | 前端任务进度与 Agent step 展示 | 待记录 |
 | Day 21 | Pending | 历史任务和历史报告 | 待记录 |
 | Day 22 | Pending | 日志、trace、错误分类 | 待记录 |
@@ -1234,6 +1234,80 @@ Day 18 的目标是在报告和证据链基础上加入可解释评分，让报�
 
 进入 Day 19，把 Next.js 前端开始接真实 API，优先接任务状态、事件流、报告详情和证据链接口。
 
+## Day 19 记录
+
+### 实际完成
+
+Day 19 的目标是把 Next.js 控制台从 mock-first 页面推进到真实 FastAPI 接入。今天没有一次性把所有前端页面都改成真实接口，而是优先打通最核心的长任务入口：前端创建任务、拿到 `task_id`、跳转任务详情页，并让任务详情继续读取真实状态和事件。
+
+完成内容：
+
+- 新增 `tests/test_frontend_api_integration_contract.py`，用契约测试锁定前端真实 API 接入边界。
+- 扩展 `frontend/src/lib/types.ts`，新增 `TaskCreateInput`、`TaskAccepted`，并补充任务状态页需要的 `source_type`、`updated_at`、`queue_task_id`、错误字段和事件 payload 字段。
+- 重构 `frontend/src/lib/api.ts`，从纯 mock client 升级为真实 API client + fallback client。
+- 新增 `ApiEnvelope<T>`，让前端显式消费后端统一响应 envelope。
+- 新增 `ApiClientError`，保留后端错误码、HTTP status、trace ID 和 details。
+- 新增 `createTask()`，调用真实 `POST /api/tasks`。
+- `getTask()` 接入真实 `GET /api/tasks/{task_id}`。
+- `getTaskEvents()` 接入真实 `GET /api/tasks/{task_id}/events`。
+- `getTaskSteps()` 在后端接口未实现时显式 `return []`，避免任务详情页崩溃。
+- `listTasks()`、`listReports()`、`getReport()`、`listEvidence()` 暂时保留 mock fallback，因为对应后端接口尚未完成。
+- 新增 `frontend/src/components/new-research-form.tsx`，实现客户端任务提交表单。
+- 更新 `frontend/src/app/research/new/page.tsx`，用 `NewResearchForm` 替换静态 mock 表单。
+- 更新 `frontend/src/components/app-shell.tsx`，显示当前 API 模式和 API base URL。
+- 更新 `frontend/.env.example`，把默认示例切换为 `NEXT_PUBLIC_USE_MOCKS=false`。
+
+### 当天选择思考
+
+今天优先做前端真实 API 接入，是因为后端从 Day 4 到 Day 18 已经积累了任务创建、状态查询、事件流、采集、Agent、RAG、报告和评分能力，但如果控制台还停留在静态 mock，项目演示就仍然需要命令行或测试用例支撑。Day 19 的价值是把“后端工程能力”暴露到一个真实可操作入口。
+
+今天没有直接做完整报告详情页，是因为报告详情依赖 `GET /api/reports/{report_id}`、报告列表、历史任务列表等接口，而这些接口尚未完成。强行在前端做完整页面只会制造更多 mock。更合理的顺序是先打通 `POST /api/tasks`、`GET /api/tasks/{task_id}` 和 `GET /api/tasks/{task_id}/events` 这三个已经稳定的接口，再把未实现接口作为 Day 20/Day 21 的明确后续任务。
+
+我选择自己封装轻量 API client，而不是立即引入 React Query / SWR，是因为 Day 19 的主要风险不是缓存策略，而是接口边界是否真实、错误 envelope 是否能被正确处理、mock fallback 是否被限制在未实现接口上。等 Day 20 开始做轮询、进度刷新和 Agent step 展示时，再评估是否引入数据请求库更合适。
+
+我保留 `NEXT_PUBLIC_USE_MOCKS`，是为了让前端具备开发降级能力。真实 API 模式用于联调和演示，mock 模式用于后端未启动时检查页面布局。但默认 `.env.example` 已经切到真实 API，避免项目长期停在 mock 模式。
+
+### 关键文件
+
+- `frontend/src/lib/api.ts`
+- `frontend/src/lib/types.ts`
+- `frontend/src/components/new-research-form.tsx`
+- `frontend/src/app/research/new/page.tsx`
+- `frontend/src/components/app-shell.tsx`
+- `frontend/.env.example`
+- `tests/test_frontend_api_integration_contract.py`
+- `doc/roadmap/day-19.md`
+- `doc/supporting/ui-console-spec.md`
+- `doc/supporting/stitch-frontend-handoff.md`
+- `doc/supporting/api-contract.md`
+- `doc/supporting/interview-defense-dossier.md`
+
+### 验证记录
+
+- `uv run pytest tests\test_frontend_api_integration_contract.py`：4 passed
+- `uv run pytest`：94 passed
+- `uv run ruff check backend tests migrations`：通过
+- `uv run alembic heads`：`0002_task_queue_id (head)`
+- `cd frontend; npm run build`：通过
+- `cd frontend; npm run lint`：通过
+- Playwright 打开 `http://127.0.0.1:3000/research/new`：页面标题正常，表单控件可见，API 模式显示 `Real API`
+
+### 提交记录
+
+- 待提交：`feat: 实现 Day 19 前端真实 API 接入`
+
+### 遗留问题
+
+- `GET /api/tasks` 尚未实现，任务列表页仍然 fallback 到 mock data。
+- `GET /api/tasks/{task_id}/steps` 尚未实现，任务详情页的 Agent steps 暂时返回空数组。
+- `GET /api/reports` 和 `GET /api/reports/{report_id}` 尚未实现，报告列表和报告详情仍然 fallback。
+- 前端还没有轮询、SSE 或 WebSocket，任务详情页不会自动刷新。
+- 任务创建成功后如果后端 worker 没启动，详情页可能显示 queued 或失败，需要 Day 20 增强状态提示。
+
+### 下一步
+
+进入 Day 20，围绕任务详情页做进度刷新、Agent step 展示和未实现 steps API 的后端补齐，避免前端只会提交任务但不能有效观察执行过程。
+
 ## Day 08 到 Day 14 记录模板
 
 第二周重点从数据采集进入 Agent 工具和状态机。每天开发后按下面格式补充。
@@ -1259,7 +1333,7 @@ Day 18 的目标是在报告和证据链基础上加入可解释评分，让报�
 | Day 16 | 报告 schema 与确定性报告生成骨架 | `StructuredReport`、证据引用校验、Markdown 渲染、`reports` 入库 | pytest 79 passed，ruff 通过，alembic head 正常，frontend build 通过 | `193da03` |
 | Day 17 | 证据链引用和报告可追溯 | evidence ref 解析、EvidenceChain、Markdown citation、报告证据链 API | pytest 86 passed，ruff 通过，alembic head 正常，frontend build 通过 | `363dd34` |
 | Day 18 | 评论机会点评分与风险分析 | `AnalysisScorecard`、维度风险分、机会分、样本不足降权、Markdown 评分展示 | pytest 90 passed，ruff 通过，alembic head 正常，frontend build 通过 | `dfc2117` |
-| Day 19 | Next.js 接真实 API | 待记录 | 待记录 | 待记录 |
+| Day 19 | Next.js 接真实 API | `POST /api/tasks` 真实提交、任务状态/事件真实读取、API envelope/error 封装、未实现接口 fallback、新建任务表单 | pytest 94 passed，ruff 通过，alembic head 正常，frontend build/lint 通过 | 待提交 |
 | Day 20 | 前端任务进度与 Agent step 展示 | 待记录 | 待记录 | 待记录 |
 | Day 21 | 历史任务和历史报告 | 待记录 | 待记录 | 待记录 |
 
