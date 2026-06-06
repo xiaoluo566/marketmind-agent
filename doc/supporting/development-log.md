@@ -93,7 +93,7 @@
 | Day 12 | Done | Pydantic Guardrails 与 self-heal | `5b1c0cf` |
 | Day 13 | Done | 短期记忆与上下文压缩 | `c552801` |
 | Day 14 | Done | 评论切片与 embedding 写入 | `ed4597d` |
-| Day 15 | Done | `search_reviews_tool` 语义检索 | 待提交 |
+| Day 15 | Done | `search_reviews_tool` 语义检索 | `ac23718` |
 | Day 16 | Pending | 报告 schema 与报告生成 | 待记录 |
 | Day 17 | Pending | 证据链引用和报告可追溯 | 待记录 |
 | Day 18 | Pending | 评论机会点评分与风险分析 | 待记录 |
@@ -1012,7 +1012,7 @@ Day 15 的目标是把 Day 14 的 RAG 检索能力变成 Agent 可调用工具�
 
 ### 提交记录
 
-- 待提交
+- `ac23718 feat: 实现 Day 15 差评语义搜索工具`
 
 ### 遗留问题
 
@@ -1037,7 +1037,7 @@ Day 15 的目标是把 Day 14 的 RAG 检索能力变成 Agent 可调用工具�
 | Day 12 | Pydantic Guardrails 与 self-heal | 结构化输出守门、JSON repair prompt、run 指标累计 | pytest + ruff + build 通过 | `5b1c0cf` |
 | Day 13 | 短期记忆与上下文压缩 | 短期记忆 snapshot、滑动窗口摘要、证据 ID 保留、从 Agent step 恢复、状态机接入记忆 | pytest 67 passed，ruff 通过，alembic head 正常，npm build 通过 | `c552801` |
 | Day 14 | 评论切片与 embedding 写入 | 评论清洗、切片、fake embedding、review chunk 幂等入库、相似度检索原型 | pytest 72 passed，ruff 通过，alembic head 正常，npm build 通过 | `ed4597d` |
-| Day 15 | `search_reviews_tool` 语义检索 | 工具 schema、依赖注入注册、evidence chunk、空召回降级 | pytest 75 passed，ruff 通过，alembic head 正常，npm build 通过 | 待提交 |
+| Day 15 | `search_reviews_tool` 语义检索 | 工具 schema、依赖注入注册、evidence chunk、空召回降级 | pytest 75 passed，ruff 通过，alembic head 正常，npm build 通过 | `ac23718` |
 
 ## Day 15 到 Day 21 记录模板
 
@@ -1045,7 +1045,7 @@ Day 15 的目标是把 Day 14 的 RAG 检索能力变成 Agent 可调用工具�
 
 | Day | 计划主题 | 实际完成 | 验证 | 提交 |
 | --- | --- | --- | --- | --- |
-| Day 15 | `search_reviews_tool` 语义检索 | 工具 schema、依赖注入注册、evidence chunk、空召回降级 | pytest 75 passed，ruff 通过，alembic head 正常，npm build 通过 | 待提交 |
+| Day 15 | `search_reviews_tool` 语义检索 | 工具 schema、依赖注入注册、evidence chunk、空召回降级 | pytest 75 passed，ruff 通过，alembic head 正常，npm build 通过 | `ac23718` |
 | Day 16 | 报告 schema 与报告生成 | 待记录 | 待记录 | 待记录 |
 | Day 17 | 证据链引用和报告可追溯 | 待记录 | 待记录 | 待记录 |
 | Day 18 | 评论机会点评分与风险分析 | 待记录 | 待记录 | 待记录 |
