@@ -127,7 +127,9 @@ export const taskEvents: TaskEvent[] = [
 
 export const agentSteps: AgentStep[] = [
   {
+    step_id: "stp_9A21_001",
     agent_run_id: "run_9A21",
+    task_id: "tsk_9A21",
     step_index: 1,
     step_type: "thought",
     status: "success",
@@ -135,7 +137,9 @@ export const agentSteps: AgentStep[] = [
     observation_summary: "User requested a complete competitor research report.",
   },
   {
+    step_id: "stp_9A21_002",
     agent_run_id: "run_9A21",
+    task_id: "tsk_9A21",
     step_index: 2,
     step_type: "action",
     tool_name: "crawl_product_tool",
@@ -145,7 +149,9 @@ export const agentSteps: AgentStep[] = [
     observation_summary: "Saved title, price, rating summary, and 43 review snippets.",
   },
   {
+    step_id: "stp_9A21_003",
     agent_run_id: "run_9A21",
+    task_id: "tsk_9A21",
     step_index: 3,
     step_type: "action",
     tool_name: "search_reviews_tool",
@@ -155,7 +161,9 @@ export const agentSteps: AgentStep[] = [
     observation_summary: "Top defects: seal leakage, low battery life, slow support.",
   },
   {
+    step_id: "stp_9A21_004",
     agent_run_id: "run_9A21",
+    task_id: "tsk_9A21",
     step_index: 4,
     step_type: "self_check",
     status: "running",
@@ -163,7 +171,9 @@ export const agentSteps: AgentStep[] = [
     observation_summary: "Validating evidence coverage before report generation.",
   },
   {
+    step_id: "stp_6D44_002",
     agent_run_id: "run_6D44",
+    task_id: "tsk_6D44",
     step_index: 2,
     step_type: "action",
     tool_name: "crawl_product_tool",
@@ -280,4 +290,3 @@ export const services: SystemService[] = [
   { name: "Crawler", status: "mock", detail: "Stitch reference available" },
   { name: "Agent", status: "mock", detail: "state machine planned" },
 ];
-

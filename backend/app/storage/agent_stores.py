@@ -210,6 +210,16 @@ class SQLAlchemyAgentRunStore:
             )
             return [self._to_step_data(row) for row in session.scalars(stmt).all()]
 
+    def list_steps_for_task(self, task_id: str) -> list[AgentStepData]:
+        with self._session_scope() as session:
+            stmt = (
+                select(AgentStep)
+                .join(AgentRun, AgentStep.agent_run_id == AgentRun.id)
+                .where(AgentStep.task_id == task_id)
+                .order_by(AgentRun.created_at.asc(), AgentStep.step_index.asc())
+            )
+            return [self._to_step_data(row) for row in session.scalars(stmt).all()]
+
     def get_latest_step(self, agent_run_id: str) -> AgentStepData | None:
         with self._session_scope() as session:
             stmt = (

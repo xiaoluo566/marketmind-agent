@@ -21,16 +21,16 @@
 
 ## 当前实现状态
 
-截至 Day 19，后端和前端真实接入状态如下：
+截至 Day 20，后端和前端真实接入状态如下：
 
 | 接口 | 后端状态 | 前端状态 | 备注 |
 | --- | --- | --- | --- |
 | `POST /api/tasks` | 已实现 | 已真实接入 | 新建任务表单调用，成功后跳转任务详情 |
 | `GET /api/tasks/{task_id}` | 已实现 | 已真实接入 | 任务详情页状态快照 |
 | `GET /api/tasks/{task_id}/events` | 已实现 | 已真实接入 | 任务详情页事件时间线 |
+| `GET /api/tasks/{task_id}/steps` | 已实现 | 已真实接入 | 返回脱敏 Agent step 摘要，任务详情页轮询刷新 |
 | `GET /api/reports/{report_id}/evidence` | 已实现 | 待接入详情页 | Day 17 已完成后端证据链 API |
 | `GET /api/tasks` | 未实现 | mock fallback | Day 21 历史任务前需要补齐 |
-| `GET /api/tasks/{task_id}/steps` | 未实现 | 空数组 fallback | Day 20 任务进度与 Agent step 展示需要补齐 |
 | `POST /api/tasks/{task_id}/retry` | 未实现 | 未接入 | 失败恢复能力后续实现 |
 | `GET /api/reports` | 未实现 | mock fallback | Day 21 历史报告前需要补齐 |
 | `GET /api/reports/{report_id}` | 未实现 | mock fallback | 报告详情页真实化前需要补齐 |
@@ -38,7 +38,7 @@
 | `POST /api/uploads` | 未实现 | 未接入 | 手工数据上传后续实现 |
 | `WS /ws/tasks/{task_id}` | 未实现 | 未接入 | 第一版继续使用查询/轮询 |
 
-前端 fallback 只用于后端未实现接口，不应掩盖 `POST /api/tasks`、`GET /api/tasks/{task_id}` 和 `GET /api/tasks/{task_id}/events` 的真实错误。
+前端 fallback 只用于后端未实现接口或非核心辅助数据，不应掩盖 `POST /api/tasks`、`GET /api/tasks/{task_id}` 和 `GET /api/tasks/{task_id}/events` 的真实错误。`GET /api/tasks/{task_id}/steps` 失败时前端可降级为空数组，避免进度详情页整体不可用。
 
 ## 接口细化
 
@@ -122,6 +122,30 @@ Day 8 事件来源：
 ### `GET /api/tasks/{task_id}/steps`
 
 职责：给调试页展示 Agent 执行细节。生产展示时可以隐藏 thought，只展示 tool 和 observation 摘要。
+
+Day 20 实现范围：
+
+- 先确认任务存在，不存在返回 `TASK_NOT_FOUND`。
+- 根据 `task_id` 查询所有 `agent_steps`。
+- 按 Agent run 创建时间和 `step_index` 升序返回。
+- 不暴露完整 `thought`。
+- `thought` 类型只返回 `input_summary=Thought recorded`。
+- tool step 只返回 tool 名称、输入 key 摘要、observation 摘要、耗时和错误码。
+
+输出：
+
+- `task_id`
+- `steps`
+- `step_id`
+- `agent_run_id`
+- `step_index`
+- `step_type`
+- `tool_name`
+- `status`
+- `duration_ms`
+- `input_summary`
+- `observation_summary`
+- `error_code`
 
 ### `POST /api/tasks/{task_id}/retry`
 

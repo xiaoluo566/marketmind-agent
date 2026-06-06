@@ -81,3 +81,22 @@ class TaskEventData(BaseModel):
 class TaskEventsData(BaseModel):
     task_id: str
     events: list[TaskEventData]
+
+
+class AgentStepSummaryData(BaseModel):
+    step_id: str
+    agent_run_id: str
+    task_id: str
+    step_index: int
+    step_type: str
+    tool_name: str | None = None
+    status: str
+    duration_ms: int | None = None
+    input_summary: str | None = None
+    observation_summary: str | None = None
+    error_code: str | None = None
+
+
+class TaskAgentStepsData(BaseModel):
+    task_id: str
+    steps: list[AgentStepSummaryData]

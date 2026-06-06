@@ -38,6 +38,27 @@ Day 19 仍然保留 fallback 的页面或数据：
 
 这意味着 Day 20 的优先级不是继续堆静态页面，而是补任务进度刷新和 Agent step 的真实展示。
 
+## Day 20 实际接入边界
+
+Day 20 已补齐任务详情页的进度刷新：
+
+- `frontend/src/components/task-progress-panel.tsx` 负责客户端轮询。
+- 轮询接口包括：
+  - `GET /api/tasks/{task_id}`
+  - `GET /api/tasks/{task_id}/events`
+  - `GET /api/tasks/{task_id}/steps`
+- 默认每 5 秒刷新一次。
+- 任务进入 `completed`、`failed`、`cancelled` 后停止轮询。
+- 用户可以手动点击 Refresh 立即刷新。
+- API 刷新失败时显示错误码，不清空已有数据。
+
+Agent step 展示边界：
+
+- 展示 `step_index`、`step_type`、`tool_name`、`status`、`duration_ms`、`input_summary`、`observation_summary` 和 `error_code`。
+- 不展示完整 thought。
+- 不展示完整 prompt 或模型输入。
+- 没有 step 时显示空态，而不是空白区域。
+
 ### 状态快照
 
 `GET /api/tasks/{task_id}` 返回的数据建议用于任务详情页的顶部摘要：

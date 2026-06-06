@@ -57,6 +57,19 @@
 6. 数据库是否写入结果
 7. 前端是否正确读取状态
 
+## Day 20 前端可观测性闭环
+
+Day 20 已把“任务卡住了”的第一层排查入口放到任务详情页：
+
+- 顶部状态卡读取 `GET /api/tasks/{task_id}`。
+- 事件时间线读取 `GET /api/tasks/{task_id}/events`。
+- Agent steps 表格读取 `GET /api/tasks/{task_id}/steps`。
+- 前端轮询默认 5 秒一次，终态自动停止。
+- 刷新失败时保留已有数据并展示错误码。
+- 任务失败时优先展示 `task.error_code` 和 `task.error_message`。
+
+这不是最终 LLMOps 监控，只是 Day 20 的任务级观测闭环。后续 Day 22 还需要补结构化日志、日志等级、trace 搜索和错误分类统计。
+
 ## 与其他文档关系
 
 - 任务状态字段见 `data-model.md`

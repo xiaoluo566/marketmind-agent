@@ -46,7 +46,9 @@ export type TaskEvent = {
 };
 
 export type AgentStep = {
+  step_id: string;
   agent_run_id: string;
+  task_id: string;
   step_index: number;
   step_type: "thought" | "action" | "observation" | "self_check";
   tool_name?: string;

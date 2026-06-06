@@ -10,6 +10,9 @@ export function TaskTimeline({ events }: { events: TaskEvent[] }) {
         <h2 className="text-sm font-semibold text-slate-950">Event timeline</h2>
       </div>
       <div className="divide-y divide-slate-100">
+        {events.length === 0 ? (
+          <div className="px-4 py-5 text-sm text-slate-500">No task events recorded.</div>
+        ) : null}
         {events.map((event) => (
           <div key={event.event_id} className="grid gap-3 px-4 py-3 md:grid-cols-[140px_120px_1fr]">
             <span className="font-mono text-xs text-slate-500">{formatDateTime(event.created_at)}</span>
@@ -26,4 +29,3 @@ export function TaskTimeline({ events }: { events: TaskEvent[] }) {
     </div>
   );
 }
-

@@ -47,8 +47,8 @@
 | --- | --- |
 | 稳定分支 | `main` |
 | 日常开发分支 | `dev` |
-| 当前开发阶段 | Day 19 已完成，准备进入 Day 20 |
-| 当前主链路 | 文档基线、Next.js 控制台骨架、前端真实 API client、真实任务提交表单、FastAPI health、任务创建 API、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、相似度检索原型、search_reviews_tool、结构化报告生成骨架、报告入库、证据链回查 API、风险机会评分、数据库模型、Alembic 迁移 |
+| 当前开发阶段 | Day 20 已完成，准备进入 Day 21 |
+| 当前主链路 | 文档基线、Next.js 控制台骨架、前端真实 API client、真实任务提交表单、任务详情轮询面板、FastAPI health、任务创建 API、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、Agent step 查询 API、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、相似度检索原型、search_reviews_tool、结构化报告生成骨架、报告入库、证据链回查 API、风险机会评分、数据库模型、Alembic 迁移 |
 | 最新开发提交 | 以 `git log -1 --oneline` 为准 |
 | 当前数据库决策 | PostgreSQL + pgvector，review chunk 使用 `vector(1536)` |
 | 当前模型决策 | 默认 `gpt-5.4-mini`，报告模型 `gpt-5.5`，embedding `text-embedding-3-small` |
@@ -98,7 +98,7 @@
 | Day 17 | Done | 证据链引用和报告可追溯 | `363dd34` |
 | Day 18 | Done | 评论机会点评分与风险分析 | `dfc2117` |
 | Day 19 | Done | Next.js 接真实 API | `3fab1b3` |
-| Day 20 | Pending | 前端任务进度与 Agent step 展示 | 待记录 |
+| Day 20 | Done | 前端任务进度与 Agent step 展示 | 待提交 |
 | Day 21 | Pending | 历史任务和历史报告 | 待记录 |
 | Day 22 | Pending | 日志、trace、错误分类 | 待记录 |
 | Day 23 | Pending | Docker Compose 一键启动 | 待记录 |
@@ -1308,6 +1308,91 @@ Day 19 的目标是把 Next.js 控制台从 mock-first 页面推进到真实 Fas
 
 进入 Day 20，围绕任务详情页做进度刷新、Agent step 展示和未实现 steps API 的后端补齐，避免前端只会提交任务但不能有效观察执行过程。
 
+## Day 20 记录
+
+### 实际完成
+
+Day 20 的目标是补齐“任务提交后怎么观察运行过程”的缺口。今天完成了后端 Agent step 查询 API、前端任务详情轮询面板、steps 映射和空态展示。任务详情页现在不再是一次性服务端渲染的静态快照，而是可以持续刷新任务状态、事件时间线和 Agent step 摘要。
+
+完成内容：
+
+- 新增 `GET /api/tasks/{task_id}/steps`。
+- 新增 `AgentStepSummaryData` 和 `TaskAgentStepsData`。
+- `SQLAlchemyAgentRunStore` 新增 `list_steps_for_task()`。
+- `get_agent_run_store()` 进入依赖注入层。
+- steps API 先检查任务是否存在，缺失返回 `TASK_NOT_FOUND`。
+- 有任务但没有 Agent step 时返回空数组。
+- steps API 不返回完整 thought，只返回 `Thought recorded` 摘要。
+- tool step 只返回工具名、输入 key 摘要、observation 摘要、耗时和错误码。
+- 前端 `getTaskSteps()` 接入真实 `GET /api/tasks/{task_id}/steps`。
+- 新增 `BackendTaskSteps`、`BackendAgentStep` 和 `mapBackendAgentStep()`。
+- `AgentStep` 前端类型补充 `step_id` 和 `task_id`。
+- mock agent steps 补齐 `step_id` 和 `task_id`。
+- 新增 `TaskProgressPanel` 客户端组件。
+- 任务详情页改为首屏服务端加载后交给 `TaskProgressPanel` 轮询。
+- 轮询默认 5 秒一次，终态 `completed`、`failed`、`cancelled` 自动停止。
+- 任务详情页新增手动刷新按钮、刷新状态、刷新错误展示和任务失败信息展示。
+- `AgentStepsTable` 和 `TaskTimeline` 增加空态。
+- 新增 `tests/test_task_steps_api.py`。
+- 新增 `tests/test_frontend_task_progress_contract.py`。
+
+### 当天选择思考
+
+今天优先做任务进度和 Agent step 展示，是因为 Day 19 虽然已经能创建任务并进入详情页，但用户仍然无法判断任务是否真的在运行、卡在哪一步、失败原因是什么。对于一个长任务 Agent 系统来说，进度可见性不是装饰，而是最基本的可用性和可调试能力。
+
+我选择先补 `GET /api/tasks/{task_id}/steps`，而不是只在前端继续 mock Agent steps，是因为 `agent_steps` 从 Day 11 起已经进入数据库。如果前端继续显示 mock steps，就会破坏项目一直强调的“状态可追踪”和“证据链可回放”。Day 20 把数据库里的 step 通过 API 暴露出来，才算真正打通 Agent 执行过程展示。
+
+我没有直接做 SSE / WebSocket，是因为当前后端已经有状态、事件和 steps 的查询接口，轮询可以低成本把观测闭环跑通。SSE / WebSocket 会引入连接管理、断线重连、部署代理配置和消息一致性问题，应该等页面和 API 契约稳定后再升级。
+
+我刻意不暴露完整 thought，是因为 Agent 内部推理可能包含 prompt、临时判断、工具参数细节或后续敏感信息。前端第一版只需要展示 step 类型、工具名、状态、耗时、输入摘要、observation 摘要和错误码。这样既能定位问题，又避免把内部推理当成用户可见内容。
+
+### 关键文件
+
+- `backend/app/api/routes/tasks.py`
+- `backend/app/api/schemas/tasks.py`
+- `backend/app/storage/agent_stores.py`
+- `backend/app/tasks/dependencies.py`
+- `frontend/src/lib/api.ts`
+- `frontend/src/lib/types.ts`
+- `frontend/src/lib/mock-data.ts`
+- `frontend/src/app/tasks/[taskId]/page.tsx`
+- `frontend/src/components/task-progress-panel.tsx`
+- `frontend/src/components/agent-steps-table.tsx`
+- `frontend/src/components/task-timeline.tsx`
+- `tests/test_task_steps_api.py`
+- `tests/test_frontend_task_progress_contract.py`
+- `doc/roadmap/day-20.md`
+- `doc/supporting/api-contract.md`
+- `doc/supporting/ui-console-spec.md`
+- `doc/supporting/observability.md`
+- `doc/supporting/interview-defense-dossier.md`
+
+### 验证记录
+
+- `uv run pytest tests\test_task_steps_api.py tests\test_frontend_task_progress_contract.py`：5 passed
+- `uv run pytest`：99 passed
+- `uv run ruff check backend tests migrations`：通过
+- `uv run alembic heads`：`0002_task_queue_id (head)`
+- `cd frontend; npm run lint`：通过
+- `cd frontend; npm run build`：通过
+- Playwright 打开 `http://127.0.0.1:3000/tasks/tsk_9A21`：mock 模式下任务详情页显示 Polling、Refresh、事件时间线和 Agent steps 表格
+
+### 提交记录
+
+- 待提交：`feat: 实现 Day 20 任务进度与 Agent Step 展示`
+
+### 遗留问题
+
+- 当前任务进度刷新是轮询，不是 SSE / WebSocket。
+- `GET /api/tasks` 尚未实现，任务列表页仍然 fallback 到 mock data。
+- `GET /api/reports` 和 `GET /api/reports/{report_id}` 尚未实现，报告列表和报告详情仍然 fallback。
+- steps API 当前展示摘要，不支持按 run 过滤或展开单步详情。
+- 失败任务重试 `POST /api/tasks/{task_id}/retry` 尚未实现。
+
+### 下一步
+
+进入 Day 21，补历史任务和历史报告相关接口，让任务列表和报告列表从 mock fallback 进入真实数据查询，并为报告详情接入真实报告数据做准备。
+
 ## Day 08 到 Day 14 记录模板
 
 第二周重点从数据采集进入 Agent 工具和状态机。每天开发后按下面格式补充。
@@ -1334,7 +1419,7 @@ Day 19 的目标是把 Next.js 控制台从 mock-first 页面推进到真实 Fas
 | Day 17 | 证据链引用和报告可追溯 | evidence ref 解析、EvidenceChain、Markdown citation、报告证据链 API | pytest 86 passed，ruff 通过，alembic head 正常，frontend build 通过 | `363dd34` |
 | Day 18 | 评论机会点评分与风险分析 | `AnalysisScorecard`、维度风险分、机会分、样本不足降权、Markdown 评分展示 | pytest 90 passed，ruff 通过，alembic head 正常，frontend build 通过 | `dfc2117` |
 | Day 19 | Next.js 接真实 API | `POST /api/tasks` 真实提交、任务状态/事件真实读取、API envelope/error 封装、未实现接口 fallback、新建任务表单 | pytest 94 passed，ruff 通过，alembic head 正常，frontend build/lint 通过 | `3fab1b3` |
-| Day 20 | 前端任务进度与 Agent step 展示 | 待记录 | 待记录 | 待记录 |
+| Day 20 | 前端任务进度与 Agent step 展示 | `GET /api/tasks/{task_id}/steps`、脱敏 step 摘要、任务详情轮询面板、空态和刷新错误展示 | pytest 99 passed，ruff 通过，alembic head 正常，frontend build/lint 通过 | 待提交 |
 | Day 21 | 历史任务和历史报告 | 待记录 | 待记录 | 待记录 |
 
 ## Day 22 到 Day 30 记录模板

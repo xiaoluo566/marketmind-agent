@@ -1,5 +1,5 @@
 import { agentSteps, evidence, reports, services, taskEvents, tasks } from "./mock-data";
-import type { Task, TaskAccepted, TaskCreateInput, TaskEvent } from "./types";
+import type { AgentStep, Task, TaskAccepted, TaskCreateInput, TaskEvent } from "./types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 const USE_MOCKS = process.env.NEXT_PUBLIC_USE_MOCKS === "true";
@@ -126,7 +126,8 @@ export async function getTaskSteps(taskId: string) {
     return agentSteps.filter((step) => step.agent_run_id === runId);
   }
   try {
-    return await request<typeof agentSteps>(`/api/tasks/${taskId}/steps`);
+    const payload = await request<BackendTaskSteps>(`/api/tasks/${taskId}/steps`);
+    return payload.steps.map(mapBackendAgentStep);
   } catch {
     return [];
   }
@@ -202,6 +203,25 @@ type BackendTaskEvent = {
   created_at: string;
 };
 
+type BackendTaskSteps = {
+  task_id: string;
+  steps: BackendAgentStep[];
+};
+
+type BackendAgentStep = {
+  step_id: string;
+  agent_run_id: string;
+  task_id: string;
+  step_index: number;
+  step_type: AgentStep["step_type"];
+  tool_name: string | null;
+  status: AgentStep["status"];
+  duration_ms: number | null;
+  input_summary: string | null;
+  observation_summary: string | null;
+  error_code: string | null;
+};
+
 function mapBackendTask(task: BackendTaskStatus): Task {
   return {
     task_id: task.task_id,
@@ -220,6 +240,22 @@ function mapBackendTask(task: BackendTaskStatus): Task {
     queue_task_id: task.queue_task_id,
     error_code: task.error_code,
     error_message: task.error_message,
+  };
+}
+
+function mapBackendAgentStep(step: BackendAgentStep): AgentStep {
+  return {
+    step_id: step.step_id,
+    agent_run_id: step.agent_run_id,
+    task_id: step.task_id,
+    step_index: step.step_index,
+    step_type: step.step_type,
+    tool_name: step.tool_name ?? undefined,
+    status: step.status,
+    duration_ms: step.duration_ms ?? undefined,
+    input_summary: step.input_summary ?? undefined,
+    observation_summary: step.observation_summary ?? undefined,
+    error_code: step.error_code ?? undefined,
   };
 }
 

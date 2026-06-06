@@ -22,8 +22,15 @@ export function AgentStepsTable({ steps }: { steps: AgentStep[] }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
+            {steps.length === 0 ? (
+              <tr>
+                <td className="px-4 py-5 text-sm text-slate-500" colSpan={6}>
+                  No Agent steps recorded.
+                </td>
+              </tr>
+            ) : null}
             {steps.map((step) => (
-              <tr key={`${step.agent_run_id}-${step.step_index}`}>
+              <tr key={step.step_id}>
                 <td className="px-4 py-3 font-mono text-xs text-slate-500">#{step.step_index}</td>
                 <td className="px-4 py-3 text-slate-700">{step.step_type}</td>
                 <td className="px-4 py-3 font-mono text-xs text-slate-600">
@@ -44,4 +51,3 @@ export function AgentStepsTable({ steps }: { steps: AgentStep[] }) {
     </div>
   );
 }
-

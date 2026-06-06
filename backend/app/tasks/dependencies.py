@@ -1,6 +1,7 @@
 from functools import lru_cache
 
 from app.core.config import get_settings
+from app.storage.agent_stores import SQLAlchemyAgentRunStore
 from app.storage.crawl_stores import SQLAlchemyCrawlResultStore
 from app.storage.database import SessionLocal
 from app.storage.task_stores import (
@@ -50,3 +51,8 @@ def get_task_dispatcher() -> TaskQueueDispatcher:
 @lru_cache
 def get_crawl_result_store() -> SQLAlchemyCrawlResultStore:
     return SQLAlchemyCrawlResultStore(session_factory=SessionLocal)
+
+
+@lru_cache
+def get_agent_run_store() -> SQLAlchemyAgentRunStore:
+    return SQLAlchemyAgentRunStore(session_factory=SessionLocal)
