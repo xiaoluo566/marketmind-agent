@@ -121,6 +121,28 @@ Day 17 当前不覆盖：
 
 Day 17 的测试重点是保证证据缺失不会被伪装成可用证据，以及 API 返回结构和底层 evidence chain 模型一致。
 
+## Day 18 评分测试边界
+
+Day 18 新增 `tests/test_report_scoring.py`，当前覆盖：
+
+- evidence snippets 能按关键词分组到质量、售后、物流、包装等维度。
+- 每个 `DimensionScore` 必须携带 `evidence_refs`。
+- 高风险低评分评论能得到较高风险分和机会分。
+- 样本数低于 `minimum_samples` 时会降权。
+- 样本不足时写入 `sample_warning=LOW_SAMPLE_SIZE`。
+- 无 evidence snippets 时输出 `insufficient_evidence`，不编造维度分。
+- `attach_scorecard_to_report()` 返回新报告，不原地修改旧报告。
+- `StructuredReport.to_markdown()` 能渲染“维度评分”章节。
+
+Day 18 当前不覆盖：
+
+- 真实 LLM 评分。
+- 机器学习分类器。
+- 前端图表展示。
+- 跨任务评分统计。
+
+Day 18 的测试重点是防止评分脱离证据、防止小样本被过度解读，以及保证评分规则可复现。
+
 ## 回归要求
 
 任何 bug 修复都要留下一个能复现旧问题的测试。没有测试的修复，后续很容易被重构再次破坏。

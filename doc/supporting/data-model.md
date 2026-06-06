@@ -296,6 +296,36 @@ Day 17 新增 `backend/app/reporting/evidence.py`，不新增数据库表。第�
 - Day 17 的目标是先打通回查协议和 API，不急着引入新关联表。
 - 后续 Day 21 做历史报告、报告版本和列表查询时，再评估是否需要把 evidence chain 快照独立成表。
 
+## Day 18 Analysis Scorecard 存储约束
+
+Day 18 新增 `AnalysisScorecard`，当前不新增数据库表或迁移。
+
+存储位置：
+
+```text
+reports.content_json.metadata.analysis_scorecard
+```
+
+Markdown 展示位置：
+
+```text
+reports.content_markdown -> ## 维度评分
+```
+
+这样设计的原因：
+
+- Day 18 的评分是报告内容的一部分，不是跨任务统计指标。
+- 评分必须和报告当时使用的 evidence snippets 一起快照保存。
+- 当前前端只需要展示报告详情，不需要按评分排序报告列表。
+- 后续如果要做“按风险分筛选历史报告”或“跨任务评分趋势”，再把 scorecard 拆到独立表。
+
+约束：
+
+- `AnalysisScorecard.evidence_refs` 必须来自输入 evidence snippets。
+- 每个 `DimensionScore.evidence_refs` 必须能回到 Day 17 的 evidence chain。
+- 样本不足必须写入 `LOW_SAMPLE_SIZE`。
+- 无证据时 `status=insufficient_evidence`，整体分数为 0。
+
 ## 与其他文档关系
 
 - 状态流转见 `agent-state-machine.md`

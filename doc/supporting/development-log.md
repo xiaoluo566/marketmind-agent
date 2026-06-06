@@ -47,8 +47,8 @@
 | --- | --- |
 | 稳定分支 | `main` |
 | 日常开发分支 | `dev` |
-| 当前开发阶段 | Day 17 已完成，准备进入 Day 18 |
-| 当前主链路 | 文档基线、Next.js 控制台骨架、FastAPI health、任务创建 API、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、相似度检索原型、search_reviews_tool、结构化报告生成骨架、报告入库、证据链回查 API、数据库模型、Alembic 迁移 |
+| 当前开发阶段 | Day 18 已完成，准备进入 Day 19 |
+| 当前主链路 | 文档基线、Next.js 控制台骨架、FastAPI health、任务创建 API、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、相似度检索原型、search_reviews_tool、结构化报告生成骨架、报告入库、证据链回查 API、风险机会评分、数据库模型、Alembic 迁移 |
 | 最新开发提交 | 以 `git log -1 --oneline` 为准 |
 | 当前数据库决策 | PostgreSQL + pgvector，review chunk 使用 `vector(1536)` |
 | 当前模型决策 | 默认 `gpt-5.4-mini`，报告模型 `gpt-5.5`，embedding `text-embedding-3-small` |
@@ -96,7 +96,7 @@
 | Day 15 | Done | `search_reviews_tool` 语义检索 | `ac23718` |
 | Day 16 | Done | 报告 schema 与确定性报告生成骨架 | `193da03` |
 | Day 17 | Done | 证据链引用和报告可追溯 | `363dd34` |
-| Day 18 | Pending | 评论机会点评分与风险分析 | 待记录 |
+| Day 18 | Done | 评论机会点评分与风险分析 | 待提交 |
 | Day 19 | Pending | Next.js 接真实 API | 待记录 |
 | Day 20 | Pending | 前端任务进度与 Agent step 展示 | 待记录 |
 | Day 21 | Pending | 历史任务和历史报告 | 待记录 |
@@ -1167,6 +1167,73 @@ Day 17 的目标是把 Day 16 的报告 evidence refs 变成可回查证据链�
 
 进入 Day 18，基于已经可追溯的 evidence chain 做评论机会点评分与风险分析，避免评分结论脱离证据。
 
+## Day 18 记录
+
+### 实际完成
+
+Day 18 的目标是在报告和证据链基础上加入可解释评分，让报告能够区分“轻微问题”和“高风险问题”。今天完成了确定性风险/机会评分模块、评分 schema、样本不足降权、报告 Markdown 评分展示和对应测试。
+
+完成内容：
+
+- 新增 `backend/app/reporting/scoring.py`。
+- 新增 `ScorecardInput`。
+- 新增 `DimensionScore`。
+- 新增 `AnalysisScorecard`。
+- 新增 `CompetitiveRiskScorer`。
+- 新增 `attach_scorecard_to_report()`。
+- 支持质量、物流、售后、价格、包装、功能缺陷六类维度。
+- 每个维度按 evidence snippets 的关键词匹配、评论评分、相似度和样本数生成风险分。
+- 机会分基于风险分和置信度生成，用于表达“痛点是否值得转成改进机会”。
+- 样本数低于 `minimum_samples` 时降权，并写入 `LOW_SAMPLE_SIZE`。
+- 无 evidence snippets 时输出 `insufficient_evidence`，不编造分数。
+- `StructuredReport.to_markdown()` 新增“维度评分”章节。
+- 新增 `tests/test_report_scoring.py`，覆盖分组、绑定 evidence refs、样本不足降权、无证据降级和 Markdown 展示。
+
+### 当天选择思考
+
+今天优先做评分，是因为 Day 17 已经能证明“结论从哪来”，下一步需要回答“哪些问题更严重、哪些痛点更值得处理”。没有评分，报告还是偏摘要；有了评分，报告才更接近运营分析。
+
+我选择确定性规则评分，而不是让 LLM 直接打分，是因为评分最怕黑盒和不可复现。规则虽然简单，但每个分数都能拆成关键词、评分、相似度和样本数，面试时也能清楚解释。
+
+我没有把评分写入新的数据库字段，是因为当前评分属于报告快照内容，放在 `reports.content_json.metadata.analysis_scorecard` 就能满足展示和导出。等后续要做历史报告筛选或跨任务统计，再考虑独立表。
+
+### 关键文件
+
+- `backend/app/reporting/scoring.py`
+- `backend/app/reporting/schemas.py`
+- `backend/app/reporting/__init__.py`
+- `tests/test_report_scoring.py`
+- `doc/roadmap/day-18.md`
+- `doc/supporting/data-contract-examples.md`
+- `doc/supporting/data-model.md`
+- `doc/supporting/prompt-strategy.md`
+- `doc/supporting/testing-strategy.md`
+- `doc/supporting/interview-defense-dossier.md`
+
+### 验证记录
+
+- `uv run pytest tests\test_report_scoring.py`：4 passed
+- `uv run pytest tests\test_report_scoring.py tests\test_report_generation.py tests\test_report_evidence_chain.py`：15 passed
+- `uv run pytest`：90 passed
+- `uv run ruff check backend tests migrations`：通过
+- `uv run alembic heads`：`0002_task_queue_id (head)`
+- `cd frontend; npm run build`：通过
+
+### 提交记录
+
+- 待提交：`feat: 实现 Day 18 评论风险机会评分`
+
+### 遗留问题
+
+- 当前评分是规则 baseline，不是机器学习模型或真实 LLM 评分。
+- 前端还没有展示 scorecard。
+- 评分还没有接入完整 worker 主流程。
+- 后续如果要按评分筛选历史报告，需要考虑独立字段或表。
+
+### 下一步
+
+进入 Day 19，把 Next.js 前端开始接真实 API，优先接任务状态、事件流、报告详情和证据链接口。
+
 ## Day 08 到 Day 14 记录模板
 
 第二周重点从数据采集进入 Agent 工具和状态机。每天开发后按下面格式补充。
@@ -1191,7 +1258,7 @@ Day 17 的目标是把 Day 16 的报告 evidence refs 变成可回查证据链�
 | Day 15 | `search_reviews_tool` 语义检索 | 工具 schema、依赖注入注册、evidence chunk、空召回降级 | pytest 75 passed，ruff 通过，alembic head 正常，npm build 通过 | `ac23718` |
 | Day 16 | 报告 schema 与确定性报告生成骨架 | `StructuredReport`、证据引用校验、Markdown 渲染、`reports` 入库 | pytest 79 passed，ruff 通过，alembic head 正常，frontend build 通过 | `193da03` |
 | Day 17 | 证据链引用和报告可追溯 | evidence ref 解析、EvidenceChain、Markdown citation、报告证据链 API | pytest 86 passed，ruff 通过，alembic head 正常，frontend build 通过 | `363dd34` |
-| Day 18 | 评论机会点评分与风险分析 | 待记录 | 待记录 | 待记录 |
+| Day 18 | 评论机会点评分与风险分析 | `AnalysisScorecard`、维度风险分、机会分、样本不足降权、Markdown 评分展示 | pytest 90 passed，ruff 通过，alembic head 正常，frontend build 通过 | 待提交 |
 | Day 19 | Next.js 接真实 API | 待记录 | 待记录 | 待记录 |
 | Day 20 | 前端任务进度与 Agent step 展示 | 待记录 | 待记录 | 待记录 |
 | Day 21 | 历史任务和历史报告 | 待记录 | 待记录 | 待记录 |

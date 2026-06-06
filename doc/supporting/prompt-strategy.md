@@ -109,6 +109,35 @@ StructuredReport(report.v1)
 
 Day 16 的确定性生成器可以视为未来 LLM report prompt 的 golden baseline：LLM 可以写得更自然，但不能降低证据引用约束。
 
+## Day 18 scoring prompt 边界
+
+Day 18 的风险与机会评分先采用确定性规则 `deterministic.scorecard.v1`，不调用大模型。
+
+当前评分只基于：
+
+- evidence snippet 内容关键词
+- 评论评分 `rating`
+- 检索相似度 `similarity`
+- 样本数量
+- `minimum_samples` 降权
+
+后续如果让 LLM 参与评分，只能做两类事情：
+
+- 帮助解释 `DimensionScore.explanation`
+- 帮助改进维度分类
+
+不能让 LLM 绕过这些约束：
+
+- 每个维度评分必须绑定 evidence refs。
+- 样本不足必须标注。
+- 无证据不能输出风险分。
+- 不能输出“爆款概率”或“销量预测”。
+- 输出仍然必须匹配 `AnalysisScorecard(scorecard.v1)`。
+
+推荐 prompt 名称：
+
+- `report.scorecard_explanation.v1`
+
 ## 版本管理建议
 
 - prompt 不要直接散落在代码里

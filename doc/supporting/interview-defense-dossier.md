@@ -126,6 +126,12 @@ Day 17 做证据链回查，是因为 Day 16 只能保证报告引用了合法 `
 
 > Day 17 我把“证据 ID”升级成“证据链”。报告里不只是出现 `chunk:xxx`，而是能通过 API 回查到原始 review chunk、父级 review、artifact 或 Agent step。这样报告可信度不是靠口头解释，而是有结构化数据和测试支撑。
 
+Day 18 做评论机会点评分和风险分析，是因为 Day 17 已经解决“结论能追溯到哪里”，但报告还缺少“哪个问题更严重、哪个痛点更值得处理”的排序能力。今天我新增 `AnalysisScorecard`、`DimensionScore` 和 `CompetitiveRiskScorer`，用确定性规则基于关键词、评分、相似度和样本数生成风险分与机会分，并且样本不足会降权。
+
+面试时可以这样讲：
+
+> Day 18 我没有让模型直接打分，而是先做可解释的规则评分 baseline。每个维度分数都绑定 evidence refs，并说明样本数、平均评分、相似度和降权原因。这样评分不是黑盒，也不会被误解成销量预测。
+
 ### Day 8 之后追加模板
 
 ```markdown
@@ -319,11 +325,11 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 
 ### 7. 我对“不要夸大进度”的思考
 
-这个项目目前推进到 Day 17，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
+这个项目目前推进到 Day 18，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
 
-- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、工具 schema、工具注册机制、最小 ReAct 状态机、Agent step 落库、结构化输出 guardrails、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、`search_reviews_tool`、结构化报告生成骨架、报告入库、证据链回查 API、错误 envelope、测试。
-- 正在做：评论机会点评分与风险分析。
-- 后续做：真实 embedding provider、pgvector 原生检索、真实 LLM report prompt、前端真实接入、部署。
+- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、工具 schema、工具注册机制、最小 ReAct 状态机、Agent step 落库、结构化输出 guardrails、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、`search_reviews_tool`、结构化报告生成骨架、报告入库、证据链回查 API、评论风险机会评分、错误 envelope、测试。
+- 正在做：Next.js 接真实 API。
+- 后续做：真实 embedding provider、pgvector 原生检索、真实 LLM report prompt、部署。
 
 我认为这反而是加分项。因为真实开发中，清楚知道自己完成了什么、没完成什么，比把项目包装得过满更可信。
 
@@ -365,7 +371,7 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 
 ## 当前开发进度怎么讲
 
-截至 Day 17，项目已经完成：
+截至 Day 18，项目已经完成：
 
 - 文档体系、30 天 roadmap、开发日志。
 - Next.js 控制台骨架。
@@ -426,6 +432,11 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 - `attach_evidence_chain()`，把 evidence chain 绑定到报告 metadata。
 - 报告 Markdown 的“证据链回查”章节。
 - `GET /api/reports/{report_id}/evidence`，返回报告 evidence chain。
+- `ScorecardInput`、`DimensionScore` 和 `AnalysisScorecard`，用于结构化评分输出。
+- `CompetitiveRiskScorer`，基于关键词、评分、相似度和样本数生成风险/机会分。
+- 样本不足降权和 `LOW_SAMPLE_SIZE`。
+- `attach_scorecard_to_report()`，把 scorecard 绑定到报告 metadata。
+- 报告 Markdown 的“维度评分”章节。
 - 工具调用前后状态落库，Action step 能从 pending/running 更新为 success/failed。
 - Agent 工具失败时，错误码和失败 observation 会写入数据库，不覆盖旧 step。
 - 队列不可用、状态缓存不可用、参数校验失败的统一错误响应。
@@ -444,7 +455,7 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 - 前端接真实 API。
 - Docker Compose 全链路一键启动。
 
-面试时可以诚实讲：这个项目正在按 30 天里程碑推进，目前已经完成底层任务入口、异步管线、任务事件流、PostgreSQL 持久化、Playwright 最小采集、采集结果入库、Agent 工具契约、最小 ReAct 状态机、结构化输出 guardrails、短期记忆压缩、评论 RAG 索引基础、`search_reviews_tool`、结构化报告生成骨架和报告证据链回查。下一阶段会补评论机会点评分、真实 report prompt、前端真实接入和部署。重点是展示工程化思路和持续推进能力，而不是假装已经做完所有功能。
+面试时可以诚实讲：这个项目正在按 30 天里程碑推进，目前已经完成底层任务入口、异步管线、任务事件流、PostgreSQL 持久化、Playwright 最小采集、采集结果入库、Agent 工具契约、最小 ReAct 状态机、结构化输出 guardrails、短期记忆压缩、评论 RAG 索引基础、`search_reviews_tool`、结构化报告生成骨架、报告证据链回查和可解释评分 baseline。下一阶段会补前端真实 API 接入、真实 report prompt 和部署。重点是展示工程化思路和持续推进能力，而不是假装已经做完所有功能。
 
 ## 2 分钟项目介绍话术
 
@@ -1401,6 +1412,34 @@ Day 17 的处理是：
 
 这样前端可以提示“报告证据链不完整”，Agent 后续也可以决定重新检索或重新采集。
 
+### Q28：Day 18 的评分是不是在预测商业成功？
+
+不是。Day 18 的评分是解释型排序，不是销量预测，也不是爆款概率。
+
+评分输入只来自：
+
+- evidence snippet 内容。
+- 评论 rating。
+- 检索 similarity。
+- 样本数。
+- `minimum_samples` 降权。
+
+它的作用是帮助用户判断“哪个维度更值得关注”，比如质量问题比物流问题更高风险，而不是判断“这个商品一定会不会卖爆”。
+
+面试时可以这样讲：
+
+> 我没有把评分包装成商业预测，因为那需要销量、价格、广告、市场规模等更多数据。当前评分只对评论证据本身负责，是一个可解释的风险排序 baseline。
+
+### Q29：为什么不用 LLM 直接给风险分？
+
+因为 LLM 直接打分很容易出现三个问题：
+
+- 不可复现：同样输入多次分数可能不同。
+- 难解释：面试官追问 82 分怎么来的，很难拆解。
+- 容易脱离证据：模型可能凭常识给分。
+
+Day 18 用确定性规则先建立 baseline：关键词决定维度，rating 和 similarity 影响风险，样本数不足就降权。后续即使用 LLM，也只能辅助解释或分类，不能绕过 evidence refs 和 schema。
+
 ## 面试官可能深挖的技术点
 
 ### 异步任务一致性
@@ -1543,7 +1582,7 @@ Agent step 状态：
 
 ## 目前最适合展示的代码点
 
-截至 Day 17，最适合展示：
+截至 Day 18，最适合展示：
 
 - `backend/app/api/routes/tasks.py`：API 如何接收任务、投递队列、统一错误。
 - `backend/app/tasks/service.py`：任务状态创建和入队流程。
@@ -1571,6 +1610,7 @@ Agent step 状态：
 - `backend/app/reporting/generator.py`：确定性报告生成骨架和无证据降级。
 - `backend/app/reporting/stores.py`：报告 JSON、Markdown、evidence refs 和 schema version 入库。
 - `backend/app/reporting/evidence.py`：evidence ref 解析、EvidenceChain、缺失证据降级和来源回查。
+- `backend/app/reporting/scoring.py`：维度评分、样本不足降权、风险/机会解释。
 - `backend/app/api/routes/reports.py`：报告证据链 API。
 - `backend/app/storage/models.py`：数据库模型设计。
 - `migrations/versions/0002_task_queue_id.py`：任务队列 ID 持久化迁移。
@@ -1587,6 +1627,7 @@ Agent step 状态：
 - `tests/test_search_reviews_tool.py`：RAG 工具注册、证据返回和空召回降级测试。
 - `tests/test_report_generation.py`：报告 evidence refs 校验、证据不足降级、Markdown 渲染和报告入库测试。
 - `tests/test_report_evidence_chain.py`：证据链解析、回查、缺失降级、Markdown citation 和 API envelope 测试。
+- `tests/test_report_scoring.py`：维度分组、风险机会评分、样本不足降权和 Markdown 评分展示测试。
 
 ## 如果被问“你在项目中学到了什么”
 
@@ -1615,10 +1656,11 @@ Agent step 状态：
 - Day 15：`search_reviews_tool` 和 evidence chunk 输出已完成。
 - Day 16：结构化报告 schema、确定性报告生成、Markdown 渲染和 `reports` 入库已完成。
 - Day 17：证据链回查、Markdown citation 和 `GET /api/reports/{report_id}/evidence` 已完成。
+- Day 18：可解释风险/机会评分、样本不足降权和 Markdown 评分展示已完成。
 
 中期：
 
-- 评论机会点评分与风险分析。
+- Next.js 接真实 API。
 - 真实 embedding provider。
 - pgvector 原生向量排序。
 - 真实 LLM report prompt。

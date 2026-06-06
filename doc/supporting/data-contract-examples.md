@@ -721,6 +721,86 @@ Day 17 起，报告详情可以通过 evidence chain 回查来源。`evidence_re
 }
 ```
 
+## Analysis scorecard 示例
+
+Day 18 起，报告可以携带 `analysis_scorecard`，用于展示评论维度风险和机会评分。评分是规则 baseline，不代表销量预测或商业成功概率。
+
+```json
+{
+  "task_id": "tsk_01HXYZ",
+  "status": "scored",
+  "overall_risk_score": 82,
+  "overall_opportunity_score": 73,
+  "evidence_refs": [
+    "chunk:chk_quality_1",
+    "chunk:chk_quality_2",
+    "chunk:chk_support_1"
+  ],
+  "schema_version": "scorecard.v1",
+  "summary": "最高风险维度是 质量风险，风险分 92，基于 2 条证据。评分用于排序和解释，不代表严格商业预测。",
+  "dimensions": [
+    {
+      "dimension": "quality",
+      "label": "质量风险",
+      "risk_score": 92,
+      "opportunity_score": 89,
+      "evidence_refs": ["chunk:chk_quality_1", "chunk:chk_quality_2"],
+      "sample_size": 2,
+      "average_rating": 1.5,
+      "max_similarity": 0.91,
+      "confidence": 1.0,
+      "sample_warning": null,
+      "explanation": "质量风险(quality) 基于 2 条证据，平均评分 1.5，风险分 92。",
+      "metadata": {
+        "minimum_samples": 2
+      }
+    },
+    {
+      "dimension": "support",
+      "label": "售后风险",
+      "risk_score": 50,
+      "opportunity_score": 48,
+      "evidence_refs": ["chunk:chk_support_1"],
+      "sample_size": 1,
+      "average_rating": 1.0,
+      "max_similarity": 0.86,
+      "confidence": 0.5,
+      "sample_warning": "LOW_SAMPLE_SIZE",
+      "explanation": "售后风险(support) 基于 1 条证据，平均评分 1.0，风险分 50。 样本不足：当前 1 条，低于阈值 2 条，已降权。"
+    }
+  ]
+}
+```
+
+嵌入报告时，scorecard 写入：
+
+```json
+{
+  "metadata": {
+    "analysis_scorecard": {
+      "schema_version": "scorecard.v1"
+    }
+  }
+}
+```
+
+Markdown 会增加：
+
+```markdown
+## 维度评分
+
+最高风险维度是 质量风险，风险分 92，基于 2 条证据。评分用于排序和解释，不代表严格商业预测。
+
+- 综合风险分：`82`
+- 综合机会分：`73`
+
+### 质量风险
+
+- 风险分：`92`
+- 机会分：`89`
+- 证据引用：`chunk:chk_quality_1`, `chunk:chk_quality_2`
+```
+
 ## 作用
 
 这些示例是给 `api-contract.md`、`data-model.md`、`agent-state-machine.md`、`model-and-data-decisions.md` 和 `testing-strategy.md` 共用的参考样例。

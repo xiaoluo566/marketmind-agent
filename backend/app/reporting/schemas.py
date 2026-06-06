@@ -89,6 +89,35 @@ class StructuredReport(BaseModel):
         else:
             lines.extend(["## 证据摘录", "", "证据不足：当前没有可引用的评论证据。", ""])
 
+        scorecard = self.metadata.get("analysis_scorecard")
+        if scorecard:
+            lines.extend(
+                [
+                    "## 维度评分",
+                    "",
+                    str(scorecard.get("summary", "")),
+                    "",
+                    f"- 综合风险分：`{scorecard.get('overall_risk_score', 0)}`",
+                    f"- 综合机会分：`{scorecard.get('overall_opportunity_score', 0)}`",
+                    "",
+                ]
+            )
+            for dimension in scorecard.get("dimensions", []):
+                lines.extend(
+                    [
+                        f"### {dimension.get('label', dimension.get('dimension', 'unknown'))}",
+                        "",
+                        f"- 风险分：`{dimension.get('risk_score', 0)}`",
+                        f"- 机会分：`{dimension.get('opportunity_score', 0)}`",
+                        f"- 置信度：`{dimension.get('confidence', 0)}`",
+                        f"- 样本数：`{dimension.get('sample_size', 0)}`",
+                        f"- 证据引用：{_format_evidence_refs(dimension.get('evidence_refs', []))}",
+                        "",
+                        str(dimension.get("explanation", "")),
+                        "",
+                    ]
+                )
+
         evidence_chain = self.metadata.get("evidence_chain")
         if evidence_chain:
             lines.extend(["## 证据链回查", ""])
