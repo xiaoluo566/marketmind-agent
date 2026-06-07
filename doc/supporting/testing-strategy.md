@@ -1,4 +1,4 @@
-# 测试策略
+﻿# 测试策略
 
 ## 测试层次
 
@@ -183,7 +183,7 @@ show_missing = true
 
 - 默认 `uv run pytest` 保持轻量，方便日常定向测试。
 - 提交前使用 `uv run pytest --cov=backend --cov-report=term-missing` 执行 coverage 门禁。
-- coverage fail-under 固定为 80，当前 Day 23 实测 backend coverage 为 90.83%。
+- coverage fail-under 固定为 80，当前 Day 23 实测 backend coverage 为 90.80%。
 
 不要把 `--cov=backend --cov-fail-under=80` 直接写入默认 `addopts`。这样会让只跑纯配置测试或前端契约测试时 coverage 变成 0，反而破坏开发效率。
 
@@ -211,6 +211,59 @@ show_missing = true
 - `TaskStatus` 和 `AgentStepStatus` 枚举值和文档保持一致。
 
 这组测试和已有 API 测试有意重叠一部分。原因是 API 测试验证路由行为，schema 测试验证边界模型本身；当未来路由重构时，schema 约束仍然应该独立成立。
+
+## Day 24 主链路集成测试边界
+
+Day 24 新增 `tests/test_day24_integration_flow.py`，用于验证 Day 1 到 Day 23 已完成能力是否能组成一条稳定主链路。
+
+这条测试链路覆盖：
+
+- `POST /api/tasks` 创建任务，并通过依赖覆盖使用真实 `SQLAlchemyTaskStatusStore` 和 `SQLAlchemyTaskEventStore`。
+- fake dispatcher 捕获入队 payload，验证 API 层确实生成 `task_id`、`trace_id` 和 `queue_task_id`。
+- `run_research_task()` 使用同一个 `task_id` 执行 Worker 主体。
+- fixture HTML 被 crawler 解析为商品、页面、评论和 artifact。
+- `SQLAlchemyCrawlResultStore` 将采集结果写入数据库。
+- `SQLAlchemyReviewChunkStore` 对评论切片并写入 `review_chunks`。
+- `DeterministicEmbeddingProvider` 生成稳定 embedding，用于本地回归。
+- `search_similar_reviews()` 召回评论 chunk，并构造 `chunk:{id}` evidence ref。
+- `StructuredReportGenerator` 和 `SQLAlchemyReportStore` 生成并保存报告。
+- `GET /api/reports`、`GET /api/reports/{report_id}` 和 `GET /api/reports/{report_id}/evidence` 通过真实 API 回查报告和证据链。
+
+Day 24 有意不覆盖：
+
+- 真实 Redis broker。
+- 独立 Celery worker 进程。
+- 真实 PostgreSQL / pgvector 原生 `<=>` 排序。
+- 真实外部电商网站。
+- 真实 LLM / embedding API。
+- 浏览器端 E2E。
+
+这些能力分别放到 Day 25 之后的 Docker Compose、CI、benchmark、E2E 和真实 provider 接入阶段。Day 24 的重点是“业务模块之间的契约是否闭环”，而不是“所有基础设施是否在本机同时启动”。
+
+当前验证命令：
+
+```powershell
+uv run pytest tests\test_day24_integration_flow.py
+```
+
+当前结果：
+
+```text
+1 passed
+```
+
+提交前完整门禁结果：
+
+```text
+uv run pytest: 137 passed
+uv run pytest --cov=backend --cov-report=term-missing: 137 passed, backend coverage 90.86%
+uv run ruff check backend tests migrations: passed
+uv run alembic heads: 0002_task_queue_id (head)
+frontend npm run lint: passed
+frontend npm run build: passed
+npm audit --audit-level=high: 0 vulnerabilities
+uvx pip-audit: No known vulnerabilities found
+```
 
 ## 回归要求
 

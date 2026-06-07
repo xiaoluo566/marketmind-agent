@@ -1,4 +1,4 @@
-# 面试防守手册：MarketMind Agent 项目深度讲解
+﻿# 面试防守手册：MarketMind Agent 项目深度讲解
 
 ## 文档定位
 
@@ -335,18 +335,24 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 
 > 我不希望单元测试依赖本机 Redis 是否启动，所以通过接口抽象隔离基础设施。真实 Redis 联调会做，但它应该是集成测试或联调步骤，而不是所有测试的前置条件。
 
-Day 23 做测试体系加固时，我又补了一个取舍：默认 `uv run pytest` 保持轻量，coverage 门禁放在 `uv run pytest --cov=backend --cov-report=term-missing`。这样日常可以快速跑单文件测试，提交前再跑完整覆盖率门禁。当前 backend coverage 为 90.83%，超过 80% fail-under。
+Day 23 做测试体系加固时，我又补了一个取舍：默认 `uv run pytest` 保持轻量，coverage 门禁放在 `uv run pytest --cov=backend --cov-report=term-missing`。这样日常可以快速跑单文件测试，提交前再跑完整覆盖率门禁。当前 backend coverage 为 90.80%，超过 80% fail-under。
 
 面试可以这样说：
 
 > 我没有把 coverage 强行塞进 pytest 默认参数，因为只跑纯配置测试时 coverage 会是 0，反而影响定位问题。我的做法是把 coverage fail-under 写进配置，并在提交前门禁里强制跑 coverage。这样既保留开发效率，又有明确质量线。
 
+Day 24 做主链路集成测试时，我继续保留这个分层思路：业务链路尽量真实，基础设施替身尽量稳定。新增的 `tests/test_day24_integration_flow.py` 会串起 API 提交、Worker 执行、Crawler fixture、采集入库、RAG indexing、报告保存和 evidence API 回查，但不强依赖真实 Redis、独立 Celery worker、真实外部网站和真实模型服务。
+
+面试可以这样说：
+
+> 我把 Day 24 的集成测试设计成“真实业务模块 + 可控基础设施替身”。API、SQLAlchemy store、Worker 主体、Crawler 解析、RAG store、Report store 和 Evidence API 都是真的；Celery broker、外部网页和模型服务用稳定替身。这样测试能证明主链路数据契约闭环，又不会因为本机 Redis 没启动或外部网站波动导致回归不稳定。
+
 ### 7. 我对“不要夸大进度”的思考
 
-这个项目目前推进到 Day 23，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
+这个项目目前推进到 Day 24，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
 
-- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、工具 schema、工具注册机制、最小 ReAct 状态机、Agent step 落库、Agent step 查询 API、结构化输出 guardrails、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、`search_reviews_tool`、结构化报告生成骨架、报告入库、证据链回查 API、评论风险机会评分、前端真实任务提交、任务状态/事件/steps 轮询读取、历史任务、历史报告、报告详情、报告 evidence chain 前端接入、结构化错误日志、观测错误查询 API、coverage 门禁、状态转换策略和核心 schema 契约测试。
-- 正在做：第四周工程质量、集成测试、部署和演示准备。
+- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、工具 schema、工具注册机制、最小 ReAct 状态机、Agent step 落库、Agent step 查询 API、结构化输出 guardrails、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、`search_reviews_tool`、结构化报告生成骨架、报告入库、证据链回查 API、评论风险机会评分、前端真实任务提交、任务状态/事件/steps 轮询读取、历史任务、历史报告、报告详情、报告 evidence chain 前端接入、结构化错误日志、观测错误查询 API、coverage 门禁、状态转换策略、核心 schema 契约测试和主链路集成回归样例。
+- 正在做：第四周部署、CI、性能评估和演示准备。
 - 后续做：任务重试、全局 evidence 检索、真实 embedding provider、pgvector 原生检索、真实 LLM report prompt、Docker Compose、E2E、CI。
 
 我认为这反而是加分项。因为真实开发中，清楚知道自己完成了什么、没完成什么，比把项目包装得过满更可信。
@@ -1745,8 +1751,9 @@ Day 22 的自我思考：
 
 ## 目前最适合展示的代码点
 
-截至 Day 23，最适合展示：
+截至 Day 24，最适合展示：
 
+- `tests/test_day24_integration_flow.py`：主链路集成测试，串联 API 提交、Worker 执行、采集入库、RAG indexing、报告保存和 evidence API 回查。
 - `backend/app/api/routes/tasks.py`：`GET /api/tasks` 如何支持历史任务查询、状态筛选、时间筛选和分页。
 - `pyproject.toml`：pytest 快速测试配置和 coverage fail-under 80 门禁。
 - `backend/app/storage/status_policy.py`：任务状态转换策略，支撑后续 retry / cancel。
@@ -1855,6 +1862,7 @@ Day 22 的自我思考：
 - Day 21：历史任务、历史报告列表和报告详情真实 API 接入已完成。
 - Day 22：结构化日志、错误分类、`error_logs` 持久化和错误查询 API 已完成。
 - Day 23：coverage fail-under 80、状态转换策略和核心 schema 契约测试已完成。
+- Day 24：API、Worker、Crawler fixture、RAG、Report 和 evidence API 的主链路集成回归样例已完成。
 
 中期：
 

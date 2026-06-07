@@ -1,4 +1,4 @@
-# Day 23 - 测试体系加固与覆盖率门禁
+﻿# Day 23 - 测试体系加固与覆盖率门禁
 
 ## 当天目标
 
@@ -111,7 +111,7 @@ Day 23 的真正价值是把测试体系变成工程门禁：
 - 真实 Playwright 和外部网络采集不适合每次单元测试都跑。
 - 测试价值不等于覆盖率数字本身，关键是核心风险路径有明确回归。
 
-当前全量 coverage 结果为 90.83%，已经超过门槛。
+当前全量 coverage 结果为 90.80%，已经超过门槛。
 
 ### 为什么状态策略先独立，不立即接入 store？
 
@@ -132,7 +132,7 @@ Day 23 的真正价值是把测试体系变成工程门禁：
 - `uv run pytest tests\test_quality_gate_config.py`：1 passed。
 - `uv run pytest tests\test_task_status_policy.py`：11 passed。
 - `uv run pytest tests\test_schema_validation_contracts.py tests\test_task_status_policy.py tests\test_quality_gate_config.py`：22 passed。
-- `uv run pytest --cov=backend --cov-report=term-missing`：136 passed，backend coverage 90.83%，达到 80% 门槛。
+- `uv run pytest --cov=backend --cov-report=term-missing`：136 passed，backend coverage 90.80%，达到 80% 门槛。
 
 最终完整验证以本次提交前完整门禁为准。
 

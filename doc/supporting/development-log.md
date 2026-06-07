@@ -1,4 +1,4 @@
-# 开发实时记录
+﻿# 开发实时记录
 
 ## 文档定位
 
@@ -47,8 +47,8 @@
 | --- | --- |
 | 稳定分支 | `main` |
 | 日常开发分支 | `dev` |
-| 当前开发阶段 | Day 23 测试体系加固 |
-| 当前主链路 | 文档基线、Next.js 控制台骨架、前端真实 API client、真实任务提交表单、任务详情轮询面板、历史任务列表、历史报告列表、报告详情真实读取、报告 evidence chain 真实读取、FastAPI health、任务创建 API、public_url 安全校验、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、Agent step 查询 API、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、相似度检索原型、search_reviews_tool、结构化报告生成骨架、报告入库、证据链回查 API、风险机会评分、结构化错误日志、观测错误查询 API、数据库模型、Alembic 迁移 |
+| 当前开发阶段 | Day 24 主链路集成测试 |
+| 当前主链路 | 文档基线、Next.js 控制台骨架、前端真实 API client、真实任务提交表单、任务详情轮询面板、历史任务列表、历史报告列表、报告详情真实读取、报告 evidence chain 真实读取、FastAPI health、任务创建 API、public_url 安全校验、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、Agent step 查询 API、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、相似度检索原型、search_reviews_tool、结构化报告生成骨架、报告入库、证据链回查 API、风险机会评分、结构化错误日志、观测错误查询 API、主链路集成回归样例、数据库模型、Alembic 迁移 |
 | 最新开发提交 | 以 `git log -1 --oneline` 为准 |
 | 当前数据库决策 | PostgreSQL + pgvector，review chunk 使用 `vector(1536)` |
 | 当前模型决策 | 默认 `gpt-5.4-mini`，报告模型 `gpt-5.5`，embedding `text-embedding-3-small` |
@@ -102,7 +102,7 @@
 | Day 21 | Done | 历史任务和历史报告真实接入 | `ca09e3a` |
 | Day 22 | Done | 日志、trace、错误分类、结构化错误查询 API | `80e372b` |
 | Day 23 | Done | 单元测试、校验测试、覆盖率门禁 | 见本提交 |
-| Day 24 | Pending | 集成测试与回归样例 | 待记录 |
+| Day 24 | Done | 集成测试与回归样例 | 见本提交 |
 | Day 25 | Pending | Docker Compose 一键启动 | 待记录 |
 | Day 26 | Pending | CI 与版本回退策略 | 待记录 |
 | Day 27 | Pending | 性能评估和 benchmark 数据 | 待记录 |
@@ -1592,8 +1592,8 @@ Day 21 的目标是补齐历史任务和历史报告，让系统从“能跑一�
 | Day | 计划主题 | 实际完成 | 验证 | 提交 |
 | --- | --- | --- | --- | --- |
 | Day 22 | 日志、trace、错误分类 | 结构化 JSON 日志入口、敏感字段脱敏、`ErrorLogStore`、API 错误写入、Worker/Crawler 分类错误、`GET /api/observability/errors` | `uv run pytest` 114 passed，ruff 通过，alembic head 正常，frontend lint/build 通过 | `80e372b` |
-| Day 23 | 测试体系加固与覆盖率门禁 | quality gate 配置测试、coverage fail-under 80、任务状态转换策略、核心 schema 契约测试 | targeted tests 22 passed，coverage full gate 136 passed，coverage 90.83% | 见本提交 |
-| Day 24 | 集成测试与回归样例 | 待记录 | 待记录 | 待记录 |
+| Day 23 | 测试体系加固与覆盖率门禁 | quality gate 配置测试、coverage fail-under 80、任务状态转换策略、核心 schema 契约测试 | targeted tests 22 passed，coverage full gate 136 passed，coverage 90.80% | 见本提交 |
+| Day 24 | 集成测试与回归样例 | API 提交、Worker 执行、Crawler fixture、采集入库、RAG indexing、报告保存和 evidence API 回查的主链路集成测试 | full pytest 137 passed，coverage 90.86%，ruff/build/audit 通过 | 见本提交 |
 | Day 25 | Docker Compose 一键启动 | 待记录 | 待记录 | 待记录 |
 | Day 26 | CI 与版本回退策略 | 待记录 | 待记录 | 待记录 |
 | Day 27 | 性能评估和 benchmark 数据 | 待记录 | 待记录 | 待记录 |
@@ -1685,7 +1685,7 @@ Day 23 原计划是补单元测试和校验测试。但项目从 Day 4 起一直
 - `uv run pytest tests\test_quality_gate_config.py`：1 passed。
 - `uv run pytest tests\test_task_status_policy.py`：11 passed。
 - `uv run pytest tests\test_schema_validation_contracts.py tests\test_task_status_policy.py tests\test_quality_gate_config.py`：22 passed。
-- `uv run pytest --cov=backend --cov-report=term-missing`：136 passed，backend coverage 90.83%，达到 80% 门槛。
+- `uv run pytest --cov=backend --cov-report=term-missing`：136 passed，backend coverage 90.80%，达到 80% 门槛。
 
 ### 遗留问题
 
@@ -1693,6 +1693,69 @@ Day 23 原计划是补单元测试和校验测试。但项目从 Day 4 起一直
 - 还没有 Playwright E2E。
 - 还没有真实 PostgreSQL / Redis / Celery 的 Docker 集成测试。
 - 还没有 CI workflow。
+
+## Day 24 开发记录
+
+### 背景
+
+Day 24 原计划是“集成测试与回归样例”。经过 Day 23 的质量门禁加固后，项目已经具备大量单点测试，但还缺一条能证明主链路闭环的自动化样例。
+
+如果只停留在 API、Worker、Crawler、RAG、Report 各自的测试，后续改动可能出现一种风险：每个模块单独能跑，但同一个 `task_id` 从任务提交到报告证据回查却串不起来。Day 24 因此优先补主链路集成测试。
+
+### 实际完成
+
+- 新增 `tests/test_day24_integration_flow.py`。
+- 使用内存 SQLite + `StaticPool` 搭建稳定集成测试数据库。
+- 使用真实 `SQLAlchemyTaskStatusStore` 和 `SQLAlchemyTaskEventStore` 验证任务与事件持久化。
+- 使用 `CapturingDispatcher` 替代真实 Celery broker，捕获 API 入队 payload 和 `queue_task_id`。
+- 调用真实 `run_research_task()`，用同一个 `task_id` 推进 Worker 主体。
+- 使用 fixture HTML 解析商品、价格、评分和两条低分评论。
+- 使用 `SQLAlchemyCrawlResultStore` 写入 product、crawled_page、review 和 artifact。
+- 使用 `SQLAlchemyReviewChunkStore` + `DeterministicEmbeddingProvider` 完成评论切片、embedding 写入和 top_k 检索。
+- 使用 `StructuredReportGenerator` + `SQLAlchemyReportStore` 保存带 `chunk:{id}` evidence refs 的报告。
+- 使用 `GET /api/reports`、`GET /api/reports/{report_id}`、`GET /api/reports/{report_id}/evidence` 验证报告列表、详情和证据链回查。
+- 修正 Day 23 文档中的 coverage 漂移数据：最新复跑为 90.80%。
+- 更新 `doc/roadmap/day-24.md`、`doc/supporting/testing-strategy.md`、`development-log.md` 和 `interview-defense-dossier.md`。
+
+### 当天为什么这样选
+
+今天最重要的选择是：不把 Day 24 集成测试做成“必须启动所有真实基础设施”的测试。
+
+原因是 Day 24 的目标是验证业务模块契约，而不是验证部署环境。真实 Redis、Celery worker、PostgreSQL 和 pgvector 都很重要，但它们会让测试依赖本机服务状态。一旦失败，排查时很难判断是业务逻辑断了，还是 Redis 没启动、worker 没连上、数据库配置不一致。
+
+所以今天采用“真实业务模块 + 稳定替身”的策略：
+
+- API 路由是真的。
+- SQLAlchemy store 是真的。
+- Worker 主体是真的。
+- Crawler fixture 解析是真的。
+- RAG store 和报告 store 是真的。
+- 只有 Celery broker、外部网页和外部模型服务被替换成可控测试替身。
+
+这个取舍能让测试稳定、快速、可重复，同时保留主链路最关键的数据流。
+
+### 当前验证
+
+- `uv run pytest tests\test_day24_integration_flow.py`：1 passed。
+- `uv run pytest tests\test_quality_gate_config.py tests\test_task_status_policy.py tests\test_schema_validation_contracts.py`：22 passed。
+- `uv run pytest`：137 passed。
+- `uv run pytest --cov=backend --cov-report=term-missing`：137 passed，backend coverage 90.86%，达到 80% 门槛。
+- `uv run ruff check backend tests migrations`：通过。
+- `uv run alembic heads`：`0002_task_queue_id (head)`。
+- `cd frontend; npm run lint`：通过。
+- `cd frontend; npm run build`：通过。
+- `cd frontend; npm audit --audit-level=high`：0 vulnerabilities。
+- `uvx pip-audit`：No known vulnerabilities found。
+
+### 遗留问题
+
+- Day 24 还没有验证真实 Redis broker。
+- Day 24 还没有启动独立 Celery worker 进程。
+- Day 24 还没有连接真实 PostgreSQL / pgvector 原生排序。
+- Day 24 还没有浏览器端 E2E。
+- 报告仍使用确定性生成器，真实 LLM prompt 尚未接入。
+
+这些遗留项进入 Day 25 之后的 Docker Compose、CI、benchmark、E2E 和真实 provider 接入阶段。
 
 ## 30 天后优化记录
 

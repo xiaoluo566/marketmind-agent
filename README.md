@@ -31,7 +31,7 @@
 
 ## 当前阶段
 
-当前已完成 Day 1-23 的阶段性开发，并完成一次推主分支前审计。系统已经具备：
+当前已完成 Day 1-24 的阶段性开发，并完成一次推主分支前审计。系统已经具备：
 
 - FastAPI 统一 API envelope 和 trace ID。
 - Celery + Redis 长任务分发与任务状态缓存。
@@ -43,7 +43,7 @@
 - `search_reviews_tool`、结构化报告生成、证据链回查和风险/机会评分。
 - Next.js 真实任务提交、任务详情轮询、Agent step 摘要、历史任务、历史报告、报告详情和报告 evidence chain 展示。
 - 结构化错误日志、`error_logs` 持久化、观测错误查询 API。
-- pytest 快速测试、coverage fail-under 80 门禁、状态转换策略和核心 schema 契约测试。
+- pytest 快速测试、coverage fail-under 80 门禁、状态转换策略、核心 schema 契约测试和主链路集成回归样例。
 
 尚未完成的能力包括任务重试、全局 evidence 检索接口、真实 embedding provider、pgvector 原生排序、真实 LLM report prompt、Docker Compose 一键启动和 Playwright E2E。
 
