@@ -152,6 +152,66 @@ Day 18 当前不覆盖：
 
 Day 18 的测试重点是防止评分脱离证据、防止小样本被过度解读，以及保证评分规则可复现。
 
+## Day 23 测试体系加固
+
+Day 23 不再重复“建立 tests 目录”，而是把已经积累的测试体系固化成质量门禁。
+
+新增内容：
+
+- `tests/test_quality_gate_config.py`
+- `tests/test_task_status_policy.py`
+- `tests/test_schema_validation_contracts.py`
+- `backend/app/storage/status_policy.py`
+
+### Coverage 门禁
+
+`pyproject.toml` 当前策略：
+
+```toml
+[tool.pytest.ini_options]
+addopts = "-q"
+
+[tool.coverage.run]
+source = ["backend"]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+```
+
+设计取舍：
+
+- 默认 `uv run pytest` 保持轻量，方便日常定向测试。
+- 提交前使用 `uv run pytest --cov=backend --cov-report=term-missing` 执行 coverage 门禁。
+- coverage fail-under 固定为 80，当前 Day 23 实测 backend coverage 为 90.83%。
+
+不要把 `--cov=backend --cov-fail-under=80` 直接写入默认 `addopts`。这样会让只跑纯配置测试或前端契约测试时 coverage 变成 0，反而破坏开发效率。
+
+### 状态转换测试边界
+
+`tests/test_task_status_policy.py` 覆盖：
+
+- received -> queued
+- queued -> running
+- running -> completed / failed
+- failed -> waiting_retry
+- waiting_retry -> queued
+- completed / cancelled 终态不能回到 running / queued
+
+当前状态策略先作为独立模块存在，不直接接入 store。后续 Day 28 做 retry / resume 时，再把 `ensure_task_status_transition()` 接入具体业务入口。
+
+### Schema 契约测试边界
+
+`tests/test_schema_validation_contracts.py` 覆盖：
+
+- `TaskCreateRequest` 的 target trim 和默认值。
+- `public_url` 的危险目标拒绝。
+- 合法 HTTPS public URL 放行。
+- `StructuredReport` 的 evidence refs 一致性。
+- `TaskStatus` 和 `AgentStepStatus` 枚举值和文档保持一致。
+
+这组测试和已有 API 测试有意重叠一部分。原因是 API 测试验证路由行为，schema 测试验证边界模型本身；当未来路由重构时，schema 约束仍然应该独立成立。
+
 ## 回归要求
 
 任何 bug 修复都要留下一个能复现旧问题的测试。没有测试的修复，后续很容易被重构再次破坏。

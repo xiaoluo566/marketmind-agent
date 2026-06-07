@@ -47,8 +47,8 @@
 | --- | --- |
 | 稳定分支 | `main` |
 | 日常开发分支 | `dev` |
-| 当前开发阶段 | Day 1-21 阶段审计与主分支合并准备 |
-| 当前主链路 | 文档基线、Next.js 控制台骨架、前端真实 API client、真实任务提交表单、任务详情轮询面板、历史任务列表、历史报告列表、报告详情真实读取、报告 evidence chain 真实读取、FastAPI health、任务创建 API、public_url 安全校验、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、Agent step 查询 API、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、相似度检索原型、search_reviews_tool、结构化报告生成骨架、报告入库、证据链回查 API、风险机会评分、数据库模型、Alembic 迁移 |
+| 当前开发阶段 | Day 23 测试体系加固 |
+| 当前主链路 | 文档基线、Next.js 控制台骨架、前端真实 API client、真实任务提交表单、任务详情轮询面板、历史任务列表、历史报告列表、报告详情真实读取、报告 evidence chain 真实读取、FastAPI health、任务创建 API、public_url 安全校验、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、Agent step 查询 API、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、相似度检索原型、search_reviews_tool、结构化报告生成骨架、报告入库、证据链回查 API、风险机会评分、结构化错误日志、观测错误查询 API、数据库模型、Alembic 迁移 |
 | 最新开发提交 | 以 `git log -1 --oneline` 为准 |
 | 当前数据库决策 | PostgreSQL + pgvector，review chunk 使用 `vector(1536)` |
 | 当前模型决策 | 默认 `gpt-5.4-mini`，报告模型 `gpt-5.5`，embedding `text-embedding-3-small` |
@@ -100,15 +100,15 @@
 | Day 19 | Done | Next.js 接真实 API | `3fab1b3` |
 | Day 20 | Done | 前端任务进度与 Agent step 展示 | `3ff03a8` |
 | Day 21 | Done | 历史任务和历史报告真实接入 | `ca09e3a` |
-| Day 22 | Pending | 日志、trace、错误分类 | 待记录 |
-| Day 23 | Pending | Docker Compose 一键启动 | 待记录 |
-| Day 24 | Pending | 单元测试、集成测试、固定样例 | 待记录 |
-| Day 25 | Pending | E2E 与关键用户流验证 | 待记录 |
-| Day 26 | Pending | LLMOps 指标统计 | 待记录 |
-| Day 27 | Pending | 50 次任务复盘和数据统计 | 待记录 |
-| Day 28 | Pending | Demo 脚本、简历素材、截图 | 待记录 |
-| Day 29 | Pending | 回归修复和发布准备 | 待记录 |
-| Day 30 | Pending | 里程碑封版和总结 | 待记录 |
+| Day 22 | Done | 日志、trace、错误分类、结构化错误查询 API | `80e372b` |
+| Day 23 | Done | 单元测试、校验测试、覆盖率门禁 | 见本提交 |
+| Day 24 | Pending | 集成测试与回归样例 | 待记录 |
+| Day 25 | Pending | Docker Compose 一键启动 | 待记录 |
+| Day 26 | Pending | CI 与版本回退策略 | 待记录 |
+| Day 27 | Pending | 性能评估和 benchmark 数据 | 待记录 |
+| Day 28 | Pending | 失败重试和续跑机制 | 待记录 |
+| Day 29 | Pending | README、demo 和演示素材 | 待记录 |
+| Day 30 | Pending | 里程碑发布、tag、指标和复盘 | 待记录 |
 
 ## Day 01 记录
 
@@ -1591,15 +1591,15 @@ Day 21 的目标是补齐历史任务和历史报告，让系统从“能跑一�
 
 | Day | 计划主题 | 实际完成 | 验证 | 提交 |
 | --- | --- | --- | --- | --- |
-| Day 22 | 日志、trace、错误分类 | 结构化 JSON 日志入口、敏感字段脱敏、`ErrorLogStore`、API 错误写入、Worker/Crawler 分类错误、`GET /api/observability/errors` | `uv run pytest` 114 passed，ruff 通过，alembic head 正常，frontend lint/build 通过 | 待提交 |
-| Day 23 | Docker Compose 一键启动 | 待记录 | 待记录 | 待记录 |
-| Day 24 | 单元测试、集成测试、固定样例 | 待记录 | 待记录 | 待记录 |
-| Day 25 | E2E 与关键用户流验证 | 待记录 | 待记录 | 待记录 |
-| Day 26 | LLMOps 指标统计 | 待记录 | 待记录 | 待记录 |
-| Day 27 | 50 次任务复盘和数据统计 | 待记录 | 待记录 | 待记录 |
-| Day 28 | Demo 脚本、简历素材、截图 | 待记录 | 待记录 | 待记录 |
-| Day 29 | 回归修复和发布准备 | 待记录 | 待记录 | 待记录 |
-| Day 30 | 里程碑封版和总结 | 待记录 | 待记录 | 待记录 |
+| Day 22 | 日志、trace、错误分类 | 结构化 JSON 日志入口、敏感字段脱敏、`ErrorLogStore`、API 错误写入、Worker/Crawler 分类错误、`GET /api/observability/errors` | `uv run pytest` 114 passed，ruff 通过，alembic head 正常，frontend lint/build 通过 | `80e372b` |
+| Day 23 | 测试体系加固与覆盖率门禁 | quality gate 配置测试、coverage fail-under 80、任务状态转换策略、核心 schema 契约测试 | targeted tests 22 passed，coverage full gate 136 passed，coverage 90.83% | 见本提交 |
+| Day 24 | 集成测试与回归样例 | 待记录 | 待记录 | 待记录 |
+| Day 25 | Docker Compose 一键启动 | 待记录 | 待记录 | 待记录 |
+| Day 26 | CI 与版本回退策略 | 待记录 | 待记录 | 待记录 |
+| Day 27 | 性能评估和 benchmark 数据 | 待记录 | 待记录 | 待记录 |
+| Day 28 | 失败重试和续跑机制 | 待记录 | 待记录 | 待记录 |
+| Day 29 | README、demo 和演示素材 | 待记录 | 待记录 | 待记录 |
+| Day 30 | 里程碑发布、tag、指标和复盘 | 待记录 | 待记录 | 待记录 |
 
 ## Day 22 开发记录
 
@@ -1648,6 +1648,51 @@ Day 22 因此选择先做“可排障闭环”，而不是直接做复杂 LLMOps
 - 错误日志还没有按 `error_code` 聚合统计。
 - `POST /api/tasks/{task_id}/retry` 尚未实现，错误分类还没有和自动恢复策略打通。
 - 当前结构化日志仍输出到应用日志流，后续可以接 Loguru、OpenTelemetry、ELK 或 Grafana Loki。
+
+## Day 23 开发记录
+
+### 背景
+
+Day 23 原计划是补单元测试和校验测试。但项目从 Day 4 起一直按 TDD 推进，截至 Day 22 已有 API、任务队列、Crawler、Agent、RAG、Report、前端契约和 Observability 测试。因此今天不再机械地“建立 tests 目录”，而是把测试体系升级成可执行的质量门禁。
+
+### 实际完成
+
+- 修改 `pyproject.toml`：
+  - 保持 pytest 默认 `addopts = "-q"`。
+  - 新增 `[tool.coverage.run] source = ["backend"]`。
+  - 新增 `[tool.coverage.report] fail_under = 80` 和 `show_missing = true`。
+- 新增 `tests/test_quality_gate_config.py`，防止 coverage 门禁配置被误删。
+- 新增 `backend/app/storage/status_policy.py`，沉淀任务状态转换策略。
+- 新增 `tests/test_task_status_policy.py`，覆盖合法和非法状态转换。
+- 新增 `tests/test_schema_validation_contracts.py`，覆盖任务创建 schema、public URL 安全校验、报告 evidence refs 和状态枚举。
+- 更新 `doc/roadmap/day-23.md` 和 `doc/supporting/testing-strategy.md`。
+
+### 当天为什么这样选
+
+今天最重要的取舍是：不把 coverage 强塞进 pytest 默认 `addopts`。
+
+原因是定向测试经常只跑一个小文件。如果这个文件不 import backend 代码，coverage 会是 0，然后 fail-under 直接失败。这会让“快速定位问题”的测试体验变差。最终选择是：
+
+- 日常快速测试：`uv run pytest tests\some_test.py`
+- 提交前 coverage 门禁：`uv run pytest --cov=backend --cov-report=term-missing`
+
+这样既保留开发效率，又有可量化的质量线。
+
+状态转换策略也选择先独立，不立即接入 store。原因是状态策略会影响所有任务写入，Day 23 的目标是测试体系加固，不应引入大范围行为变化。后续 Day 28 做 retry / resume 时，再把策略接入业务入口。
+
+### 当前验证
+
+- `uv run pytest tests\test_quality_gate_config.py`：1 passed。
+- `uv run pytest tests\test_task_status_policy.py`：11 passed。
+- `uv run pytest tests\test_schema_validation_contracts.py tests\test_task_status_policy.py tests\test_quality_gate_config.py`：22 passed。
+- `uv run pytest --cov=backend --cov-report=term-missing`：136 passed，backend coverage 90.83%，达到 80% 门槛。
+
+### 遗留问题
+
+- `status_policy.py` 还没有接入 `SQLAlchemyTaskStatusStore` 或 retry / cancel API。
+- 还没有 Playwright E2E。
+- 还没有真实 PostgreSQL / Redis / Celery 的 Docker 集成测试。
+- 还没有 CI workflow。
 
 ## 30 天后优化记录
 

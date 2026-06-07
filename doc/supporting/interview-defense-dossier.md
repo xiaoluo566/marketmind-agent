@@ -335,13 +335,19 @@ Day 5 接 Celery + Redis 时，我没有让测试强依赖真实 Redis。这里�
 
 > 我不希望单元测试依赖本机 Redis 是否启动，所以通过接口抽象隔离基础设施。真实 Redis 联调会做，但它应该是集成测试或联调步骤，而不是所有测试的前置条件。
 
+Day 23 做测试体系加固时，我又补了一个取舍：默认 `uv run pytest` 保持轻量，coverage 门禁放在 `uv run pytest --cov=backend --cov-report=term-missing`。这样日常可以快速跑单文件测试，提交前再跑完整覆盖率门禁。当前 backend coverage 为 90.83%，超过 80% fail-under。
+
+面试可以这样说：
+
+> 我没有把 coverage 强行塞进 pytest 默认参数，因为只跑纯配置测试时 coverage 会是 0，反而影响定位问题。我的做法是把 coverage fail-under 写进配置，并在提交前门禁里强制跑 coverage。这样既保留开发效率，又有明确质量线。
+
 ### 7. 我对“不要夸大进度”的思考
 
-这个项目目前推进到 Day 20，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
+这个项目目前推进到 Day 23，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
 
-- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、工具 schema、工具注册机制、最小 ReAct 状态机、Agent step 落库、Agent step 查询 API、结构化输出 guardrails、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、`search_reviews_tool`、结构化报告生成骨架、报告入库、证据链回查 API、评论风险机会评分、前端真实任务提交、任务状态/事件/steps 轮询读取、历史任务、历史报告、报告详情、报告 evidence chain 前端接入、错误 envelope、测试。
-- 正在做：Day 1-21 阶段审计和主分支合并准备。
-- 后续做：任务重试、全局 evidence 检索、真实 embedding provider、pgvector 原生检索、真实 LLM report prompt、部署。
+- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、工具 schema、工具注册机制、最小 ReAct 状态机、Agent step 落库、Agent step 查询 API、结构化输出 guardrails、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、`search_reviews_tool`、结构化报告生成骨架、报告入库、证据链回查 API、评论风险机会评分、前端真实任务提交、任务状态/事件/steps 轮询读取、历史任务、历史报告、报告详情、报告 evidence chain 前端接入、结构化错误日志、观测错误查询 API、coverage 门禁、状态转换策略和核心 schema 契约测试。
+- 正在做：第四周工程质量、集成测试、部署和演示准备。
+- 后续做：任务重试、全局 evidence 检索、真实 embedding provider、pgvector 原生检索、真实 LLM report prompt、Docker Compose、E2E、CI。
 
 我认为这反而是加分项。因为真实开发中，清楚知道自己完成了什么、没完成什么，比把项目包装得过满更可信。
 
@@ -1739,9 +1745,14 @@ Day 22 的自我思考：
 
 ## 目前最适合展示的代码点
 
-截至 Day 22，最适合展示：
+截至 Day 23，最适合展示：
 
 - `backend/app/api/routes/tasks.py`：`GET /api/tasks` 如何支持历史任务查询、状态筛选、时间筛选和分页。
+- `pyproject.toml`：pytest 快速测试配置和 coverage fail-under 80 门禁。
+- `backend/app/storage/status_policy.py`：任务状态转换策略，支撑后续 retry / cancel。
+- `tests/test_quality_gate_config.py`：质量门禁配置测试。
+- `tests/test_task_status_policy.py`：任务生命周期合法/非法转换测试。
+- `tests/test_schema_validation_contracts.py`：任务创建、public URL、报告 evidence refs 和状态枚举契约测试。
 - `backend/app/observability/error_store.py`：`ErrorLayer`、`ErrorLogData`、内存和 SQLAlchemy 双实现。
 - `backend/app/observability/sanitization.py`：结构化日志 details 的递归脱敏。
 - `backend/app/api/routes/observability.py`：按 `trace_id` / `task_id` 查询错误日志，且禁止无条件全量查询。
@@ -1843,6 +1854,7 @@ Day 22 的自我思考：
 - Day 20：任务详情轮询、`GET /api/tasks/{task_id}/steps` 和 Agent step 脱敏摘要展示已完成。
 - Day 21：历史任务、历史报告列表和报告详情真实 API 接入已完成。
 - Day 22：结构化日志、错误分类、`error_logs` 持久化和错误查询 API 已完成。
+- Day 23：coverage fail-under 80、状态转换策略和核心 schema 契约测试已完成。
 
 中期：
 
@@ -1869,4 +1881,4 @@ Day 22 的自我思考：
 
 如果让你说下一步：
 
-> 下一步我会补日志、trace、错误分类和更完整的证据来源交互，让历史任务不仅能查到，还能更快定位失败原因和报告证据来源。
+> 下一步我会补集成测试、Docker Compose 和 E2E，把现在已经有的后端能力变成更稳定的一键演示链路。
