@@ -14,7 +14,7 @@ def read_project_file(relative_path: str) -> str:
 def test_readme_is_demo_ready_and_links_core_materials() -> None:
     readme = read_project_file("README.md")
 
-    assert "Day 29" in readme
+    assert "Day 30" in readme
     assert "## 快速启动" in readme
     assert "## 架构图" in readme
     assert "## 演示路径" in readme
@@ -22,6 +22,7 @@ def test_readme_is_demo_ready_and_links_core_materials() -> None:
     assert "doc/supporting/demo-script.md" in readme
     assert "doc/supporting/resume-story.md" in readme
     assert "doc/supporting/interview-story.md" in readme
+    assert "doc/supporting/day30-release-candidate.md" in readme
 
 
 def test_demo_script_covers_main_flow_retry_and_fallbacks() -> None:

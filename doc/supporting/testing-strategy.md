@@ -488,7 +488,7 @@ Day 30 新增 `tests/test_day30_release_candidate.py`，用于验证第一阶段
 这组测试覆盖：
 
 - `doc/supporting/day30-release-candidate.md` 必须存在，并记录 `v0.1-day30-rc1`、release candidate、Docker Desktop daemon 状态、GitHub Actions 和“不声明 v1.0”的边界。
-- `doc/supporting/day30-metrics-summary.md` 必须只使用已验证数字，例如 `167 passed`、coverage `90.79%`、Day27 fixture benchmark 的 `20` 个样例、`95.00%` 成功率、`338 ms` 平均耗时、`391 ms` P95，以及模型调用次数：0。
+- `doc/supporting/day30-metrics-summary.md` 必须只使用已验证数字，例如 `168 passed`、coverage `90.77%`、Day27 fixture benchmark 的 `20` 个样例、`95.00%` 成功率、`338 ms` 平均耗时、`391 ms` P95，以及模型调用次数：0。
 - `doc/supporting/day30-bug-summary.md` 必须明确未解决缺口，包括前端 retry 按钮、真实 compose build/up、真实 embedding provider 等。
 - `doc/supporting/future-iterations.md` 必须把第二阶段优先级具体化，避免 Day30 之后继续发散。
 - `doc/supporting/release-checklist.md`、`README.md`、`development-log.md` 和 `interview-defense-dossier.md` 必须同步 Day30 RC 状态。

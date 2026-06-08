@@ -18,8 +18,8 @@
 
 | 指标 | 已验证结果 | 说明 |
 | --- | --- | --- |
-| 全量 pytest | `167 passed` | 覆盖后端业务、Agent、RAG、报告、CI 契约、文档契约和 Day30 RC 文档测试 |
-| Backend coverage | `90.79%` | 超过 `pyproject.toml` 中 `fail_under = 80` 的门槛 |
+| 全量 pytest | `168 passed` | 覆盖后端业务、Agent、RAG、报告、CI 契约、文档契约、Day30 RC 文档测试和阶段审计测试 |
+| Backend coverage | `90.77%` | 超过 `pyproject.toml` 中 `fail_under = 80` 的门槛 |
 | Ruff | passed | `uv run ruff check backend tests migrations` |
 | Alembic heads | passed | `0002_task_queue_id (head)` |
 | Compose config | passed | 只验证配置解析，不等于真实容器启动 |
@@ -27,7 +27,7 @@
 | Frontend audit | passed | `npm audit --audit-level=high` 无 high 及以上漏洞 |
 | Python audit | passed | `uvx pip-audit` 无已知漏洞 |
 
-Day 29 收尾时的基线是 `162 passed`。Day30 新增 5 个 release candidate 文档测试后，最终变为 `167 passed`。
+Day 29 收尾时的基线是 `162 passed`。Day30 新增 release candidate 文档测试和阶段审计测试后，最终变为 `168 passed`。
 
 ## Day27 fixture benchmark
 
@@ -59,7 +59,7 @@ Day27 benchmark 是 `fixture benchmark`，用于验证主链路统计模型和�
 
 可以写：
 
-- 构建 167 个自动化测试覆盖的工程化 Agent 主链路，backend coverage 90.79%。
+- 构建 168 个自动化测试覆盖的工程化 Agent 主链路，backend coverage 90.77%。
 - 设计 20 个 fixture 样例任务 benchmark，记录成功率 95.00%、平均耗时 338 ms、P95 391 ms。
 - 将测试、coverage、ruff、Alembic、Docker Compose config、前端构建和依赖审计纳入 CI/本地门禁。
 

@@ -1903,7 +1903,7 @@ Day 30 的面试讲法重点是：我没有把项目硬包装成 v1.0，而是�
 
 - 发布不是“代码写完就结束”，还要有 checklist、指标、缺口、tag、CI 和回退。
 - RC 不是 v1.0。真实 compose build/up、真实 embedding provider、真实 LLM report prompt、前端 retry 按钮和 Playwright E2E 没完成，就必须写成缺口。
-- 指标只能写已验证事实，例如 `167 passed`、coverage `90.79%`、Day27 fixture benchmark 的 20 个样例、95.00% 成功率、338 ms 平均耗时和 391 ms P95。
+- 指标只能写已验证事实，例如 `168 passed`、coverage `90.77%`、Day27 fixture benchmark 的 20 个样例、95.00% 成功率、338 ms 平均耗时和 391 ms P95。
 - 模型调用次数：0 也要如实写，因为当前还没有接真实 provider，不能把 deterministic baseline 包装成真实 LLMOps 数据。
 
 如果面试官问“为什么不继续做功能，而是写这些文档”，可以回答：

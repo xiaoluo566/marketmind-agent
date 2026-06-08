@@ -24,8 +24,8 @@ def test_day30_release_candidate_doc_records_tag_scope_and_boundaries() -> None:
 def test_day30_metrics_summary_uses_verified_numbers_only() -> None:
     metrics = read_project_file("doc/supporting/day30-metrics-summary.md")
 
-    assert "167 passed" in metrics
-    assert "90.79%" in metrics
+    assert "168 passed" in metrics
+    assert "90.77%" in metrics
     assert "20" in metrics
     assert "95.00%" in metrics
     assert "338 ms" in metrics
@@ -68,3 +68,18 @@ def test_release_checklist_and_readme_reflect_day30_candidate() -> None:
     assert "v0.1-day30-rc1" in release_checklist
     assert "Day 30" in readme
     assert "day30-release-candidate.md" in readme
+
+
+def test_day30_audit_removes_stale_day29_release_status() -> None:
+    readme = read_project_file("README.md")
+    release_candidate = read_project_file("doc/supporting/day30-release-candidate.md")
+    development_log = read_project_file("doc/supporting/development-log.md")
+    resume_story = read_project_file("doc/supporting/resume-story.md")
+
+    assert "截至 Day 30" in readme
+    assert "Day 1-30 的第一阶段 release candidate" in readme
+    assert "run id: 27138404103" in release_candidate
+    assert "Day 30 最新远程 GitHub Actions 已通过" in release_candidate
+    assert "| Day 30 | 里程碑发布、tag、指标和复盘 | 待记录" not in development_log
+    assert "Day30 release candidate tests 6 passed" in development_log
+    assert "Day30 `uv run pytest`：168 passed" in resume_story

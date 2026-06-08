@@ -1599,7 +1599,7 @@ Day 21 的目标是补齐历史任务和历史报告，让系统从“能跑一�
 | Day 27 | 性能评估和 benchmark 数据 | `backend/app/benchmarking/*`、`tests/test_day27_benchmarking.py`、20 个 fixture 样例任务、benchmark JSON/Markdown artifact、性能文档和 LLMOps 指标补充 | Day27 tests 5 passed；benchmark 20 samples，success 95%，avg 338ms，P95 391ms；full pytest 150 passed；coverage 90.80%；ruff/alembic/compose/frontend/audit 通过 | 见本提交 |
 | Day 28 | 失败重试和续跑机制 | `backend/app/tasks/recovery.py`、`POST /api/tasks/{task_id}/retry`、`waiting_retry` 状态流、Worker recovery resume 事件、Day28 recovery tests 和文档同步 | Day28 recovery tests 7 passed；Day26-Day28 targeted tests 16 passed；full pytest 157 passed；coverage 90.79%；ruff/alembic/compose config/frontend lint/build/audit/pip-audit 通过 | 见本提交 |
 | Day 29 | README、demo 和演示素材 | `README.md`、`doc/supporting/demo-script.md`、`doc/supporting/resume-story.md`、`doc/supporting/interview-story.md`、`tests/test_day29_demo_docs.py` 和 Day29 文档同步 | Day29 demo docs tests 5 passed；Day27-Day29 targeted tests 17 passed；full pytest 162 passed；coverage 90.79%；ruff/alembic/compose config/frontend lint/build/audit/pip-audit 通过 | 见本提交 |
-| Day 30 | 里程碑发布、tag、指标和复盘 | 待记录 | 待记录 | 待记录 |
+| Day 30 | 里程碑发布、tag、指标和复盘 | `tests/test_day30_release_candidate.py`、Day30 RC 文档、metrics summary、bug summary、release checklist、README、future iterations 和面试材料同步 | Day30 release candidate tests 6 passed；Day27-Day30 targeted tests 22 passed；full pytest 168 passed；coverage 90.77%；ruff/alembic/compose config/frontend lint/build/audit/pip-audit 通过；GitHub Actions run 27138404103 success | 见本审计提交 |
 
 ## Day 22 开发记录
 
@@ -2159,7 +2159,7 @@ Day 30 的任务不是继续堆功能，而是把第一阶段收口成一个可�
 
 - 新增 `tests/test_day30_release_candidate.py`，把 Day30 release candidate 文档同步纳入自动化测试。
 - 新增 `doc/supporting/day30-release-candidate.md`，说明建议 tag `v0.1-day30-rc1`、RC 范围、非 v1.0 边界、Docker daemon 状态、GitHub Actions 观察要求和回退路径。
-- 新增 `doc/supporting/day30-metrics-summary.md`，只记录已验证指标：`167 passed`、coverage `90.79%`、Day27 `fixture benchmark` 的 20 个样例、95.00% 成功率、338 ms 平均耗时、391 ms P95，以及模型调用次数：0。
+- 新增 `doc/supporting/day30-metrics-summary.md`，只记录已验证指标：`168 passed`、coverage `90.77%`、Day27 `fixture benchmark` 的 20 个样例、95.00% 成功率、338 ms 平均耗时、391 ms P95，以及模型调用次数：0。
 - 新增 `doc/supporting/day30-bug-summary.md`，列出未解决缺口：前端 retry 按钮、真实 compose build/up、真实 embedding provider、真实 LLM report prompt、Celery countdown、Agent step replay、Playwright E2E、GitHub branch protection 等。
 - 更新 `doc/supporting/future-iterations.md`，把第二阶段优先级从泛化计划改成可执行 backlog。
 - 更新 `doc/supporting/release-checklist.md`，补充 Day 30 release candidate 和 `v0.1-day30-rc1` 的发布边界。
@@ -2178,8 +2178,8 @@ Day 30 的任务不是继续堆功能，而是把第一阶段收口成一个可�
 
 - `uv run pytest tests\test_day30_release_candidate.py`：Day30 release candidate tests，先 RED，补齐文档后 5 passed。
 - `uv run pytest tests\test_day30_release_candidate.py tests\test_day29_demo_docs.py tests\test_day28_recovery.py tests\test_day27_benchmarking.py`：22 passed。
-- `uv run pytest`：167 passed。
-- `uv run pytest --cov=backend --cov-report=term-missing`：167 passed，backend coverage 90.79%，达到 80% 门槛。
+- `uv run pytest`：168 passed。
+- `uv run pytest --cov=backend --cov-report=term-missing`：168 passed，backend coverage 90.77%，达到 80% 门槛。
 - `uv run ruff check backend tests migrations`：All checks passed。
 - `uv run alembic heads`：`0002_task_queue_id (head)`。
 - `docker info`：Docker client 29.3.1，server 仍无法连接 `dockerDesktopLinuxEngine`。

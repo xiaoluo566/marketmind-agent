@@ -36,7 +36,7 @@ MarketMind Agent 是一个面向电商运营评论洞察的工程化 Agent 系�
 
 ### 工程质量
 
-- 建立 pytest + coverage + ruff + Alembic + Docker Compose config + npm lint/build/audit + pip-audit 的质量门禁；Day28 完整测试为 `157 passed`，Day29 完整测试为 `162 passed`，backend coverage `90.79%`。
+- 建立 pytest + coverage + ruff + Alembic + Docker Compose config + npm lint/build/audit + pip-audit 的质量门禁；Day28 完整测试为 `157 passed`，Day29 完整测试为 `162 passed`，Day30 完整测试为 `168 passed`，Day30 backend coverage `90.77%`。
 
 ### 性能与失败恢复
 
@@ -48,7 +48,9 @@ MarketMind Agent 是一个面向电商运营评论洞察的工程化 Agent 系�
 
 - Day28 `uv run pytest`：157 passed。
 - Day29 `uv run pytest`：162 passed。
-- backend coverage：90.79%。
+- Day29 backend coverage：90.79%。
+- Day30 `uv run pytest`：168 passed。
+- Day30 backend coverage：90.77%。
 - Day27 fixture benchmark：20 个样例任务。
 - Day27 fixture benchmark 成功率：95.00%。
 - Day27 fixture benchmark 平均端到端耗时：338 ms。

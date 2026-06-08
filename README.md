@@ -8,7 +8,7 @@ MarketMind Agent 是一个面向电商运营场景的评论洞察与证据链报
 - 运营报告必须有证据链，不能只给一段看起来合理的 AI 文案。
 - Agent 执行过程需要可追踪、可测试、可复盘，方便调试和面试展示。
 
-截至 Day 29，仓库已经完成 Day 1-28 的核心工程链路，并在 Day 29 完成 README、演示脚本、简历表达和面试讲述材料整理。
+截至 Day 30，仓库已经完成 Day 1-30 的第一阶段 release candidate：核心工程链路、自动化测试、CI、benchmark、失败任务 retry、演示材料、指标汇总、缺口复盘和 RC tag 均已收口。
 
 ## 架构图
 
@@ -119,8 +119,8 @@ uvx pip-audit
 
 最新 Day30 本地完整门禁：
 
-- `uv run pytest`：167 passed。
-- coverage：90.79%。
+- `uv run pytest`：168 passed。
+- coverage：90.77%。
 - ruff、alembic heads、compose config：通过。
 - frontend lint / build / audit：通过。
 - `uvx pip-audit`：No known vulnerabilities found。
