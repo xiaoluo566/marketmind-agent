@@ -47,8 +47,8 @@
 | --- | --- |
 | 稳定分支 | `main` |
 | 日常开发分支 | `dev` |
-| 当前开发阶段 | Day 27 性能与容量评估 |
-| 当前主链路 | 文档基线、Next.js 控制台骨架、前端真实 API client、真实任务提交表单、任务详情轮询面板、历史任务列表、历史报告列表、报告详情真实读取、报告 evidence chain 真实读取、FastAPI health、任务创建 API、public_url 安全校验、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、Agent step 查询 API、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、相似度检索原型、search_reviews_tool、结构化报告生成骨架、报告入库、证据链回查 API、风险机会评分、结构化错误日志、观测错误查询 API、主链路集成回归样例、Docker Compose 服务拓扑、数据库迁移服务、后端/前端 Dockerfile、GitHub Actions CI、PR 模板、发布检查清单、回退运行手册、Day27 benchmark harness、20 个 fixture 样例任务、性能 summary artifact、数据库模型、Alembic 迁移 |
+| 当前开发阶段 | Day 28 失败恢复与重试策略 |
+| 当前主链路 | 文档基线、Next.js 控制台骨架、前端真实 API client、真实任务提交表单、任务详情轮询面板、历史任务列表、历史报告列表、报告详情真实读取、报告 evidence chain 真实读取、FastAPI health、任务创建 API、public_url 安全校验、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、Agent step 查询 API、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、相似度检索原型、search_reviews_tool、结构化报告生成骨架、报告入库、证据链回查 API、风险机会评分、结构化错误日志、观测错误查询 API、主链路集成回归样例、Docker Compose 服务拓扑、数据库迁移服务、后端/前端 Dockerfile、GitHub Actions CI、PR 模板、发布检查清单、回退运行手册、Day27 benchmark harness、20 个 fixture 样例任务、性能 summary artifact、Day28 retry policy、任务 retry API、Worker recovery resume 事件、数据库模型、Alembic 迁移 |
 | 最新开发提交 | 以 `git log -1 --oneline` 为准 |
 | 当前数据库决策 | PostgreSQL + pgvector，review chunk 使用 `vector(1536)` |
 | 当前模型决策 | 默认 `gpt-5.4-mini`，报告模型 `gpt-5.5`，embedding `text-embedding-3-small` |
@@ -106,7 +106,7 @@
 | Day 25 | Done | Docker Compose 环境固化 | 见本提交 |
 | Day 26 | Done | CI 与版本回退策略 | 见本提交 |
 | Day 27 | Done | 性能评估和 benchmark 数据 | 见本提交 |
-| Day 28 | Pending | 失败重试和续跑机制 | 待记录 |
+| Day 28 | Done | 失败重试和续跑机制 | 见本提交 |
 | Day 29 | Pending | README、demo 和演示素材 | 待记录 |
 | Day 30 | Pending | 里程碑发布、tag、指标和复盘 | 待记录 |
 
@@ -1478,7 +1478,7 @@ Day 21 的目标是补齐历史任务和历史报告，让系统从“能跑一�
 
 ### 遗留问题
 
-- `POST /api/tasks/{task_id}/retry` 尚未实现。
+- `POST /api/tasks/{task_id}/retry` 已在 Day 28 完成后端接口和 worker recovery event；前端按钮、真实 countdown 调度和完整 Agent step replay 仍未实现。
 - `GET /api/evidence` 仍未实现，证据总览页继续 mock fallback。
 - 报告详情前端字段仍叫 `evidence_ids`，但真实后端值是 evidence refs，后续需要统一命名。
 - 历史列表筛选能力已经在 API 层实现，但前端还没有筛选控件。
@@ -1531,7 +1531,7 @@ Day 21 的目标是补齐历史任务和历史报告，让系统从“能跑一�
 
 这些不是本次推 main 前必须修复的问题，而是 Day 22 之后的计划项：
 
-- `POST /api/tasks/{task_id}/retry`：失败任务重试。
+- `POST /api/tasks/{task_id}/retry`：失败任务重试后端已在 Day 28 实现；前端入口、真实延迟调度和更细粒度 Agent 续跑仍是后续项。
 - `GET /api/evidence`：全局证据检索 / 总览页真实接口。
 - 历史任务和历史报告的前端筛选控件。
 - 报告详情字段 `evidence_ids` 与真实 evidence refs 的命名统一。
@@ -1597,7 +1597,7 @@ Day 21 的目标是补齐历史任务和历史报告，让系统从“能跑一�
 | Day 25 | Docker Compose 一键启动 | `docker-compose.yml`、后端/前端 Dockerfile、migrate 服务、健康检查、数据卷、env 模板、compose 契约测试和运行手册 | full pytest 141 passed，coverage 90.86%，compose config/lint/build/audit 通过；真实 Docker build 因 daemon 未运行阻塞 | 见本提交 |
 | Day 26 | CI 与版本回退策略 | `.github/workflows/ci.yml`、PR 模板、release checklist、rollback runbook、CI 契约测试和 Day26 文档同步 | Day26 contract tests 4 passed；Day24-Day26 targeted tests 9 passed；full pytest 145 passed；coverage 90.86%；ruff/alembic/compose config/frontend lint/build/audit/pip-audit 通过 | 见本提交 |
 | Day 27 | 性能评估和 benchmark 数据 | `backend/app/benchmarking/*`、`tests/test_day27_benchmarking.py`、20 个 fixture 样例任务、benchmark JSON/Markdown artifact、性能文档和 LLMOps 指标补充 | Day27 tests 5 passed；benchmark 20 samples，success 95%，avg 338ms，P95 391ms；full pytest 150 passed；coverage 90.80%；ruff/alembic/compose/frontend/audit 通过 | 见本提交 |
-| Day 28 | 失败重试和续跑机制 | 待记录 | 待记录 | 待记录 |
+| Day 28 | 失败重试和续跑机制 | `backend/app/tasks/recovery.py`、`POST /api/tasks/{task_id}/retry`、`waiting_retry` 状态流、Worker recovery resume 事件、Day28 recovery tests 和文档同步 | Day28 recovery tests 7 passed；Day26-Day28 targeted tests 16 passed；full pytest 157 passed；coverage 90.79%；ruff/alembic/compose config/frontend lint/build/audit/pip-audit 通过 | 见本提交 |
 | Day 29 | README、demo 和演示素材 | 待记录 | 待记录 | 待记录 |
 | Day 30 | 里程碑发布、tag、指标和复盘 | 待记录 | 待记录 | 待记录 |
 
@@ -1948,6 +1948,139 @@ Day 26 已经把质量门禁放进 GitHub Actions。Day 27 不继续盲目新增
 - 当前没有真实 LLM / embedding token 和成本统计。
 - 当前没有并发 benchmark。
 - Day 28 retry / resume 需要复用 `ACCESS_BLOCKED` 失败分类来统计恢复成功率。
+
+## Day 28 开发记录
+
+### 背景
+
+Day 27 已经把主链路 benchmark 和失败分类统计固定下来，结果里出现了 `ACCESS_BLOCKED` 这类可恢复失败。Day 28 不继续扩大分析能力，而是补“失败任务能不能被用户重新推进”的工程闭环。
+
+这个能力的目标不是一次性实现完整工作流编排系统，而是先建立一条可验证的失败恢复主线：
+
+```text
+failed
+  -> waiting_retry
+  -> queued
+  -> running
+  -> completed / failed
+```
+
+今天的设计选择是复用原 `task_id`，而不是每次 retry 创建新任务。这样历史事件、报告、错误日志、benchmark 失败分类和前端任务详情页都能继续围绕同一个业务任务展开。旧事件不会被删除，新 retry 只追加新的 recovery / queued / running / completed / failed 事件。
+
+### 实际完成
+
+- 新增 `backend/app/tasks/recovery.py`。
+- 新增 `tests/test_day28_recovery.py`。
+- 在 `backend/app/tasks/service.py` 增加 `retry_task_request(...)` 和 `TaskRetryError`。
+- 在 `backend/app/api/routes/tasks.py` 增加 `POST /api/tasks/{task_id}/retry`。
+- 在 `backend/app/worker/tasks.py` 增加 recovery metadata 识别和 `task recovery resumed` 事件。
+- 更新 `doc/roadmap/day-28.md`，把计划和实际边界对齐。
+- 更新 `doc/supporting/api-contract.md`，记录 retry endpoint 的成功响应、错误码和暂不支持项。
+- 更新 `doc/supporting/testing-strategy.md`，记录 Day 28 Retry / Resume 测试边界。
+- 更新 `README.md`，把当前阶段推进到 Day 28。
+- 更新本文和 `doc/supporting/interview-defense-dossier.md`，补齐开发事实和面试表达。
+
+### 核心实现
+
+`backend/app/tasks/recovery.py` 负责纯策略判断：
+
+- `classify_retry_error(...)`：把错误码分为 retryable、not_retryable、unknown。
+- `plan_retry(...)`：只允许 `failed` 任务进入 retry，最多 3 次，backoff metadata 为 30 / 60 / 120 秒。
+- `find_resume_checkpoint(...)`：从历史事件里找最近一次可作为恢复参考的 observation / crawl / report / failed event。
+- `build_retry_options(...)`：把 retry 元数据写入 `TaskStatusData.options["recovery"]`。
+- `build_retry_payload(...)`：把同一个 `task_id` 重新投递到 worker。
+
+`backend/app/tasks/service.py` 负责业务事务顺序：
+
+1. 读取任务状态。
+2. 确认任务存在且当前是 `failed`。
+3. 根据 `error_code` 判断是否允许 retry。
+4. 从事件流中寻找 checkpoint。
+5. 先写入 `waiting_retry` 状态和 `task waiting retry` 事件。
+6. 重新投递同一个 `task_id`。
+7. 投递成功后写入 `queued`，清空当前 `error_code`、`error_message`、`finished_at`。
+8. 投递失败时回滚为 `failed`，写入 `QUEUE_UNAVAILABLE` 和 `task retry queue unavailable`。
+
+`backend/app/worker/tasks.py` 在收到带有 `options.recovery` 的 payload 时，会先追加：
+
+```text
+event_type = "recovery"
+message = "task recovery resumed"
+```
+
+事件 payload 会包含：
+
+- `retry_count`
+- `resume_from_event_id`
+- `resume_from_event_type`
+- `last_error_code`
+
+这让前端和日志能看出本次执行不是首次执行，而是一次从失败状态恢复后的重跑。
+
+### 当天为什么这样选
+
+今天最重要的取舍是：先实现“同任务重试”，不创建新任务，也不立刻加 `task_retries` 表。
+
+原因有四点：
+
+1. 当前任务详情页、事件流、Agent step、错误日志和报告都是围绕 `task_id` 查询的。同任务 retry 可以最大限度复用现有查询链路。
+2. 新建任务会让用户看到两个相似任务，后续解释“哪个任务是原始失败，哪个任务是 retry 成功”会增加复杂度。
+3. Day 28 的核心是打通状态恢复边界，不是做完整调度平台。把 retry_count、last_error_code、resume checkpoint 暂时放进 `options.recovery`，可以避免为了一个小步能力新增迁移。
+4. 后续如果需要更强审计，再把 `options.recovery` 迁出为独立 `task_retries` 表也不晚。当前写法保留了迁移空间。
+
+第二个取舍是：`backoff_seconds` 先作为 metadata，不接 Celery countdown。
+
+原因是当前测试里使用 fake dispatcher 和同步 worker 入口，真实 countdown 会把测试和本地联调复杂度拉高。今天先把 retry 策略和 API 契约固定，后续在真实 Redis/Celery 环境完成后，再接入 delayed retry 更稳。
+
+第三个取舍是：只 retry 已知 retryable 错误。
+
+当前允许：
+
+- `PAGE_TIMEOUT`
+- `NETWORK_ERROR`
+- `ACCESS_BLOCKED`
+- `CRAWL_PERSISTENCE_FAILED`
+- `QUEUE_UNAVAILABLE`
+
+当前拒绝：
+
+- `DOM_NOT_FOUND`
+- `PARSER_ERROR`
+- `VALIDATION_FAILED`
+- `TASK_NOT_FOUND`
+- `UNKNOWN_SITE`
+
+这样做是为了避免“所有失败都能重试”导致无限重跑。比如 DOM 结构不匹配、输入校验失败、未知站点不属于短暂波动，重试不会提高成功率，反而会浪费队列资源和后续 token。
+
+### 当前验证
+
+- `uv run pytest tests\test_day28_recovery.py`：开发中已通过 7 passed。
+- `uv run pytest tests\test_day28_recovery.py tests\test_day27_benchmarking.py tests\test_day26_ci_contract.py`：16 passed。
+
+完整门禁：
+
+- `uv run pytest`：157 passed。
+- `uv run pytest --cov=backend --cov-report=term-missing`：157 passed，backend coverage 90.79%，达到 80% 门槛。
+- `uv run ruff check backend tests migrations`：All checks passed。
+- `uv run alembic heads`：`0002_task_queue_id (head)`。
+- `docker compose config`：通过。
+- `cd frontend; npm run lint`：通过。
+- `cd frontend; npm run build`：通过。
+- `cd frontend; npm audit --audit-level=high`：found 0 vulnerabilities。
+- `uvx pip-audit`：No known vulnerabilities found。
+
+### 遗留问题
+
+- 前端还没有“重试失败任务”按钮。
+- `backoff_seconds` 只是 metadata，暂未接 Celery countdown。
+- 没有独立 `task_retries` 表，retry 审计暂存在 `options.recovery` 和 task events。
+- 当前恢复是任务级重跑，不是精确到 Agent step 的 replay。
+- 还没有统计“恢复成功率”和“平均恢复耗时”。
+- 还没有真实 Redis/Celery/Worker 多进程环境下的 retry E2E。
+
+### 下一步
+
+Day 29 优先做 README、demo script 和演示素材，确保 Day 1-28 的能力能被快速理解和演示。retry 能力后续需要接入前端失败任务详情页，并在 Day 30 复盘时加入恢复成功率指标。
 
 ## 30 天后优化记录
 

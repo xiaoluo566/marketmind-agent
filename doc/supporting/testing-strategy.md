@@ -198,7 +198,7 @@ show_missing = true
 - waiting_retry -> queued
 - completed / cancelled 终态不能回到 running / queued
 
-当前状态策略先作为独立模块存在，不直接接入 store。后续 Day 28 做 retry / resume 时，再把 `ensure_task_status_transition()` 接入具体业务入口。
+状态策略先作为独立模块存在，不直接接入 store。Day 28 已经把 `waiting_retry` 接入 retry 业务入口，但底层 store 仍保持轻量，后续如果加入 cancel / pause / resume，需要继续把状态策略往写入层下沉。
 
 ### Schema 契约测试边界
 
@@ -393,6 +393,51 @@ uv run pytest tests\test_day27_benchmarking.py
 
 ```text
 Day 27 benchmark tests: 5 passed
+```
+
+## Day 28 Retry / Resume 测试边界
+
+Day 28 新增 `tests/test_day28_recovery.py`，用于验证失败重试和恢复策略。
+
+这组测试覆盖：
+
+- `classify_retry_error()` 能区分可重试、不可重试和 unknown 错误码。
+- `plan_retry()` 能按 `retry_count` 生成下一次重试次数和指数退避。
+- 达到最大重试次数后返回 `TASK_RETRY_LIMIT_REACHED`。
+- `POST /api/tasks/{task_id}/retry` 能把失败任务推进为 `waiting_retry`，再重新投递为 `queued`。
+- retry payload 复用原 `task_id`，并携带 `options.recovery`。
+- 不可重试错误返回 `TASK_NOT_RETRYABLE`。
+- 队列投递失败时任务回到 `failed`，并写入 `task retry queue unavailable` 事件。
+- Worker 看到 recovery payload 后写入 `task recovery resumed` 事件。
+- Day28 roadmap、development log 和 interview dossier 必须记录 retry / resume 边界。
+
+Day 28 当前不覆盖：
+
+- 前端 retry 按钮。
+- 真实 Celery countdown 延迟重试。
+- 并发双击 retry 的幂等锁。
+- 独立 `task_retries` 表。
+- 完整 Agent step replay。
+
+当前验证命令：
+
+```powershell
+uv run pytest tests\test_day28_recovery.py
+```
+
+当前结果：
+
+```text
+Day 28 recovery tests: 7 passed
+Day26-Day28 targeted tests: 16 passed
+Full pytest: 157 passed
+Coverage gate: 157 passed, backend coverage 90.79%
+ruff: passed
+alembic heads: 0002_task_queue_id (head)
+docker compose config: passed
+frontend lint/build: passed
+npm audit: 0 vulnerabilities
+pip-audit: No known vulnerabilities found
 ```
 
 ## 回归要求

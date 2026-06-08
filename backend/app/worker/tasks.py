@@ -58,6 +58,24 @@ def run_research_task(
             updated_at=utc_now(),
         )
 
+    recovery_options = _recovery_options(payload)
+    if recovery_options:
+        event_store.append(
+            build_task_event(
+                task_id=task_id,
+                status=TaskStatus.RUNNING.value,
+                event_type="recovery",
+                message="task recovery resumed",
+                payload={
+                    "retry_count": recovery_options.get("retry_count"),
+                    "resume_from_event_id": recovery_options.get("resume_from_event_id"),
+                    "resume_from_event_type": recovery_options.get("resume_from_event_type"),
+                    "last_error_code": recovery_options.get("last_error_code"),
+                },
+                trace_id=trace_id,
+            )
+        )
+
     running_task = current_task.model_copy(
         update={
             "status": TaskStatus.RUNNING.value,
@@ -265,6 +283,16 @@ def run_research_task(
 
 def _should_crawl(payload: dict) -> bool:
     return str(payload.get("source_type")) == "public_url"
+
+
+def _recovery_options(payload: dict) -> dict:
+    options = payload.get("options")
+    if not isinstance(options, dict):
+        return {}
+    recovery = options.get("recovery")
+    if not isinstance(recovery, dict):
+        return {}
+    return recovery
 
 
 def _build_crawl_request(task_id: str, payload: dict) -> CrawlRequest:

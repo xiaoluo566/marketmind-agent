@@ -16,9 +16,11 @@ from app.tasks.dependencies import (
 from app.tasks.dispatcher import QueueUnavailableError, TaskQueueDispatcher
 from app.tasks.event_store import TaskEventStore, TaskEventStoreUnavailableError
 from app.tasks.service import (
+    TaskRetryError,
     get_task_status,
     list_task_events,
     list_task_statuses,
+    retry_task_request,
     submit_task_request,
 )
 from app.tasks.status_store import TaskStatusStore, TaskStatusStoreUnavailableError
@@ -124,6 +126,51 @@ def read_task(
     return success_response(
         data=task_status.model_dump(mode="json"),
         message="ok",
+        trace_id=request.state.trace_id,
+    )
+
+
+@router.post("/tasks/{task_id}/retry", status_code=status.HTTP_202_ACCEPTED)
+def retry_task(
+    task_id: str,
+    request: Request,
+    status_store: Annotated[TaskStatusStore, Depends(get_task_status_store)],
+    event_store: Annotated[TaskEventStore, Depends(get_task_event_store)],
+    dispatcher: Annotated[TaskQueueDispatcher, Depends(get_task_dispatcher)],
+) -> dict:
+    try:
+        accepted_task = retry_task_request(
+            task_id=task_id,
+            trace_id=request.state.trace_id,
+            status_store=status_store,
+            event_store=event_store,
+            dispatcher=dispatcher,
+        )
+    except TaskRetryError as exc:
+        raise AppError(
+            code=exc.code,
+            message=str(exc),
+            status_code=_retry_error_status(exc.code),
+            details=exc.details,
+        ) from exc
+    except QueueUnavailableError as exc:
+        raise AppError(
+            code="QUEUE_UNAVAILABLE",
+            message="task retry queue is unavailable",
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            details={"reason": str(exc)},
+        ) from exc
+    except (TaskStatusStoreUnavailableError, TaskEventStoreUnavailableError) as exc:
+        raise AppError(
+            code="RECOVERY_STORE_UNAVAILABLE",
+            message="task recovery store is unavailable",
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            details={"reason": str(exc)},
+        ) from exc
+
+    return success_response(
+        data=accepted_task.model_dump(),
+        message="accepted",
         trace_id=request.state.trace_id,
     )
 
@@ -250,3 +297,9 @@ def _truncate(value: str | None, limit: int = 220) -> str | None:
     if len(normalized) <= limit:
         return normalized
     return f"{normalized[: limit - 3]}..."
+
+
+def _retry_error_status(code: str) -> int:
+    if code == "TASK_NOT_FOUND":
+        return status.HTTP_404_NOT_FOUND
+    return status.HTTP_409_CONFLICT

@@ -365,13 +365,19 @@ Day 27 做性能 benchmark，是因为项目已经有主链路和 CI，下一步
 
 > Day 27 我开始做性能复盘，但没有把 benchmark 包装成真实生产压测。第一版用 20 个 fixture 样例任务固定指标结构和瓶颈排序，结果显示 crawler 和 RAG 是当前 fixture 链路里最慢的两层。模型调用和 token 都记录为 0，因为还没有接真实 provider。这个边界写清楚，后续接真实 Redis、pgvector 和 LLM 时才能做可信对比。
 
+Day 28 做失败重试和恢复策略，是因为 Day 27 benchmark 已经能暴露失败分类，但系统还不能把可恢复失败重新推进。今天我选择先做同一个 `task_id` 的 retry，而不是创建新任务或新建 `task_retries` 表。核心原因是当前任务详情、事件流、错误日志和报告链路都围绕 `task_id` 组织，同任务 retry 能保留完整历史，不会把一次业务分析拆成多个相似任务。
+
+面试可以这样说：
+
+> Day 28 做失败重试时，我没有简单地“失败就再跑一次”，而是先定义 retryable 错误码、最大 retry 次数、backoff metadata、resume checkpoint 和状态流。失败任务会从 `failed -> waiting_retry -> queued -> running` 重新进入 worker，旧事件保留，新事件追加。这个阶段还没有接 Celery countdown 和前端按钮，但后端 retry API、策略判断、队列失败回滚和 recovery event 已经有测试覆盖。
+
 ### 7. 我对“不要夸大进度”的思考
 
-这个项目目前推进到 Day 27，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
+这个项目目前推进到 Day 28，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
 
-- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、工具 schema、工具注册机制、最小 ReAct 状态机、Agent step 落库、Agent step 查询 API、结构化输出 guardrails、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、`search_reviews_tool`、结构化报告生成骨架、报告入库、证据链回查 API、评论风险机会评分、前端真实任务提交、任务状态/事件/steps 轮询读取、历史任务、历史报告、报告详情、报告 evidence chain 前端接入、结构化错误日志、观测错误查询 API、coverage 门禁、状态转换策略、核心 schema 契约测试、主链路集成回归样例、Docker Compose 启动拓扑、GitHub Actions CI、PR 模板、发布检查清单、回退运行手册和 Day27 fixture benchmark。
-- 正在做：第四周性能评估、失败重试、演示准备和真实容器补验。
-- 后续做：任务重试、全局 evidence 检索、真实 embedding provider、pgvector 原生检索、真实 LLM report prompt、Docker Desktop daemon 启动后的真实 compose up 验证、E2E、GitHub branch protection。
+- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、工具 schema、工具注册机制、最小 ReAct 状态机、Agent step 落库、Agent step 查询 API、结构化输出 guardrails、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、`search_reviews_tool`、结构化报告生成骨架、报告入库、证据链回查 API、评论风险机会评分、前端真实任务提交、任务状态/事件/steps 轮询读取、历史任务、历史报告、报告详情、报告 evidence chain 前端接入、结构化错误日志、观测错误查询 API、coverage 门禁、状态转换策略、核心 schema 契约测试、主链路集成回归样例、Docker Compose 启动拓扑、GitHub Actions CI、PR 模板、发布检查清单、回退运行手册、Day27 fixture benchmark 和 Day28 失败任务 retry API / recovery event。
+- 正在做：第四周演示准备、README/demo 收尾和真实容器补验。
+- 后续做：前端 retry 按钮、Celery countdown 延迟重试、全局 evidence 检索、真实 embedding provider、pgvector 原生检索、真实 LLM report prompt、Docker Desktop daemon 启动后的真实 compose up 验证、E2E、GitHub branch protection。
 
 我认为这反而是加分项。因为真实开发中，清楚知道自己完成了什么、没完成什么，比把项目包装得过满更可信。
 
@@ -413,7 +419,7 @@ Day 27 做性能 benchmark，是因为项目已经有主链路和 CI，下一步
 
 ## 当前开发进度怎么讲
 
-截至 Day 21，项目已经完成：
+截至 Day 28，项目已经完成：
 
 - 文档体系、30 天 roadmap、开发日志。
 - Next.js 控制台骨架。
@@ -449,6 +455,8 @@ Day 27 做性能 benchmark，是因为项目已经有主链路和 CI，下一步
 - `AgentToolDecision` 和 `ReportStructure` 两个结构化输出 schema。
 - `build_json_repair_prompt` 和有限次 self-heal retry。
 - `validation_error_count` 与 `self_heal_count` 的 LLMOps 指标入口。
+- Day 27 fixture benchmark、20 个样例任务和性能 JSON / Markdown artifact。
+- Day 28 失败任务 retry 策略、`POST /api/tasks/{task_id}/retry`、`waiting_retry` 状态和 Worker recovery resume 事件。
 - `AgentShortTermMemory`，用于当前任务短期上下文管理。
 - 短期记忆滑动窗口，默认最近 3 条保留详细内容。
 - 历史上下文确定性摘要压缩，避免 prompt context 无限增长。
@@ -1769,8 +1777,13 @@ Day 22 的自我思考：
 
 ## 目前最适合展示的代码点
 
-截至 Day 27，最适合展示：
+截至 Day 28，最适合展示：
 
+- `backend/app/tasks/recovery.py`：retryable 错误分类、retry plan、backoff metadata、resume checkpoint 和 retry payload 构造。
+- `backend/app/tasks/service.py`：失败任务从 `failed -> waiting_retry -> queued` 的业务流程，以及队列投递失败时回滚为 `failed`。
+- `backend/app/api/routes/tasks.py`：`POST /api/tasks/{task_id}/retry` 如何返回 accepted envelope，并区分 404、409、503。
+- `backend/app/worker/tasks.py`：worker 如何识别 `options.recovery` 并写入 `task recovery resumed` 事件。
+- `tests/test_day28_recovery.py`：retry 策略、API、队列失败回滚、worker recovery event 和文档联动测试。
 - `backend/app/benchmarking/summary.py`：benchmark 指标模型、成功率、P50/P95、阶段均值、失败分类和瓶颈排序。
 - `backend/app/benchmarking/main_path.py`：Day27 fixture 主链路 benchmark 生成器和 CLI 入口。
 - `tests/test_day27_benchmarking.py`：benchmark 汇总、20 个样例任务、artifact 写出和文档联动契约测试。
@@ -1900,9 +1913,12 @@ Day 22 的自我思考：
 - Day 25：Docker Compose 服务拓扑、后端/前端 Dockerfile、迁移服务、运行手册和 compose 契约测试已完成。
 - Day 26：GitHub Actions CI、PR 模板、发布检查清单、回退运行手册和 CI 契约测试已完成。
 - Day 27：fixture 主链路 benchmark、20 个样例任务、性能 JSON/Markdown artifact 和瓶颈分析已完成。
+- Day 28：失败任务 retry API、retry policy、`waiting_retry` 状态和 Worker recovery resume 事件已完成。
 
 中期：
 
+- 前端失败任务 retry 按钮。
+- Celery countdown 延迟重试和恢复成功率统计。
 - 真实 embedding provider。
 - pgvector 原生向量排序。
 - 真实 LLM report prompt。
@@ -1927,4 +1943,4 @@ Day 22 的自我思考：
 
 如果让你说下一步：
 
-> 下一步我会做性能 benchmark、失败重试和 E2E，并在 Docker Desktop daemon 可用时补真实 compose up 验证，把现在已经有的后端能力变成更稳定的一键演示链路。
+> 下一步我会做 README、demo script 和演示素材，把 Day 1-28 已经完成的异步任务、证据链、benchmark 和失败恢复能力整理成可演示链路；同时补前端 retry 按钮和真实 compose up 验证，让本地演示更接近完整产品。

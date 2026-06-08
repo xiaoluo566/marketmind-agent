@@ -273,3 +273,43 @@ Redis 短期记忆不是唯一事实来源。如果 worker 重启或 Redis key �
 - prompt 管理见 `prompt-strategy.md`
 - 数据表见 `data-model.md`
 - 测试策略见 `testing-strategy.md`
+
+## Day 28 任务级恢复接入
+
+Day 28 已经实现第一版失败任务 retry，但它是任务级恢复，不是完整 Agent step replay。
+
+当前实现位置：
+
+- `backend/app/tasks/recovery.py`
+- `backend/app/tasks/service.py`
+- `backend/app/api/routes/tasks.py`
+- `backend/app/worker/tasks.py`
+- `tests/test_day28_recovery.py`
+
+当前状态流：
+
+```text
+failed
+  -> waiting_retry
+  -> queued
+  -> running
+  -> completed / failed
+```
+
+当前策略：
+
+- retry 复用原 `task_id`。
+- 历史 events 不删除，只追加 `task waiting retry`、`task requeued`、`task recovery resumed` 等新事件。
+- retry 元数据暂存到 `TaskStatusData.options["recovery"]`。
+- resume checkpoint 来自历史 task events，而不是直接从 `agent_steps` 精确恢复。
+- 只允许已分类的可恢复错误重试，例如 `PAGE_TIMEOUT`、`NETWORK_ERROR`、`ACCESS_BLOCKED`、`CRAWL_PERSISTENCE_FAILED` 和 `QUEUE_UNAVAILABLE`。
+- `DOM_NOT_FOUND`、`PARSER_ERROR`、`VALIDATION_FAILED`、`TASK_NOT_FOUND`、`UNKNOWN_SITE` 等错误不会自动 retry。
+
+当前未实现：
+
+- 精确到 Thought / Action / Observation 的 step replay。
+- `task_retries` 独立审计表。
+- Celery countdown 延迟重试。
+- 前端失败任务 retry 按钮。
+
+后续如果要升级为 Agent 级断点续跑，应把 Day 28 的 `resume_from_event_id` 扩展为 `resume_from_step_id`，并在恢复前重建短期记忆上下文。

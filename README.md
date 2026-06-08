@@ -31,7 +31,7 @@
 
 ## 当前阶段
 
-当前已完成 Day 1-27 的阶段性开发，并完成一次推主分支前审计。系统已经具备：
+当前已完成 Day 1-28 的阶段性开发，并完成一次推主分支前审计。系统已经具备：
 
 - FastAPI 统一 API envelope 和 trace ID。
 - Celery + Redis 长任务分发与任务状态缓存。
@@ -47,8 +47,9 @@
 - Docker Compose 服务拓扑、后端/前端 Dockerfile、迁移服务、健康检查、数据卷和 compose 契约测试。
 - GitHub Actions CI、PR 模板、发布检查清单、回退运行手册和 CI 契约测试。
 - Day27 fixture 主链路 benchmark、20 个样例任务、性能 JSON/Markdown artifact 和瓶颈分析。
+- Day28 失败重试策略、`POST /api/tasks/{task_id}/retry`、`waiting_retry` 状态流和 Worker recovery resume 事件。
 
-尚未完成的能力包括任务重试、全局 evidence 检索接口、真实 embedding provider、pgvector 原生排序、真实 LLM report prompt、Docker Desktop daemon 启动后的真实镜像 build / compose up 验证、Playwright E2E 和 GitHub branch protection。
+尚未完成的能力包括前端 retry 操作入口、全局 evidence 检索接口、真实 embedding provider、pgvector 原生排序、真实 LLM report prompt、Docker Desktop daemon 启动后的真实镜像 build / compose up 验证、Playwright E2E 和 GitHub branch protection。
 
 ## 验证命令
 
@@ -59,6 +60,7 @@ uv run ruff check backend tests migrations
 uv run alembic heads
 uv run pytest tests\test_day26_ci_contract.py
 uv run pytest tests\test_day27_benchmarking.py
+uv run pytest tests\test_day28_recovery.py
 uv run pytest tests\test_day25_compose_contract.py
 docker compose config
 $env:PYTHONPATH='backend'; uv run python -m app.benchmarking.main_path --iterations 20 --output-dir doc\supporting

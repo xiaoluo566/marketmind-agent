@@ -24,7 +24,7 @@
 
 ## 当前实现状态
 
-截至 Day 22，后端和前端真实接入状态如下：
+截至 Day 28，后端和前端真实接入状态如下：
 
 | 接口 | 后端状态 | 前端状态 | 备注 |
 | --- | --- | --- | --- |
@@ -37,7 +37,7 @@
 | `GET /api/reports` | 已实现 | 已真实接入 | 历史报告列表，返回 task_status、risk_score、evidence_count |
 | `GET /api/reports/{report_id}` | 已实现 | 已真实接入 | 报告详情，返回 sections、Markdown 和 evidence refs |
 | `GET /api/observability/errors` | 已实现 | 未接入 UI | Day 22 调试接口，支持按 trace_id 或 task_id 查询结构化错误 |
-| `POST /api/tasks/{task_id}/retry` | 未实现 | 未接入 | 失败恢复能力后续实现 |
+| `POST /api/tasks/{task_id}/retry` | 已实现 | 未接入 UI | Day 28 失败任务重试入口，复用原 task_id |
 | `GET /api/evidence` | 未实现 | mock fallback | 证据总览页后续实现 |
 | `POST /api/uploads` | 未实现 | 未接入 | 手工数据上传后续实现 |
 | `WS /ws/tasks/{task_id}` | 未实现 | 未接入 | 第一版继续使用查询/轮询 |
@@ -197,7 +197,40 @@ Day 20 实现范围：
 
 ### `POST /api/tasks/{task_id}/retry`
 
-职责：只允许重试失败或可恢复状态的任务。重试时必须记录新的 `agent_run_id`，不能覆盖旧记录。
+职责：只允许重试失败且可恢复的任务。Day 28 第一版复用原 `task_id`，不会新建任务，也不会覆盖旧事件。
+
+Day 28 实现范围：
+
+- 只允许当前状态为 `failed` 的任务重试。
+- 可重试错误码包括 `PAGE_TIMEOUT`、`NETWORK_ERROR`、`ACCESS_BLOCKED`、`CRAWL_PERSISTENCE_FAILED`、`QUEUE_UNAVAILABLE`。
+- 不可重试错误码包括 `DOM_NOT_FOUND`、`PARSER_ERROR`、`VALIDATION_FAILED`、`TASK_NOT_FOUND`、`UNKNOWN_SITE`。
+- 默认最多重试 3 次。
+- 状态流为 `failed -> waiting_retry -> queued`。
+- 重试成功投递后清空当前任务状态上的 `error_code` 和 `error_message`。
+- 旧失败原因保留在历史 `task_events` 和 `options.recovery.last_error_code`。
+- `options.recovery` 写入 `retry_count`、`max_attempts`、`backoff_seconds`、`resume_from_event_id` 和上次错误。
+- Worker 看到 `options.recovery` 后写入 `event_type=recovery`、`message=task recovery resumed`。
+
+输出：
+
+- `task_id`
+- `status`
+- `trace_id`
+- `queue_task_id`
+
+失败：
+
+- `TASK_NOT_FOUND`：任务不存在。
+- `TASK_NOT_RETRYABLE`：任务不是失败态，或错误码不可恢复。
+- `TASK_RETRY_LIMIT_REACHED`：超过最大重试次数。
+- `QUEUE_UNAVAILABLE`：重试投递队列失败。
+- `RECOVERY_STORE_UNAVAILABLE`：状态或事件存储不可用。
+
+注意：
+
+- 当前 API 只提供后端能力，前端按钮还没有接入。
+- 当前 `backoff_seconds` 只写入 metadata，还没有使用 Celery countdown 延迟执行。
+- 当前 resume checkpoint 基于事件流，不是完整 Agent step replay。
 
 ### `GET /api/reports`
 
