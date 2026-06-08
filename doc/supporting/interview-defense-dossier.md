@@ -359,11 +359,17 @@ Day 26 做 CI 和回退流程，是因为项目已经从“本地能跑”推进
 
 > Day 26 我把质量门禁从“我本地手动跑过”升级为 GitHub Actions。这里的取舍是：CI 先保证快速稳定，跑测试、coverage、lint、迁移检查、安全审计和 compose config；真实 compose up 先不强塞进 CI，因为它依赖 Docker daemon、镜像构建、数据库 readiness 和 worker 消费，应该在 Docker 验证稳定后作为独立 E2E job 加入。
 
+Day 27 做性能 benchmark，是因为项目已经有主链路和 CI，下一步需要知道系统慢在哪里，而不是凭感觉优化。今天我选择先做 fixture benchmark，而不是直接跑真实电商网站、真实 Redis/Celery broker 和真实 LLM API。这个选择的核心是先把指标结构、统计逻辑和 artifact 格式固定下来：端到端耗时、阶段耗时、P50、P95、成功率、失败分类、模型调用次数和 token。当前数据明确写成 fixture benchmark，不用于声称真实线上吞吐。
+
+面试可以这样说：
+
+> Day 27 我开始做性能复盘，但没有把 benchmark 包装成真实生产压测。第一版用 20 个 fixture 样例任务固定指标结构和瓶颈排序，结果显示 crawler 和 RAG 是当前 fixture 链路里最慢的两层。模型调用和 token 都记录为 0，因为还没有接真实 provider。这个边界写清楚，后续接真实 Redis、pgvector 和 LLM 时才能做可信对比。
+
 ### 7. 我对“不要夸大进度”的思考
 
-这个项目目前推进到 Day 26，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
+这个项目目前推进到 Day 27，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
 
-- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、工具 schema、工具注册机制、最小 ReAct 状态机、Agent step 落库、Agent step 查询 API、结构化输出 guardrails、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、`search_reviews_tool`、结构化报告生成骨架、报告入库、证据链回查 API、评论风险机会评分、前端真实任务提交、任务状态/事件/steps 轮询读取、历史任务、历史报告、报告详情、报告 evidence chain 前端接入、结构化错误日志、观测错误查询 API、coverage 门禁、状态转换策略、核心 schema 契约测试、主链路集成回归样例、Docker Compose 启动拓扑、GitHub Actions CI、PR 模板、发布检查清单和回退运行手册。
+- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、工具 schema、工具注册机制、最小 ReAct 状态机、Agent step 落库、Agent step 查询 API、结构化输出 guardrails、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、`search_reviews_tool`、结构化报告生成骨架、报告入库、证据链回查 API、评论风险机会评分、前端真实任务提交、任务状态/事件/steps 轮询读取、历史任务、历史报告、报告详情、报告 evidence chain 前端接入、结构化错误日志、观测错误查询 API、coverage 门禁、状态转换策略、核心 schema 契约测试、主链路集成回归样例、Docker Compose 启动拓扑、GitHub Actions CI、PR 模板、发布检查清单、回退运行手册和 Day27 fixture benchmark。
 - 正在做：第四周性能评估、失败重试、演示准备和真实容器补验。
 - 后续做：任务重试、全局 evidence 检索、真实 embedding provider、pgvector 原生检索、真实 LLM report prompt、Docker Desktop daemon 启动后的真实 compose up 验证、E2E、GitHub branch protection。
 
@@ -1763,8 +1769,14 @@ Day 22 的自我思考：
 
 ## 目前最适合展示的代码点
 
-截至 Day 26，最适合展示：
+截至 Day 27，最适合展示：
 
+- `backend/app/benchmarking/summary.py`：benchmark 指标模型、成功率、P50/P95、阶段均值、失败分类和瓶颈排序。
+- `backend/app/benchmarking/main_path.py`：Day27 fixture 主链路 benchmark 生成器和 CLI 入口。
+- `tests/test_day27_benchmarking.py`：benchmark 汇总、20 个样例任务、artifact 写出和文档联动契约测试。
+- `doc/supporting/day27-benchmark-results.json`：20 个 fixture 样例任务的机器可读明细。
+- `doc/supporting/day27-benchmark-summary.md`：Day27 人可读 benchmark 摘要，包含成功率、平均耗时、P95、瓶颈和失败分类。
+- `doc/supporting/performance-benchmark.md`：性能评估边界、结论和后续 benchmark 阶段。
 - `.github/workflows/ci.yml`：GitHub Actions 如何把 backend、frontend、compose config 和依赖审计纳入质量门禁。
 - `.github/pull_request_template.md`：每次 PR 如何要求验证记录、影响范围和回退方案。
 - `tests/test_day26_ci_contract.py`：把 CI workflow、PR 模板、发布清单和回退手册纳入契约测试。
@@ -1887,6 +1899,7 @@ Day 22 的自我思考：
 - Day 24：API、Worker、Crawler fixture、RAG、Report 和 evidence API 的主链路集成回归样例已完成。
 - Day 25：Docker Compose 服务拓扑、后端/前端 Dockerfile、迁移服务、运行手册和 compose 契约测试已完成。
 - Day 26：GitHub Actions CI、PR 模板、发布检查清单、回退运行手册和 CI 契约测试已完成。
+- Day 27：fixture 主链路 benchmark、20 个样例任务、性能 JSON/Markdown artifact 和瓶颈分析已完成。
 
 中期：
 

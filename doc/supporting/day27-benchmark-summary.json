@@ -1,0 +1,63 @@
+{
+  "benchmark_name": "day27-main-path-fixture",
+  "summary": {
+    "total_runs": 20,
+    "success_count": 19,
+    "failure_count": 1,
+    "success_rate": 0.95,
+    "average_total_duration_ms": 338,
+    "p50_total_duration_ms": 347,
+    "p95_total_duration_ms": 391,
+    "stage_averages_ms": {
+      "agent": 50,
+      "api": 14,
+      "crawler": 129,
+      "queue": 7,
+      "rag": 84,
+      "report": 64
+    },
+    "failure_counts": {
+      "ACCESS_BLOCKED": 1
+    },
+    "bottlenecks": [
+      {
+        "stage": "crawler",
+        "average_duration_ms": 129,
+        "sample_count": 20,
+        "share_of_total": 0.3817
+      },
+      {
+        "stage": "rag",
+        "average_duration_ms": 84,
+        "sample_count": 19,
+        "share_of_total": 0.2485
+      },
+      {
+        "stage": "report",
+        "average_duration_ms": 64,
+        "sample_count": 19,
+        "share_of_total": 0.1893
+      },
+      {
+        "stage": "agent",
+        "average_duration_ms": 50,
+        "sample_count": 19,
+        "share_of_total": 0.1479
+      },
+      {
+        "stage": "api",
+        "average_duration_ms": 14,
+        "sample_count": 20,
+        "share_of_total": 0.0414
+      },
+      {
+        "stage": "queue",
+        "average_duration_ms": 7,
+        "sample_count": 20,
+        "share_of_total": 0.0207
+      }
+    ],
+    "model_call_count": 0,
+    "total_tokens": 0
+  }
+}

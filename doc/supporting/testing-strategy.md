@@ -363,6 +363,38 @@ Full pytest: 145 passed
 Coverage gate: 145 passed, backend coverage 90.86%
 ```
 
+## Day 27 Benchmark 测试边界
+
+Day 27 新增 `tests/test_day27_benchmarking.py`，用于验证 benchmark 统计逻辑和性能 artifact 生成。
+
+这组测试覆盖：
+
+- `summarize_benchmark_results()` 能统计总样本数、成功数、失败数、成功率、平均端到端耗时、阶段均值和失败分类。
+- 20 个 fixture 样例任务可稳定生成。
+- `crawler` 和 `rag` 的瓶颈排序可复现。
+- benchmark artifact 能写出 JSON、summary JSON 和 Markdown。
+- Day27 roadmap、development log、interview dossier、performance benchmark 和 LLMOps 文档必须记录 benchmark 边界。
+
+Day 27 benchmark 测试不覆盖：
+
+- 真实 Redis / Celery broker 排队耗时。
+- 真实 Playwright 浏览器访问外部网站。
+- 真实 PostgreSQL / pgvector 原生排序耗时。
+- 真实 LLM / embedding provider 调用耗时和 token 成本。
+- 并发任务吞吐。
+
+当前验证命令：
+
+```powershell
+uv run pytest tests\test_day27_benchmarking.py
+```
+
+当前结果：
+
+```text
+Day 27 benchmark tests: 5 passed
+```
+
 ## 回归要求
 
 任何 bug 修复都要留下一个能复现旧问题的测试。没有测试的修复，后续很容易被重构再次破坏。

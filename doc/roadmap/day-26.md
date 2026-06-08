@@ -176,9 +176,19 @@ frontend npm audit --audit-level=high: found 0 vulnerabilities
 uvx pip-audit: No known vulnerabilities found
 ```
 
+GitHub Actions 远程验证：
+
+```text
+run id: 27123022288
+branch: dev
+trigger: push
+result: success
+backend quality gate: passed
+frontend quality gate: passed
+```
+
 ## 遗留问题
 
-- 还没有在 GitHub Actions 真实远程环境观察首轮 CI 结果。
 - 还没有把真实 `docker compose build` / `docker compose up` 放入 CI 或本地补验。
 - 还没有 release tag，Day 30 里程碑发布时再打正式 tag。
 - `uvx pip-audit` 在 CI 中依赖网络，后续如果 GitHub Actions 网络不稳定，可以考虑固定 audit 环境或改成定期安全扫描 job。

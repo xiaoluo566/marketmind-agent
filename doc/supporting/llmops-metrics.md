@@ -90,6 +90,50 @@ Day 14 的 `SQLAlchemyReviewChunkStore.index_task_reviews` 返回 `ReviewChunkIn
 - 输出校验修复率
 - 人工分析时间节省估算
 
+## Day 27 已落地 benchmark 指标
+
+Day 27 新增 `backend/app/benchmarking/main_path.py` 和 `backend/app/benchmarking/summary.py`，先把主链路 benchmark 的指标结构固化下来。
+
+当前运行命令：
+
+```powershell
+$env:PYTHONPATH='backend'
+uv run python -m app.benchmarking.main_path --iterations 20 --output-dir doc\supporting
+```
+
+当前 artifact：
+
+- `day27-benchmark-results.json`
+- `day27-benchmark-summary.json`
+- `day27-benchmark-summary.md`
+- `performance-benchmark.md`
+
+当前 20 个 fixture 样例任务统计：
+
+| 指标 | 结果 |
+| --- | ---: |
+| 样本数 | 20 |
+| 成功数 | 19 |
+| 失败数 | 1 |
+| 成功率 | 95.00% |
+| 平均端到端耗时 | 338 ms |
+| P50 端到端耗时 | 347 ms |
+| P95 端到端耗时 | 391 ms |
+| 模型调用次数 | 0 |
+| Token 总量 | 0 |
+
+阶段瓶颈：
+
+1. `crawler`：平均 129 ms。
+2. `rag`：平均 84 ms。
+3. `report`：平均 64 ms。
+
+失败分类：
+
+- `ACCESS_BLOCKED`：1 次。
+
+注意：Day 27 benchmark 是 fixture benchmark，不调用真实 LLM / embedding API，所以模型调用次数和 token 总量必须记录为 0。后续接真实 provider 后，才允许统计真实 token、成本、模型失败率和 self-heal 成功率。
+
 ## 注意
 
 没有真实跑出来的数据不要写成确定指标。简历中要写“统计得到”，而不是“理论上”。

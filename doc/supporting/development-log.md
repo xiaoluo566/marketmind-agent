@@ -47,8 +47,8 @@
 | --- | --- |
 | 稳定分支 | `main` |
 | 日常开发分支 | `dev` |
-| 当前开发阶段 | Day 26 CI 与版本回退策略 |
-| 当前主链路 | 文档基线、Next.js 控制台骨架、前端真实 API client、真实任务提交表单、任务详情轮询面板、历史任务列表、历史报告列表、报告详情真实读取、报告 evidence chain 真实读取、FastAPI health、任务创建 API、public_url 安全校验、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、Agent step 查询 API、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、相似度检索原型、search_reviews_tool、结构化报告生成骨架、报告入库、证据链回查 API、风险机会评分、结构化错误日志、观测错误查询 API、主链路集成回归样例、Docker Compose 服务拓扑、数据库迁移服务、后端/前端 Dockerfile、GitHub Actions CI、PR 模板、发布检查清单、回退运行手册、数据库模型、Alembic 迁移 |
+| 当前开发阶段 | Day 27 性能与容量评估 |
+| 当前主链路 | 文档基线、Next.js 控制台骨架、前端真实 API client、真实任务提交表单、任务详情轮询面板、历史任务列表、历史报告列表、报告详情真实读取、报告 evidence chain 真实读取、FastAPI health、任务创建 API、public_url 安全校验、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、Agent step 查询 API、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、相似度检索原型、search_reviews_tool、结构化报告生成骨架、报告入库、证据链回查 API、风险机会评分、结构化错误日志、观测错误查询 API、主链路集成回归样例、Docker Compose 服务拓扑、数据库迁移服务、后端/前端 Dockerfile、GitHub Actions CI、PR 模板、发布检查清单、回退运行手册、Day27 benchmark harness、20 个 fixture 样例任务、性能 summary artifact、数据库模型、Alembic 迁移 |
 | 最新开发提交 | 以 `git log -1 --oneline` 为准 |
 | 当前数据库决策 | PostgreSQL + pgvector，review chunk 使用 `vector(1536)` |
 | 当前模型决策 | 默认 `gpt-5.4-mini`，报告模型 `gpt-5.5`，embedding `text-embedding-3-small` |
@@ -105,7 +105,7 @@
 | Day 24 | Done | 集成测试与回归样例 | 见本提交 |
 | Day 25 | Done | Docker Compose 环境固化 | 见本提交 |
 | Day 26 | Done | CI 与版本回退策略 | 见本提交 |
-| Day 27 | Pending | 性能评估和 benchmark 数据 | 待记录 |
+| Day 27 | Done | 性能评估和 benchmark 数据 | 见本提交 |
 | Day 28 | Pending | 失败重试和续跑机制 | 待记录 |
 | Day 29 | Pending | README、demo 和演示素材 | 待记录 |
 | Day 30 | Pending | 里程碑发布、tag、指标和复盘 | 待记录 |
@@ -1596,7 +1596,7 @@ Day 21 的目标是补齐历史任务和历史报告，让系统从“能跑一�
 | Day 24 | 集成测试与回归样例 | API 提交、Worker 执行、Crawler fixture、采集入库、RAG indexing、报告保存和 evidence API 回查的主链路集成测试 | full pytest 137 passed，coverage 90.86%，ruff/build/audit 通过 | 见本提交 |
 | Day 25 | Docker Compose 一键启动 | `docker-compose.yml`、后端/前端 Dockerfile、migrate 服务、健康检查、数据卷、env 模板、compose 契约测试和运行手册 | full pytest 141 passed，coverage 90.86%，compose config/lint/build/audit 通过；真实 Docker build 因 daemon 未运行阻塞 | 见本提交 |
 | Day 26 | CI 与版本回退策略 | `.github/workflows/ci.yml`、PR 模板、release checklist、rollback runbook、CI 契约测试和 Day26 文档同步 | Day26 contract tests 4 passed；Day24-Day26 targeted tests 9 passed；full pytest 145 passed；coverage 90.86%；ruff/alembic/compose config/frontend lint/build/audit/pip-audit 通过 | 见本提交 |
-| Day 27 | 性能评估和 benchmark 数据 | 待记录 | 待记录 | 待记录 |
+| Day 27 | 性能评估和 benchmark 数据 | `backend/app/benchmarking/*`、`tests/test_day27_benchmarking.py`、20 个 fixture 样例任务、benchmark JSON/Markdown artifact、性能文档和 LLMOps 指标补充 | Day27 tests 5 passed；benchmark 20 samples，success 95%，avg 338ms，P95 391ms；full pytest 150 passed；coverage 90.80%；ruff/alembic/compose/frontend/audit 通过 | 见本提交 |
 | Day 28 | 失败重试和续跑机制 | 待记录 | 待记录 | 待记录 |
 | Day 29 | README、demo 和演示素材 | 待记录 | 待记录 | 待记录 |
 | Day 30 | 里程碑发布、tag、指标和复盘 | 待记录 | 待记录 | 待记录 |
@@ -1867,14 +1867,87 @@ Day 25 已经把本地运行拓扑固化成 Docker Compose，但项目要成为�
 - `cd frontend; npm run build`：通过。
 - `cd frontend; npm audit --audit-level=high`：found 0 vulnerabilities。
 - `uvx pip-audit`：No known vulnerabilities found。
+- GitHub Actions 远程 CI：run `27123022288`，backend quality gate 和 frontend quality gate 均通过。
 
 ### 遗留问题
 
-- 还没有观察 GitHub Actions 远程首轮运行结果。
 - 还没有配置 GitHub branch protection required status checks。
 - 还没有执行真实 `docker compose build` / `docker compose up`。
 - 还没有在容器环境中提交样例任务并观察 Worker 消费。
 - Day 27 benchmark 需要复用 Day26 的质量门禁，避免性能测试建立在不稳定代码上。
+
+## Day 27 开发记录
+
+### 背景
+
+Day 26 已经把质量门禁放进 GitHub Actions。Day 27 不继续盲目新增功能，而是建立第一版性能与容量评估基线，用数据判断后续应该优化哪一层。
+
+今天的 benchmark 选择从 fixture 主链路开始，不连接真实 Redis / Celery broker、不访问真实外部网站、不调用真实 LLM / embedding API。这个边界是有意的：先把指标模型、统计逻辑和 artifact 形式固定下来，再逐步替换为真实基础设施 benchmark。
+
+### 实际完成
+
+- 新增 `backend/app/benchmarking/summary.py`。
+- 新增 `backend/app/benchmarking/main_path.py`。
+- 新增 `tests/test_day27_benchmarking.py`。
+- 生成 `doc/supporting/day27-benchmark-results.json`。
+- 生成 `doc/supporting/day27-benchmark-summary.json`。
+- 生成 `doc/supporting/day27-benchmark-summary.md`。
+- 新增 `doc/supporting/performance-benchmark.md`。
+- 更新 `doc/roadmap/day-27.md`。
+- 更新 `doc/supporting/llmops-metrics.md`。
+- 更新 `doc/supporting/interview-defense-dossier.md`。
+
+### 当天为什么这样选
+
+今天最重要的选择是：先做可复现 fixture benchmark，而不是直接跑真实外部网站和真实模型。
+
+原因有三点：
+
+1. 真实网站、浏览器环境、网络、代理和模型 API 会引入大量波动。第一版 benchmark 如果直接接这些外部依赖，数据很难复现。
+2. Day 27 的核心不是追求漂亮数字，而是建立指标结构：端到端耗时、阶段耗时、P50、P95、成功率、失败分类、模型调用次数和 token。
+3. 结果写入 JSON 和 Markdown 后，可以被 Git 追踪，也可以在 Day 28 retry/resume、Day 30 复盘和面试材料中复用。
+
+另一个选择是明确记录模型调用次数和 token 为 0。因为当前 benchmark 没有真实 LLM / embedding API，不能把 fixture 数据包装成真实模型成本。
+
+### 当前验证
+
+- `uv run pytest tests\test_day27_benchmarking.py`：开发中已通过 5 passed。
+- `$env:PYTHONPATH='backend'; uv run python -m app.benchmarking.main_path --iterations 20 --output-dir doc\supporting`：生成 Day27 JSON / Markdown artifact，success_rate 95.00%。
+
+当前 benchmark 摘要：
+
+- 样本数：20。
+- 成功数：19。
+- 失败数：1。
+- 成功率：95.00%。
+- 平均端到端耗时：338 ms。
+- P50：347 ms。
+- P95：391 ms。
+- 最慢阶段：`crawler`，平均 129 ms。
+- 第二瓶颈：`rag`，平均 84 ms。
+- 失败分类：`ACCESS_BLOCKED` 1 次。
+- 模型调用次数：0。
+- Token 总量：0。
+
+完整门禁：
+
+- `uv run pytest`：150 passed。
+- `uv run pytest --cov=backend --cov-report=term-missing`：150 passed，backend coverage 90.80%，达到 80% 门槛。
+- `uv run ruff check backend tests migrations`：All checks passed。
+- `uv run alembic heads`：`0002_task_queue_id (head)`。
+- `docker compose config`：通过。
+- `cd frontend; npm run lint`：通过。
+- `cd frontend; npm run build`：通过。
+- `cd frontend; npm audit --audit-level=high`：found 0 vulnerabilities。
+- `uvx pip-audit`：No known vulnerabilities found。
+
+### 遗留问题
+
+- 当前 benchmark 是 fixture benchmark，不代表真实外部网站性能。
+- 当前没有真实 Redis / Celery broker 排队耗时。
+- 当前没有真实 LLM / embedding token 和成本统计。
+- 当前没有并发 benchmark。
+- Day 28 retry / resume 需要复用 `ACCESS_BLOCKED` 失败分类来统计恢复成功率。
 
 ## 30 天后优化记录
 

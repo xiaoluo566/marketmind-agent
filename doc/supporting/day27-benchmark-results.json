@@ -1,0 +1,1028 @@
+{
+  "benchmark_name": "day27-main-path-fixture",
+  "scope": "local fixture benchmark; no live Redis, Celery broker, external website, or LLM API",
+  "summary": {
+    "total_runs": 20,
+    "success_count": 19,
+    "failure_count": 1,
+    "success_rate": 0.95,
+    "average_total_duration_ms": 338,
+    "p50_total_duration_ms": 347,
+    "p95_total_duration_ms": 391,
+    "stage_averages_ms": {
+      "agent": 50,
+      "api": 14,
+      "crawler": 129,
+      "queue": 7,
+      "rag": 84,
+      "report": 64
+    },
+    "failure_counts": {
+      "ACCESS_BLOCKED": 1
+    },
+    "bottlenecks": [
+      {
+        "stage": "crawler",
+        "average_duration_ms": 129,
+        "sample_count": 20,
+        "share_of_total": 0.3817
+      },
+      {
+        "stage": "rag",
+        "average_duration_ms": 84,
+        "sample_count": 19,
+        "share_of_total": 0.2485
+      },
+      {
+        "stage": "report",
+        "average_duration_ms": 64,
+        "sample_count": 19,
+        "share_of_total": 0.1893
+      },
+      {
+        "stage": "agent",
+        "average_duration_ms": 50,
+        "sample_count": 19,
+        "share_of_total": 0.1479
+      },
+      {
+        "stage": "api",
+        "average_duration_ms": 14,
+        "sample_count": 20,
+        "share_of_total": 0.0414
+      },
+      {
+        "stage": "queue",
+        "average_duration_ms": 7,
+        "sample_count": 20,
+        "share_of_total": 0.0207
+      }
+    ],
+    "model_call_count": 0,
+    "total_tokens": 0
+  },
+  "results": [
+    {
+      "task_id": "bench_tsk_01",
+      "source_id": "fixture-product-01",
+      "status": "completed",
+      "stages": [
+        {
+          "name": "api",
+          "duration_ms": 13,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "queue",
+          "duration_ms": 7,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "crawler",
+          "duration_ms": 111,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "agent",
+          "duration_ms": 46,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "rag",
+          "duration_ms": 71,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "report",
+          "duration_ms": 57,
+          "success": true,
+          "error_code": null
+        }
+      ],
+      "error_code": null,
+      "model_call_count": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_duration_ms": 305,
+      "total_tokens": 0
+    },
+    {
+      "task_id": "bench_tsk_02",
+      "source_id": "fixture-product-02",
+      "status": "completed",
+      "stages": [
+        {
+          "name": "api",
+          "duration_ms": 15,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "queue",
+          "duration_ms": 8,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "crawler",
+          "duration_ms": 126,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "agent",
+          "duration_ms": 54,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "rag",
+          "duration_ms": 80,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "report",
+          "duration_ms": 64,
+          "success": true,
+          "error_code": null
+        }
+      ],
+      "error_code": null,
+      "model_call_count": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_duration_ms": 347,
+      "total_tokens": 0
+    },
+    {
+      "task_id": "bench_tsk_03",
+      "source_id": "fixture-product-03",
+      "status": "completed",
+      "stages": [
+        {
+          "name": "api",
+          "duration_ms": 17,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "queue",
+          "duration_ms": 6,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "crawler",
+          "duration_ms": 141,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "agent",
+          "duration_ms": 62,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "rag",
+          "duration_ms": 89,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "report",
+          "duration_ms": 71,
+          "success": true,
+          "error_code": null
+        }
+      ],
+      "error_code": null,
+      "model_call_count": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_duration_ms": 386,
+      "total_tokens": 0
+    },
+    {
+      "task_id": "bench_tsk_04",
+      "source_id": "fixture-product-04",
+      "status": "completed",
+      "stages": [
+        {
+          "name": "api",
+          "duration_ms": 11,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "queue",
+          "duration_ms": 7,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "crawler",
+          "duration_ms": 156,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "agent",
+          "duration_ms": 38,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "rag",
+          "duration_ms": 98,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "report",
+          "duration_ms": 78,
+          "success": true,
+          "error_code": null
+        }
+      ],
+      "error_code": null,
+      "model_call_count": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_duration_ms": 388,
+      "total_tokens": 0
+    },
+    {
+      "task_id": "bench_tsk_05",
+      "source_id": "fixture-product-05",
+      "status": "completed",
+      "stages": [
+        {
+          "name": "api",
+          "duration_ms": 13,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "queue",
+          "duration_ms": 8,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "crawler",
+          "duration_ms": 96,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "agent",
+          "duration_ms": 46,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "rag",
+          "duration_ms": 107,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "report",
+          "duration_ms": 50,
+          "success": true,
+          "error_code": null
+        }
+      ],
+      "error_code": null,
+      "model_call_count": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_duration_ms": 320,
+      "total_tokens": 0
+    },
+    {
+      "task_id": "bench_tsk_06",
+      "source_id": "fixture-product-06",
+      "status": "completed",
+      "stages": [
+        {
+          "name": "api",
+          "duration_ms": 15,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "queue",
+          "duration_ms": 6,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "crawler",
+          "duration_ms": 111,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "agent",
+          "duration_ms": 54,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "rag",
+          "duration_ms": 62,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "report",
+          "duration_ms": 57,
+          "success": true,
+          "error_code": null
+        }
+      ],
+      "error_code": null,
+      "model_call_count": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_duration_ms": 305,
+      "total_tokens": 0
+    },
+    {
+      "task_id": "bench_tsk_07",
+      "source_id": "fixture-product-07",
+      "status": "completed",
+      "stages": [
+        {
+          "name": "api",
+          "duration_ms": 17,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "queue",
+          "duration_ms": 7,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "crawler",
+          "duration_ms": 126,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "agent",
+          "duration_ms": 62,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "rag",
+          "duration_ms": 71,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "report",
+          "duration_ms": 64,
+          "success": true,
+          "error_code": null
+        }
+      ],
+      "error_code": null,
+      "model_call_count": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_duration_ms": 347,
+      "total_tokens": 0
+    },
+    {
+      "task_id": "bench_tsk_08",
+      "source_id": "fixture-product-08",
+      "status": "completed",
+      "stages": [
+        {
+          "name": "api",
+          "duration_ms": 11,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "queue",
+          "duration_ms": 8,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "crawler",
+          "duration_ms": 141,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "agent",
+          "duration_ms": 38,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "rag",
+          "duration_ms": 80,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "report",
+          "duration_ms": 71,
+          "success": true,
+          "error_code": null
+        }
+      ],
+      "error_code": null,
+      "model_call_count": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_duration_ms": 349,
+      "total_tokens": 0
+    },
+    {
+      "task_id": "bench_tsk_09",
+      "source_id": "fixture-product-09",
+      "status": "completed",
+      "stages": [
+        {
+          "name": "api",
+          "duration_ms": 13,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "queue",
+          "duration_ms": 6,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "crawler",
+          "duration_ms": 156,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "agent",
+          "duration_ms": 46,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "rag",
+          "duration_ms": 89,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "report",
+          "duration_ms": 78,
+          "success": true,
+          "error_code": null
+        }
+      ],
+      "error_code": null,
+      "model_call_count": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_duration_ms": 388,
+      "total_tokens": 0
+    },
+    {
+      "task_id": "bench_tsk_10",
+      "source_id": "fixture-product-10",
+      "status": "completed",
+      "stages": [
+        {
+          "name": "api",
+          "duration_ms": 15,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "queue",
+          "duration_ms": 7,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "crawler",
+          "duration_ms": 96,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "agent",
+          "duration_ms": 54,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "rag",
+          "duration_ms": 98,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "report",
+          "duration_ms": 50,
+          "success": true,
+          "error_code": null
+        }
+      ],
+      "error_code": null,
+      "model_call_count": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_duration_ms": 320,
+      "total_tokens": 0
+    },
+    {
+      "task_id": "bench_tsk_11",
+      "source_id": "fixture-product-11",
+      "status": "completed",
+      "stages": [
+        {
+          "name": "api",
+          "duration_ms": 17,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "queue",
+          "duration_ms": 8,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "crawler",
+          "duration_ms": 111,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "agent",
+          "duration_ms": 62,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "rag",
+          "duration_ms": 107,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "report",
+          "duration_ms": 57,
+          "success": true,
+          "error_code": null
+        }
+      ],
+      "error_code": null,
+      "model_call_count": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_duration_ms": 362,
+      "total_tokens": 0
+    },
+    {
+      "task_id": "bench_tsk_12",
+      "source_id": "fixture-product-12",
+      "status": "completed",
+      "stages": [
+        {
+          "name": "api",
+          "duration_ms": 11,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "queue",
+          "duration_ms": 6,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "crawler",
+          "duration_ms": 126,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "agent",
+          "duration_ms": 38,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "rag",
+          "duration_ms": 62,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "report",
+          "duration_ms": 64,
+          "success": true,
+          "error_code": null
+        }
+      ],
+      "error_code": null,
+      "model_call_count": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_duration_ms": 307,
+      "total_tokens": 0
+    },
+    {
+      "task_id": "bench_tsk_13",
+      "source_id": "fixture-product-13",
+      "status": "failed",
+      "stages": [
+        {
+          "name": "api",
+          "duration_ms": 13,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "queue",
+          "duration_ms": 7,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "crawler",
+          "duration_ms": 201,
+          "success": false,
+          "error_code": "ACCESS_BLOCKED"
+        }
+      ],
+      "error_code": "ACCESS_BLOCKED",
+      "model_call_count": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_duration_ms": 221,
+      "total_tokens": 0
+    },
+    {
+      "task_id": "bench_tsk_14",
+      "source_id": "fixture-product-14",
+      "status": "completed",
+      "stages": [
+        {
+          "name": "api",
+          "duration_ms": 15,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "queue",
+          "duration_ms": 8,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "crawler",
+          "duration_ms": 156,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "agent",
+          "duration_ms": 54,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "rag",
+          "duration_ms": 80,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "report",
+          "duration_ms": 78,
+          "success": true,
+          "error_code": null
+        }
+      ],
+      "error_code": null,
+      "model_call_count": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_duration_ms": 391,
+      "total_tokens": 0
+    },
+    {
+      "task_id": "bench_tsk_15",
+      "source_id": "fixture-product-15",
+      "status": "completed",
+      "stages": [
+        {
+          "name": "api",
+          "duration_ms": 17,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "queue",
+          "duration_ms": 6,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "crawler",
+          "duration_ms": 96,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "agent",
+          "duration_ms": 62,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "rag",
+          "duration_ms": 89,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "report",
+          "duration_ms": 50,
+          "success": true,
+          "error_code": null
+        }
+      ],
+      "error_code": null,
+      "model_call_count": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_duration_ms": 320,
+      "total_tokens": 0
+    },
+    {
+      "task_id": "bench_tsk_16",
+      "source_id": "fixture-product-16",
+      "status": "completed",
+      "stages": [
+        {
+          "name": "api",
+          "duration_ms": 11,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "queue",
+          "duration_ms": 7,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "crawler",
+          "duration_ms": 111,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "agent",
+          "duration_ms": 38,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "rag",
+          "duration_ms": 98,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "report",
+          "duration_ms": 57,
+          "success": true,
+          "error_code": null
+        }
+      ],
+      "error_code": null,
+      "model_call_count": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_duration_ms": 322,
+      "total_tokens": 0
+    },
+    {
+      "task_id": "bench_tsk_17",
+      "source_id": "fixture-product-17",
+      "status": "completed",
+      "stages": [
+        {
+          "name": "api",
+          "duration_ms": 13,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "queue",
+          "duration_ms": 8,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "crawler",
+          "duration_ms": 126,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "agent",
+          "duration_ms": 46,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "rag",
+          "duration_ms": 107,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "report",
+          "duration_ms": 64,
+          "success": true,
+          "error_code": null
+        }
+      ],
+      "error_code": null,
+      "model_call_count": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_duration_ms": 364,
+      "total_tokens": 0
+    },
+    {
+      "task_id": "bench_tsk_18",
+      "source_id": "fixture-product-18",
+      "status": "completed",
+      "stages": [
+        {
+          "name": "api",
+          "duration_ms": 15,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "queue",
+          "duration_ms": 6,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "crawler",
+          "duration_ms": 141,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "agent",
+          "duration_ms": 54,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "rag",
+          "duration_ms": 62,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "report",
+          "duration_ms": 71,
+          "success": true,
+          "error_code": null
+        }
+      ],
+      "error_code": null,
+      "model_call_count": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_duration_ms": 349,
+      "total_tokens": 0
+    },
+    {
+      "task_id": "bench_tsk_19",
+      "source_id": "fixture-product-19",
+      "status": "completed",
+      "stages": [
+        {
+          "name": "api",
+          "duration_ms": 17,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "queue",
+          "duration_ms": 7,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "crawler",
+          "duration_ms": 156,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "agent",
+          "duration_ms": 62,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "rag",
+          "duration_ms": 71,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "report",
+          "duration_ms": 78,
+          "success": true,
+          "error_code": null
+        }
+      ],
+      "error_code": null,
+      "model_call_count": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_duration_ms": 391,
+      "total_tokens": 0
+    },
+    {
+      "task_id": "bench_tsk_20",
+      "source_id": "fixture-product-20",
+      "status": "completed",
+      "stages": [
+        {
+          "name": "api",
+          "duration_ms": 11,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "queue",
+          "duration_ms": 8,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "crawler",
+          "duration_ms": 96,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "agent",
+          "duration_ms": 38,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "rag",
+          "duration_ms": 80,
+          "success": true,
+          "error_code": null
+        },
+        {
+          "name": "report",
+          "duration_ms": 50,
+          "success": true,
+          "error_code": null
+        }
+      ],
+      "error_code": null,
+      "model_call_count": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_duration_ms": 283,
+      "total_tokens": 0
+    }
+  ]
+}
