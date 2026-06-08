@@ -47,7 +47,7 @@
 | --- | --- |
 | 稳定分支 | `main` |
 | 日常开发分支 | `dev` |
-| 当前开发阶段 | Day 29 README、演示脚本与简历材料整理 |
+| 当前开发阶段 | Day 30 release candidate、指标复盘与里程碑验收 |
 | 当前主链路 | 文档基线、Next.js 控制台骨架、前端真实 API client、真实任务提交表单、任务详情轮询面板、历史任务列表、历史报告列表、报告详情真实读取、报告 evidence chain 真实读取、FastAPI health、任务创建 API、public_url 安全校验、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、Agent step 查询 API、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、相似度检索原型、search_reviews_tool、结构化报告生成骨架、报告入库、证据链回查 API、风险机会评分、结构化错误日志、观测错误查询 API、主链路集成回归样例、Docker Compose 服务拓扑、数据库迁移服务、后端/前端 Dockerfile、GitHub Actions CI、PR 模板、发布检查清单、回退运行手册、Day27 benchmark harness、20 个 fixture 样例任务、性能 summary artifact、Day28 retry policy、任务 retry API、Worker recovery resume 事件、Day29 README/demo/resume/interview materials、数据库模型、Alembic 迁移 |
 | 最新开发提交 | 以 `git log -1 --oneline` 为准 |
 | 当前数据库决策 | PostgreSQL + pgvector，review chunk 使用 `vector(1536)` |
@@ -108,7 +108,7 @@
 | Day 27 | Done | 性能评估和 benchmark 数据 | 见本提交 |
 | Day 28 | Done | 失败重试和续跑机制 | 见本提交 |
 | Day 29 | Done | README、demo 和演示素材 | 见本提交 |
-| Day 30 | Pending | 里程碑发布、tag、指标和复盘 | 待记录 |
+| Day 30 | Done | 里程碑发布候选、指标汇总、缺口复盘和第二阶段 backlog | 见本提交 |
 
 ## Day 01 记录
 
@@ -2142,6 +2142,68 @@ Day 1-28 已经完成了主链路、CI、benchmark 和失败任务 retry，但�
 ### 下一步
 
 Day 30 进入里程碑验收：跑完整质量门禁、复核 release checklist、整理指标 summary、决定是否创建 release candidate tag，并把 30 天后优化方向从计划转成 backlog。
+
+## Day 30 开发记录
+
+### 背景
+
+Day 30 的任务不是继续堆功能，而是把第一阶段收口成一个可以展示、可以复盘、可以继续开发的 release candidate。Day 29 已经完成 README、演示脚本、简历材料和面试讲述，但还缺少三类收尾材料：
+
+- 哪些指标已经被验证，哪些不能写成真实线上指标。
+- 哪些缺口仍然存在，为什么不阻塞第一阶段 RC。
+- release checklist、future iterations、testing strategy、interview dossier 和 README 是否都同步 Day30 状态。
+
+今天继续采用 TDD：先新增 `tests/test_day30_release_candidate.py`，让测试明确要求 Day30 RC 文档、metrics summary、bug summary、README 入口和横向文档同步；确认 RED 后，再补文档。
+
+### 实际完成
+
+- 新增 `tests/test_day30_release_candidate.py`，把 Day30 release candidate 文档同步纳入自动化测试。
+- 新增 `doc/supporting/day30-release-candidate.md`，说明建议 tag `v0.1-day30-rc1`、RC 范围、非 v1.0 边界、Docker daemon 状态、GitHub Actions 观察要求和回退路径。
+- 新增 `doc/supporting/day30-metrics-summary.md`，只记录已验证指标：`167 passed`、coverage `90.79%`、Day27 `fixture benchmark` 的 20 个样例、95.00% 成功率、338 ms 平均耗时、391 ms P95，以及模型调用次数：0。
+- 新增 `doc/supporting/day30-bug-summary.md`，列出未解决缺口：前端 retry 按钮、真实 compose build/up、真实 embedding provider、真实 LLM report prompt、Celery countdown、Agent step replay、Playwright E2E、GitHub branch protection 等。
+- 更新 `doc/supporting/future-iterations.md`，把第二阶段优先级从泛化计划改成可执行 backlog。
+- 更新 `doc/supporting/release-checklist.md`，补充 Day 30 release candidate 和 `v0.1-day30-rc1` 的发布边界。
+- 更新 `doc/supporting/testing-strategy.md`，记录 Day 30 Release Candidate 测试边界。
+- 更新本文、`doc/supporting/interview-defense-dossier.md` 和 `README.md`，让项目入口、开发事实和面试表达保持一致。
+
+### 当天为什么这样选
+
+今天优先做 release candidate 收口，是因为项目已经进入 30 天计划最后一天。继续新增功能会让第一阶段边界变模糊，反而不利于展示“工程化完成度”。一个能写进简历的项目，不只要有代码，还要有清晰的验收、指标、缺口、回退和后续计划。
+
+今天没有把项目命名为 v1.0。原因是几个关键生产化能力仍然缺失：真实 Docker Compose build/up 由于 Docker Desktop daemon 不可用没有完成，真实 embedding provider 和真实 LLM report prompt 尚未接入，前端 retry 按钮和 Playwright E2E 也还没有补。把版本定义为 `v0.1-day30-rc1` 更符合真实工程表达。
+
+今天也没有补业务代码。原因是 Day30 的主要风险不是某个 API 少一个字段，而是文档、指标和边界不一致。如果 README 声称“已完整部署”，但 release checklist 只验证了 `docker compose config`，这比少一个功能更危险。
+
+### 当前验证
+
+- `uv run pytest tests\test_day30_release_candidate.py`：Day30 release candidate tests，先 RED，补齐文档后 5 passed。
+- `uv run pytest tests\test_day30_release_candidate.py tests\test_day29_demo_docs.py tests\test_day28_recovery.py tests\test_day27_benchmarking.py`：22 passed。
+- `uv run pytest`：167 passed。
+- `uv run pytest --cov=backend --cov-report=term-missing`：167 passed，backend coverage 90.79%，达到 80% 门槛。
+- `uv run ruff check backend tests migrations`：All checks passed。
+- `uv run alembic heads`：`0002_task_queue_id (head)`。
+- `docker info`：Docker client 29.3.1，server 仍无法连接 `dockerDesktopLinuxEngine`。
+- `docker compose config`：通过。
+- `cd frontend; npm run lint`：通过。
+- `cd frontend; npm run build`：通过。
+- `cd frontend; npm audit --audit-level=high`：found 0 vulnerabilities。
+- `uvx pip-audit`：No known vulnerabilities found。
+
+因此 Day30 只能声明 Compose 配置解析已验证，不能声明真实 `docker compose build` / `docker compose up` 已完成。
+
+### 遗留问题
+
+遗留问题集中记录在 `doc/supporting/day30-bug-summary.md`。其中优先级最高的是：
+
+- 前端 retry 按钮。
+- 真实 compose build/up 验证。
+- 真实 embedding provider。
+- 真实 LLM report prompt。
+- Playwright E2E。
+
+### 下一步
+
+如果本地完整门禁和 GitHub Actions 都通过，则可以把当前提交作为 Day30 release candidate 推送到 `dev`，并在合适时创建 `v0.1-day30-rc1` tag。第二阶段从 `future-iterations.md` 的优先级开始，而不是重新发散需求。
 
 ## 30 天后优化记录
 

@@ -1,61 +1,129 @@
 # 后续迭代清单
 
-## 第二阶段
+## 文档定位
 
-- 支持多个采集源
-- 支持多项目隔离
-- 支持用户登录
-- 支持报告导出 PDF / Markdown
-- 支持任务取消
-- 支持任务重试可视化
-- 支持任务运行回放
+这份文档记录 Day30 release candidate 之后的第二阶段和第三阶段 backlog。它不再是“想到什么写什么”的愿望清单，而是从 Day30 缺口、演示风险、工程闭环和面试表达中反推出来的迭代顺序。
+
+关联文档：
+
+- 当前版本边界：`project-charter.md`
+- Day30 发布候选：`day30-release-candidate.md`
+- Day30 缺口汇总：`day30-bug-summary.md`
+- 指标与 LLMOps：`day30-metrics-summary.md`、`llmops-metrics.md`
+- 回退手册：`rollback-runbook.md`
+- 里程碑验收：`milestones-and-acceptance.md`
 
 ## 第二阶段优先级
 
-优先做能增强项目说服力的功能：
+第二阶段不继续盲目加技术栈，优先补 Day30 RC 中明确影响演示和工程闭环的缺口：
 
-1. 任务取消和重试
-2. 报告导出
-3. 多数据源
-4. Prompt 版本回放
-5. 更完整的历史对比
+1. 前端 retry 按钮：在 failed 任务详情页接入 `POST /api/tasks/{task_id}/retry`，展示 retry loading、失败提示、恢复事件和终态刷新。
+2. 真实 compose build/up 验证：Docker Desktop daemon 可用后执行 `docker compose up --build`，验证 postgres、redis、migrate、api、worker、frontend 的 health 和容器内任务提交。
+3. 真实 embedding provider：接入 `text-embedding-3-small` 或可配置 provider，补超时、维度不匹配、重试和成本统计。
+4. 真实 LLM report prompt：保留 `StructuredReport` schema 校验和 evidence refs 约束，不允许模型输出绕过 guardrails。
+5. Playwright E2E：覆盖新建任务、查看进度、打开报告、查看 evidence chain 和 retry 入口。
+6. GitHub branch protection：把 backend/frontend quality gates 配成 required checks。
+7. Agent step replay：从任务级 retry 继续推进到基于最近 Observation 的 step-level resume。
 
-## 第三阶段
+这些优先级和 `day30-bug-summary.md` 对齐。后续开发应该从这里拆 Day31+ 或第二阶段 issue，而不是重新发散需求。
 
-- 加入更完整的 LLMOps 面板
-- 加入模型提供方切换
-- 加入 Prompt 版本管理
-- 加入 Agent 运行回放
-- 加入更强的 benchmark 集合
-- 加入独立 crawler worker 池
-- 加入独立 rag worker 池
+## 第二阶段建议拆分
 
-## 可选增强
+### 1. Retry 前端闭环
 
-- 把 Next.js mock 数据替换为真实 API client 和轮询状态流
-- 把爬虫 worker 拆成独立服务
-- 把向量检索迁到 Milvus
-- 加入多 Agent 分工
-- 加入商品趋势图表
-- 把报告导出做成多模板版本
+目标：
+
+- failed 任务详情页出现 retry 按钮。
+- 点击后调用真实 retry API。
+- 页面能显示 `waiting_retry`、重新 queued、recovery event 和最终状态。
+
+新增测试：
+
+- 前端契约测试：failed 状态才展示 retry。
+- API client 测试：retry endpoint envelope 解析。
+- Playwright E2E：失败任务点击 retry 后状态刷新。
+
+### 2. 真实 Compose 联调
+
+目标：
+
+- Docker Desktop daemon 可用后，真实执行 `docker compose up --build`。
+- 容器内 PostgreSQL / Redis / migrate / api / worker / frontend 均健康。
+- 通过 API 提交一个 fixture 任务，确认 worker 消费并写入数据库。
+
+新增记录：
+
+- `docker-compose-runbook.md` 增加真实运行结果。
+- `development-log.md` 增加 Docker daemon 可用后的补验记录。
+- `day30-bug-summary.md` 将该项从未解决缺口移到已补验。
+
+### 3. 真实 Embedding Provider
+
+目标：
+
+- 在 `EmbeddingProvider` 抽象下接真实 provider。
+- 保留 deterministic fake provider 给测试使用。
+- 写入 token / cost / latency 指标入口。
+
+新增测试：
+
+- provider 超时重试。
+- embedding 维度不匹配失败。
+- provider 配置缺失时 fail fast。
+- RAG store 不允许写入错误维度向量。
+
+### 4. 真实 LLM Report Prompt
+
+目标：
+
+- 接真实报告 prompt。
+- LLM 输出必须通过 `StructuredReport` schema。
+- 所有 section evidence refs 必须来自检索结果。
+- parse/validation 失败进入 self-heal，不允许绕过 guardrails。
+
+新增测试：
+
+- 坏 JSON 自愈。
+- 引用未知 evidence ref 失败。
+- 证据不足时不生成强结论。
+- prompt version 写入报告 metadata。
+
+### 5. E2E 与分支保护
+
+目标：
+
+- Playwright 覆盖关键 UI 流程。
+- GitHub branch protection 要求 backend/frontend checks 通过。
+- PR 模板中的验证记录真正成为合并前检查项。
+
+## 第三阶段方向
+
+- 报告导出 Markdown / PDF。
+- Prompt 版本回放。
+- 更完整的 LLMOps 面板。
+- 多数据源适配。
+- 独立 crawler worker 池。
+- 独立 RAG / embedding worker 池。
+- 历史报告对比和趋势图。
+- 任务取消、暂停和恢复。
 
 ## 不建议过早做
 
-- Kubernetes
-- Kafka
-- 复杂权限系统
-- 过多站点采集适配
-- 复杂多智能体自治
+- Kubernetes。
+- Kafka。
+- 复杂权限系统。
+- 过多站点采集适配。
+- 复杂多智能体自治。
+- 复杂销量预测或广告优化。
+
+这些能力会明显扩大项目范围，但对当前“评论洞察、证据链报告、长任务可追踪”的核心价值帮助有限。
 
 ## 判断是否值得做的标准
 
-- 是否能改善主链路稳定性
-- 是否能带来可展示的数据
-- 是否能体现工程深度
-- 是否会明显拖慢 30 天交付
+新增需求进入 backlog 前，至少回答：
 
-## 与其他文档关系
-
-- 当前版本边界见 `project-charter.md`
-- 里程碑见 `milestones-and-acceptance.md`
-- 风险评估见 `risk-register.md`
+- 是否能改善主链路稳定性？
+- 是否能增强报告可信度或证据链可解释性？
+- 是否能带来可展示的指标或面试材料？
+- 是否能提升工程深度，而不是只增加 UI 或名词？
+- 是否会明显拖慢当前阶段交付？

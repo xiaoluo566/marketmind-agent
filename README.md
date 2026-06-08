@@ -117,9 +117,9 @@ cd ..
 uvx pip-audit
 ```
 
-最新 Day29 本地完整门禁：
+最新 Day30 本地完整门禁：
 
-- `uv run pytest`：162 passed。
+- `uv run pytest`：167 passed。
 - coverage：90.79%。
 - ruff、alembic heads、compose config：通过。
 - frontend lint / build / audit：通过。
@@ -146,6 +146,18 @@ uvx pip-audit
 - 2 分钟项目讲述：见 [doc/supporting/interview-story.md](doc/supporting/interview-story.md)。
 - 深度追问防守：见 [doc/supporting/interview-defense-dossier.md](doc/supporting/interview-defense-dossier.md)。
 - 开发过程复盘：见 [doc/supporting/development-log.md](doc/supporting/development-log.md)。
+
+## Day 30 Release Candidate
+
+截至 Day 30，项目进入第一阶段 release candidate 收口。建议候选 tag 为 `v0.1-day30-rc1`，但它不是 v1.0。
+
+Day30 相关材料：
+
+- 发布候选边界：[doc/supporting/day30-release-candidate.md](doc/supporting/day30-release-candidate.md)
+- 指标汇总：[doc/supporting/day30-metrics-summary.md](doc/supporting/day30-metrics-summary.md)
+- 缺口与 bug 汇总：[doc/supporting/day30-bug-summary.md](doc/supporting/day30-bug-summary.md)
+
+当前仍需如实说明：真实 `docker compose build/up`、真实 embedding provider、真实 LLM report prompt、前端 retry 按钮和 Playwright E2E 尚未完成。
 
 ## 已知边界
 

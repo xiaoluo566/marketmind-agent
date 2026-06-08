@@ -17,6 +17,31 @@
 - 开发日志和面试文档已更新。
 - 如果涉及数据库迁移，已经写明是否向后兼容和如何回退。
 
+## Day 30 release candidate 状态
+
+Day 30 的建议发布候选 tag 是：
+
+```text
+v0.1-day30-rc1
+```
+
+这是 release candidate，不是 v1.0。创建或推送该 tag 前，必须满足：
+
+- Day30 release candidate 文档已更新：`day30-release-candidate.md`。
+- Day30 指标汇总已更新：`day30-metrics-summary.md`。
+- Day30 缺口汇总已更新：`day30-bug-summary.md`。
+- `uv run pytest` 和 coverage 门禁通过。
+- 后端 ruff、Alembic heads、Docker Compose config 通过。
+- 前端 lint、build、audit 通过。
+- `uvx pip-audit` 通过。
+- GitHub Actions 新 run 通过。
+
+当前边界必须如实记录：
+
+- 可以声明 `docker compose config` 已验证。
+- 不声明真实 `docker compose build` / `docker compose up` 已完成，除非 Docker Desktop daemon 可用后实际执行并通过。
+- 不声明真实 embedding provider、真实 LLM report prompt、前端 retry 按钮和 Playwright E2E 已完成。
+
 ## 发布时
 
 - 确认当前分支和目标分支。

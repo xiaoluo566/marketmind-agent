@@ -481,6 +481,35 @@ npm audit: 0 vulnerabilities
 pip-audit: No known vulnerabilities found
 ```
 
+## Day 30 Release Candidate 测试边界
+
+Day 30 新增 `tests/test_day30_release_candidate.py`，用于验证第一阶段收口材料是否完整，而不是新增业务主链路。
+
+这组测试覆盖：
+
+- `doc/supporting/day30-release-candidate.md` 必须存在，并记录 `v0.1-day30-rc1`、release candidate、Docker Desktop daemon 状态、GitHub Actions 和“不声明 v1.0”的边界。
+- `doc/supporting/day30-metrics-summary.md` 必须只使用已验证数字，例如 `167 passed`、coverage `90.79%`、Day27 fixture benchmark 的 `20` 个样例、`95.00%` 成功率、`338 ms` 平均耗时、`391 ms` P95，以及模型调用次数：0。
+- `doc/supporting/day30-bug-summary.md` 必须明确未解决缺口，包括前端 retry 按钮、真实 compose build/up、真实 embedding provider 等。
+- `doc/supporting/future-iterations.md` 必须把第二阶段优先级具体化，避免 Day30 之后继续发散。
+- `doc/supporting/release-checklist.md`、`README.md`、`development-log.md` 和 `interview-defense-dossier.md` 必须同步 Day30 RC 状态。
+
+Day 30 当前不覆盖：
+
+- 真实 Docker Compose build/up。
+- 真实 LLM / embedding provider 调用。
+- 前端 retry 按钮点击流程。
+- Playwright E2E。
+- GitHub branch protection required checks。
+- Tag 推送后的 release 页面。
+
+当前验证命令：
+
+```powershell
+uv run pytest tests\test_day30_release_candidate.py
+```
+
+当前结果会在 Day30 提交前更新到 `development-log.md`。Day30 的测试重点是防止发布材料夸大项目状态，确保 RC 边界、指标和缺口能被自动化检查。
+
 ## 回归要求
 
 任何 bug 修复都要留下一个能复现旧问题的测试。没有测试的修复，后续很容易被重构再次破坏。

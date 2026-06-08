@@ -1891,6 +1891,29 @@ Day 22 的自我思考：
 - 外部依赖必须有错误分类。
 - 测试不能强依赖本地基础设施。
 
+## Day 30 里程碑验收
+
+Day 30 的面试讲法重点是：我没有把项目硬包装成 v1.0，而是做了一个诚实的 release candidate。
+
+可以这样介绍：
+
+> Day 30 我做的是里程碑验收和发布候选收口。前 29 天已经完成了 API、Worker、Crawler、Agent、RAG、Report、Evidence Chain、Next.js 控制台、CI、benchmark、retry 和演示材料。最后一天我没有继续盲目加功能，而是把指标、缺口、发布边界、回退路径和第二阶段 backlog 固化下来，并用 `tests/test_day30_release_candidate.py` 防止文档夸大项目状态。
+
+这一天可以强调的工程思考：
+
+- 发布不是“代码写完就结束”，还要有 checklist、指标、缺口、tag、CI 和回退。
+- RC 不是 v1.0。真实 compose build/up、真实 embedding provider、真实 LLM report prompt、前端 retry 按钮和 Playwright E2E 没完成，就必须写成缺口。
+- 指标只能写已验证事实，例如 `167 passed`、coverage `90.79%`、Day27 fixture benchmark 的 20 个样例、95.00% 成功率、338 ms 平均耗时和 391 ms P95。
+- 模型调用次数：0 也要如实写，因为当前还没有接真实 provider，不能把 deterministic baseline 包装成真实 LLMOps 数据。
+
+如果面试官问“为什么不继续做功能，而是写这些文档”，可以回答：
+
+> 因为一个工程化 Agent 项目不只是功能堆叠。到了阶段末尾，更重要的是把系统边界说清楚：哪些能力已验证，哪些只是配置校验，哪些还是 backlog。这样后续接真实 provider 或 Docker Compose 联调时，不会把未验证能力误认为已完成能力。
+
+如果面试官问“这个项目现在最大缺口是什么”，可以回答：
+
+> 最大缺口不是单个模块，而是真实生产化联调还没完成。具体包括真实 compose build/up、真实 embedding provider、真实 LLM report prompt、前端 retry 按钮和 Playwright E2E。我已经把它们写进 `day30-bug-summary.md` 和 `future-iterations.md`，第二阶段优先补这些，而不是继续发散新功能。
+
 ## 后续迭代计划怎么讲
 
 短期：
