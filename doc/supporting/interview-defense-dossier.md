@@ -353,13 +353,19 @@ Day 25 做 Docker Compose 时，我没有只写一个 `docker-compose.yml` 就�
 
 > 我把 Compose 配置也纳入测试，是因为部署文件同样会发生回归。比如 API 容器应该连接 `postgres:5432` 而不是 `localhost:5432`，Worker 应该和 API 使用同一个 Redis broker，迁移应该在 API 启动前完成。这些都可以用轻量契约测试先锁住，再在 Docker daemon 可用时跑真实 `docker compose up`。
 
+Day 26 做 CI 和回退流程，是因为项目已经从“本地能跑”推进到“每次提交都要能证明没破坏主链路”的阶段。今天我没有把 `docker compose build` / `docker compose up` 直接放进 GitHub Actions，而是先把 ruff、pytest coverage、Alembic heads、compose config、frontend lint/build、npm audit 和 pip-audit 固化为稳定门禁。原因是 Day 25 已经记录真实 Docker daemon build/up 还没有完成，本阶段 CI 先锁质量边界，真实容器 E2E 后续可以独立成更重的 job。
+
+面试可以这样说：
+
+> Day 26 我把质量门禁从“我本地手动跑过”升级为 GitHub Actions。这里的取舍是：CI 先保证快速稳定，跑测试、coverage、lint、迁移检查、安全审计和 compose config；真实 compose up 先不强塞进 CI，因为它依赖 Docker daemon、镜像构建、数据库 readiness 和 worker 消费，应该在 Docker 验证稳定后作为独立 E2E job 加入。
+
 ### 7. 我对“不要夸大进度”的思考
 
-这个项目目前推进到 Day 25，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
+这个项目目前推进到 Day 26，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
 
-- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、工具 schema、工具注册机制、最小 ReAct 状态机、Agent step 落库、Agent step 查询 API、结构化输出 guardrails、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、`search_reviews_tool`、结构化报告生成骨架、报告入库、证据链回查 API、评论风险机会评分、前端真实任务提交、任务状态/事件/steps 轮询读取、历史任务、历史报告、报告详情、报告 evidence chain 前端接入、结构化错误日志、观测错误查询 API、coverage 门禁、状态转换策略、核心 schema 契约测试、主链路集成回归样例和 Docker Compose 启动拓扑。
-- 正在做：第四周 CI、性能评估和演示准备。
-- 后续做：任务重试、全局 evidence 检索、真实 embedding provider、pgvector 原生检索、真实 LLM report prompt、Docker Desktop daemon 启动后的真实 compose up 验证、E2E、CI。
+- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、工具 schema、工具注册机制、最小 ReAct 状态机、Agent step 落库、Agent step 查询 API、结构化输出 guardrails、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、`search_reviews_tool`、结构化报告生成骨架、报告入库、证据链回查 API、评论风险机会评分、前端真实任务提交、任务状态/事件/steps 轮询读取、历史任务、历史报告、报告详情、报告 evidence chain 前端接入、结构化错误日志、观测错误查询 API、coverage 门禁、状态转换策略、核心 schema 契约测试、主链路集成回归样例、Docker Compose 启动拓扑、GitHub Actions CI、PR 模板、发布检查清单和回退运行手册。
+- 正在做：第四周性能评估、失败重试、演示准备和真实容器补验。
+- 后续做：任务重试、全局 evidence 检索、真实 embedding provider、pgvector 原生检索、真实 LLM report prompt、Docker Desktop daemon 启动后的真实 compose up 验证、E2E、GitHub branch protection。
 
 我认为这反而是加分项。因为真实开发中，清楚知道自己完成了什么、没完成什么，比把项目包装得过满更可信。
 
@@ -1757,8 +1763,13 @@ Day 22 的自我思考：
 
 ## 目前最适合展示的代码点
 
-截至 Day 25，最适合展示：
+截至 Day 26，最适合展示：
 
+- `.github/workflows/ci.yml`：GitHub Actions 如何把 backend、frontend、compose config 和依赖审计纳入质量门禁。
+- `.github/pull_request_template.md`：每次 PR 如何要求验证记录、影响范围和回退方案。
+- `tests/test_day26_ci_contract.py`：把 CI workflow、PR 模板、发布清单和回退手册纳入契约测试。
+- `doc/supporting/release-checklist.md`：发版前后如何检查测试、coverage、迁移、compose、前端构建和安全审计。
+- `doc/supporting/rollback-runbook.md`：已推送提交、数据库迁移和 Docker Compose 的回退路径。
 - `docker-compose.yml`：PostgreSQL/pgvector、Redis、迁移、API、Worker 和前端的服务拓扑、健康检查和依赖顺序。
 - `Dockerfile.backend`：Python 3.12、uv、Playwright Chromium 和 Uvicorn 的后端镜像构建方式。
 - `frontend/Dockerfile`：Node 22、`npm ci`、Next.js build 和 production start 的前端镜像构建方式。
@@ -1875,6 +1886,7 @@ Day 22 的自我思考：
 - Day 23：coverage fail-under 80、状态转换策略和核心 schema 契约测试已完成。
 - Day 24：API、Worker、Crawler fixture、RAG、Report 和 evidence API 的主链路集成回归样例已完成。
 - Day 25：Docker Compose 服务拓扑、后端/前端 Dockerfile、迁移服务、运行手册和 compose 契约测试已完成。
+- Day 26：GitHub Actions CI、PR 模板、发布检查清单、回退运行手册和 CI 契约测试已完成。
 
 中期：
 
@@ -1886,8 +1898,9 @@ Day 22 的自我思考：
 后期：
 
 - 前端历史报告和证据链详情完善。
-- Docker Desktop daemon 启动后的真实 `docker compose build` / `docker compose up` 验证。
 - LLMOps 指标和 50 次任务复盘。
+- Docker Desktop daemon 启动后的真实 `docker compose build` / `docker compose up` 验证。
+- GitHub branch protection 和 required status checks。
 
 ## 面试结尾总结
 
@@ -1901,4 +1914,4 @@ Day 22 的自我思考：
 
 如果让你说下一步：
 
-> 下一步我会在 Docker Desktop daemon 可用时补真实 compose up 验证，并继续做 CI 和 E2E，把现在已经有的后端能力变成更稳定的一键演示链路。
+> 下一步我会做性能 benchmark、失败重试和 E2E，并在 Docker Desktop daemon 可用时补真实 compose up 验证，把现在已经有的后端能力变成更稳定的一键演示链路。

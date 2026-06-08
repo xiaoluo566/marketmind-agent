@@ -47,8 +47,8 @@
 | --- | --- |
 | 稳定分支 | `main` |
 | 日常开发分支 | `dev` |
-| 当前开发阶段 | Day 25 Docker Compose 环境固化 |
-| 当前主链路 | 文档基线、Next.js 控制台骨架、前端真实 API client、真实任务提交表单、任务详情轮询面板、历史任务列表、历史报告列表、报告详情真实读取、报告 evidence chain 真实读取、FastAPI health、任务创建 API、public_url 安全校验、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、Agent step 查询 API、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、相似度检索原型、search_reviews_tool、结构化报告生成骨架、报告入库、证据链回查 API、风险机会评分、结构化错误日志、观测错误查询 API、主链路集成回归样例、Docker Compose 服务拓扑、数据库迁移服务、后端/前端 Dockerfile、数据库模型、Alembic 迁移 |
+| 当前开发阶段 | Day 26 CI 与版本回退策略 |
+| 当前主链路 | 文档基线、Next.js 控制台骨架、前端真实 API client、真实任务提交表单、任务详情轮询面板、历史任务列表、历史报告列表、报告详情真实读取、报告 evidence chain 真实读取、FastAPI health、任务创建 API、public_url 安全校验、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、Agent step 查询 API、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、相似度检索原型、search_reviews_tool、结构化报告生成骨架、报告入库、证据链回查 API、风险机会评分、结构化错误日志、观测错误查询 API、主链路集成回归样例、Docker Compose 服务拓扑、数据库迁移服务、后端/前端 Dockerfile、GitHub Actions CI、PR 模板、发布检查清单、回退运行手册、数据库模型、Alembic 迁移 |
 | 最新开发提交 | 以 `git log -1 --oneline` 为准 |
 | 当前数据库决策 | PostgreSQL + pgvector，review chunk 使用 `vector(1536)` |
 | 当前模型决策 | 默认 `gpt-5.4-mini`，报告模型 `gpt-5.5`，embedding `text-embedding-3-small` |
@@ -104,7 +104,7 @@
 | Day 23 | Done | 单元测试、校验测试、覆盖率门禁 | 见本提交 |
 | Day 24 | Done | 集成测试与回归样例 | 见本提交 |
 | Day 25 | Done | Docker Compose 环境固化 | 见本提交 |
-| Day 26 | Pending | CI 与版本回退策略 | 待记录 |
+| Day 26 | Done | CI 与版本回退策略 | 见本提交 |
 | Day 27 | Pending | 性能评估和 benchmark 数据 | 待记录 |
 | Day 28 | Pending | 失败重试和续跑机制 | 待记录 |
 | Day 29 | Pending | README、demo 和演示素材 | 待记录 |
@@ -1595,7 +1595,7 @@ Day 21 的目标是补齐历史任务和历史报告，让系统从“能跑一�
 | Day 23 | 测试体系加固与覆盖率门禁 | quality gate 配置测试、coverage fail-under 80、任务状态转换策略、核心 schema 契约测试 | targeted tests 22 passed，coverage full gate 136 passed，coverage 90.80% | 见本提交 |
 | Day 24 | 集成测试与回归样例 | API 提交、Worker 执行、Crawler fixture、采集入库、RAG indexing、报告保存和 evidence API 回查的主链路集成测试 | full pytest 137 passed，coverage 90.86%，ruff/build/audit 通过 | 见本提交 |
 | Day 25 | Docker Compose 一键启动 | `docker-compose.yml`、后端/前端 Dockerfile、migrate 服务、健康检查、数据卷、env 模板、compose 契约测试和运行手册 | full pytest 141 passed，coverage 90.86%，compose config/lint/build/audit 通过；真实 Docker build 因 daemon 未运行阻塞 | 见本提交 |
-| Day 26 | CI 与版本回退策略 | 待记录 | 待记录 | 待记录 |
+| Day 26 | CI 与版本回退策略 | `.github/workflows/ci.yml`、PR 模板、release checklist、rollback runbook、CI 契约测试和 Day26 文档同步 | Day26 contract tests 4 passed；Day24-Day26 targeted tests 9 passed；full pytest 145 passed；coverage 90.86%；ruff/alembic/compose config/frontend lint/build/audit/pip-audit 通过 | 见本提交 |
 | Day 27 | 性能评估和 benchmark 数据 | 待记录 | 待记录 | 待记录 |
 | Day 28 | 失败重试和续跑机制 | 待记录 | 待记录 | 待记录 |
 | Day 29 | README、demo 和演示素材 | 待记录 | 待记录 | 待记录 |
@@ -1812,6 +1812,69 @@ failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine
 - 还没有在容器环境提交样例任务并检查 Worker 消费。
 - 后续 Day 26 做 CI 时，需要决定是否在 GitHub Actions 中跑 compose service health check。
 - 后续如果后端镜像过大，可以把 Playwright 采集能力拆成独立 `crawler-worker` 镜像。
+
+## Day 26 开发记录
+
+### 背景
+
+Day 25 已经把本地运行拓扑固化成 Docker Compose，但项目要成为可协作、可回退的工程系统，不能只靠开发者手动记得跑测试。Day 26 因此把 Day 23 - Day 25 形成的质量门禁写入 GitHub Actions，并补齐 PR 模板、发布检查清单和回退运行手册。
+
+今天没有继续做业务功能，也没有把真实 `docker compose up` 强塞进 CI。原因是 Day 25 已经诚实记录 Docker Desktop Linux engine 未运行，真实镜像 build/up 仍是后续补验项。Day 26 的核心是先让每次 push / PR 都自动检查代码、测试、迁移、前端构建、安全审计和 compose 配置是否稳定。
+
+### 实际完成
+
+- 新增 `.github/workflows/ci.yml`。
+- CI backend job 覆盖 `uv sync --frozen`、ruff、pytest coverage、Alembic heads、`docker compose config` 和 `uvx pip-audit`。
+- CI frontend job 覆盖 Node 22、`npm ci`、`npm run lint`、`npm run build` 和 `npm audit --audit-level=high`。
+- CI 触发范围限定为 `pull_request` / `push` 到 `main` 和 `dev`。
+- CI 加入 `concurrency`，同一分支新提交会取消旧运行。
+- 新增 `.github/pull_request_template.md`，要求写清变更摘要、影响范围、验证记录、回退方案和文档更新。
+- 重写 `doc/supporting/release-checklist.md`，把 tag、backup 分支、coverage、compose config、lint/build/audit 和文档同步写进发版清单。
+- 新增 `doc/supporting/rollback-runbook.md`，覆盖 `git revert`、backup 分支、数据库迁移回退、Docker Compose 回退和回退记录模板。
+- 新增 `tests/test_day26_ci_contract.py`，把 CI workflow、PR 模板、release checklist、rollback runbook、testing strategy 和 development log 都纳入契约测试。
+- 重写 `doc/roadmap/day-26.md`，从简要计划扩展成实际 Day26 开发记录。
+- 更新 `doc/supporting/testing-strategy.md`，补充 Day26 CI 契约测试边界。
+- 更新 `doc/supporting/interview-defense-dossier.md`，补充 Day26 技术选择、面试表达和展示代码点。
+
+### 当天为什么这样选
+
+今天最重要的选择是：先把 CI 做成稳定质量门禁，而不是一上来做 heavy Docker E2E。
+
+原因有三点：
+
+1. Day 23 已经建立 coverage 门槛，Day 24 已经建立主链路集成回归，Day 25 已经建立 compose 契约测试。Day 26 最自然的推进方式是把这些已有门禁搬进 CI。
+2. 真实 `docker compose build` / `docker compose up` 当前还没有在本机验证通过。如果把它直接放进 CI，失败时很难判断是 Docker 环境、镜像依赖、数据库 readiness、Playwright 安装还是业务逻辑的问题。
+3. 项目现在更需要一个快速、稳定、每次 PR 都能跑完的质量门禁。真实容器 E2E 后续可以作为独立 job 加入，而不是阻塞所有基础验证。
+
+另一个选择是把回退方案写进 PR 模板和 runbook。这个项目涉及数据库迁移、Docker volume、历史任务和历史报告读取，回退不是简单删代码。把回退提前写清楚，可以避免未来出现“代码回去了，但数据/容器/旧任务坏了”的问题。
+
+### 当前验证
+
+先执行 Day26 契约测试 RED：
+
+- `uv run pytest tests\test_day26_ci_contract.py`：最初 1 failed，原因是 `testing-strategy.md` 和 `development-log.md` 还没有写入 Day26 关联段落。
+
+修复后执行完整门禁：
+
+- `uv run pytest tests\test_day26_ci_contract.py`：4 passed。
+- `uv run pytest tests\test_day26_ci_contract.py tests\test_day25_compose_contract.py tests\test_day24_integration_flow.py`：9 passed。
+- `docker compose config`：通过。
+- `uv run pytest`：145 passed。
+- `uv run pytest --cov=backend --cov-report=term-missing`：145 passed，backend coverage 90.86%，达到 80% 门槛。
+- `uv run ruff check backend tests migrations`：All checks passed。
+- `uv run alembic heads`：`0002_task_queue_id (head)`。
+- `cd frontend; npm run lint`：通过。
+- `cd frontend; npm run build`：通过。
+- `cd frontend; npm audit --audit-level=high`：found 0 vulnerabilities。
+- `uvx pip-audit`：No known vulnerabilities found。
+
+### 遗留问题
+
+- 还没有观察 GitHub Actions 远程首轮运行结果。
+- 还没有配置 GitHub branch protection required status checks。
+- 还没有执行真实 `docker compose build` / `docker compose up`。
+- 还没有在容器环境中提交样例任务并观察 Worker 消费。
+- Day 27 benchmark 需要复用 Day26 的质量门禁，避免性能测试建立在不稳定代码上。
 
 ## 30 天后优化记录
 

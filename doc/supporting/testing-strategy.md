@@ -316,6 +316,53 @@ docker compose build api frontend
 failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine
 ```
 
+## Day 26 CI 契约测试边界
+
+Day 26 新增 `tests/test_day26_ci_contract.py`，用于把 CI workflow、PR 模板、发布清单和回退手册纳入自动化测试。
+
+这组测试覆盖：
+
+- `.github/workflows/ci.yml` 必须同时覆盖 `pull_request` 和 `push`。
+- CI 触发分支必须包含 `main` 和 `dev`。
+- backend job 必须使用 Python 3.12 和 uv。
+- backend job 必须执行 `uv run ruff check backend tests migrations`。
+- backend job 必须执行 `uv run pytest --cov=backend --cov-report=term-missing`，继续使用 80% coverage 门槛。
+- backend job 必须执行 `uv run alembic heads`，避免迁移 head 漂移。
+- backend job 必须执行 `docker compose config`，验证 compose 配置解析和服务拓扑。
+- backend job 必须执行 `uvx pip-audit`，把 Python 依赖漏洞扫描纳入门禁。
+- frontend job 必须使用 Node 22、`npm ci`、`npm run lint`、`npm run build` 和 `npm audit --audit-level=high`。
+- CI workflow 不能包含 `docker compose up` 或 `docker compose build`。
+- `.github/pull_request_template.md` 必须要求验证记录和回退方案。
+- `release-checklist.md` 必须包含 tag、backup、revert、compose 和 coverage 关键项。
+- `rollback-runbook.md` 必须覆盖 Git、数据库迁移和 Docker Compose 回退。
+
+Day 26 的测试重点是把“开发流程”也当成工程契约。CI 配置、PR 模板和回退手册不是附属材料，它们会直接影响项目是否可协作、可合入、可回退。
+
+Day 26 当前不覆盖：
+
+- GitHub Actions 远程实际运行结果。
+- 真实容器镜像构建。
+- `docker compose up -d` 后的容器健康检查。
+- 容器内 API 提交样例任务和 Worker 消费。
+- GitHub branch protection rule。
+
+这些能力分别放到后续远程 CI 观察、Docker Desktop daemon 可用后的补验、Day 27 benchmark、Day 28 retry/resume 和 Day 30 里程碑发布处理。
+
+当前验证命令：
+
+```powershell
+uv run pytest tests\test_day26_ci_contract.py
+```
+
+当前结果：
+
+```text
+Day 26 CI contract tests: 4 passed
+Day 24 - Day 26 targeted tests: 9 passed
+Full pytest: 145 passed
+Coverage gate: 145 passed, backend coverage 90.86%
+```
+
 ## 回归要求
 
 任何 bug 修复都要留下一个能复现旧问题的测试。没有测试的修复，后续很容易被重构再次破坏。
