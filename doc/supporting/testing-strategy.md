@@ -265,6 +265,57 @@ npm audit --audit-level=high: 0 vulnerabilities
 uvx pip-audit: No known vulnerabilities found
 ```
 
+## Day 25 Docker Compose 契约测试边界
+
+Day 25 新增 `tests/test_day25_compose_contract.py`，用于把容器化运行拓扑纳入自动化测试。
+
+这组测试覆盖：
+
+- `docker-compose.yml` 必须声明 `postgres`、`redis`、`migrate`、`api`、`worker`、`frontend`。
+- PostgreSQL 必须使用 pgvector 镜像。
+- Redis 必须使用 Redis 7 系列镜像。
+- API 和 Worker 必须依赖 PostgreSQL / Redis healthy 和 `migrate` 成功完成。
+- `migrate` 必须执行 `uv run alembic upgrade head`。
+- Worker 必须执行 Celery worker 启动命令。
+- API / Worker 必须使用容器内部 `postgres` 和 `redis` 地址，而不是 `localhost`。
+- 后端 Dockerfile 必须包含 Python 3.12、uv sync、Playwright Chromium 和 Uvicorn。
+- 前端 Dockerfile 必须包含 Node 22、`npm ci`、`npm run build` 和 `npm run start`。
+- `.env.example` 和 `.dockerignore` 必须覆盖必要变量和本地运行状态。
+
+Day 25 契约测试不等于真实容器 E2E。它验证的是配置结构和关键约束，真实镜像构建、`docker compose up -d`、容器健康检查和容器内任务提交，需要在 Docker Desktop Linux engine 启动后单独执行。
+
+当前验证命令：
+
+```powershell
+uv run pytest tests\test_day25_compose_contract.py
+docker compose config
+```
+
+当前结果：
+
+```text
+compose contract tests: 4 passed
+docker compose config: passed
+full pytest: 141 passed
+coverage gate: 141 passed, backend coverage 90.86%
+ruff: passed
+frontend lint/build: passed
+npm audit: 0 vulnerabilities
+pip-audit: No known vulnerabilities found
+```
+
+当前未完成：
+
+```text
+docker compose build api frontend
+```
+
+未完成原因是本机 Docker Desktop Linux engine 未运行，错误为：
+
+```text
+failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine
+```
+
 ## 回归要求
 
 任何 bug 修复都要留下一个能复现旧问题的测试。没有测试的修复，后续很容易被重构再次破坏。

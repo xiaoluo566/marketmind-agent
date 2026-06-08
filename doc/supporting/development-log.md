@@ -47,8 +47,8 @@
 | --- | --- |
 | 稳定分支 | `main` |
 | 日常开发分支 | `dev` |
-| 当前开发阶段 | Day 24 主链路集成测试 |
-| 当前主链路 | 文档基线、Next.js 控制台骨架、前端真实 API client、真实任务提交表单、任务详情轮询面板、历史任务列表、历史报告列表、报告详情真实读取、报告 evidence chain 真实读取、FastAPI health、任务创建 API、public_url 安全校验、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、Agent step 查询 API、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、相似度检索原型、search_reviews_tool、结构化报告生成骨架、报告入库、证据链回查 API、风险机会评分、结构化错误日志、观测错误查询 API、主链路集成回归样例、数据库模型、Alembic 迁移 |
+| 当前开发阶段 | Day 25 Docker Compose 环境固化 |
+| 当前主链路 | 文档基线、Next.js 控制台骨架、前端真实 API client、真实任务提交表单、任务详情轮询面板、历史任务列表、历史报告列表、报告详情真实读取、报告 evidence chain 真实读取、FastAPI health、任务创建 API、public_url 安全校验、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、Agent step 查询 API、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、相似度检索原型、search_reviews_tool、结构化报告生成骨架、报告入库、证据链回查 API、风险机会评分、结构化错误日志、观测错误查询 API、主链路集成回归样例、Docker Compose 服务拓扑、数据库迁移服务、后端/前端 Dockerfile、数据库模型、Alembic 迁移 |
 | 最新开发提交 | 以 `git log -1 --oneline` 为准 |
 | 当前数据库决策 | PostgreSQL + pgvector，review chunk 使用 `vector(1536)` |
 | 当前模型决策 | 默认 `gpt-5.4-mini`，报告模型 `gpt-5.5`，embedding `text-embedding-3-small` |
@@ -103,7 +103,7 @@
 | Day 22 | Done | 日志、trace、错误分类、结构化错误查询 API | `80e372b` |
 | Day 23 | Done | 单元测试、校验测试、覆盖率门禁 | 见本提交 |
 | Day 24 | Done | 集成测试与回归样例 | 见本提交 |
-| Day 25 | Pending | Docker Compose 一键启动 | 待记录 |
+| Day 25 | Done | Docker Compose 环境固化 | 见本提交 |
 | Day 26 | Pending | CI 与版本回退策略 | 待记录 |
 | Day 27 | Pending | 性能评估和 benchmark 数据 | 待记录 |
 | Day 28 | Pending | 失败重试和续跑机制 | 待记录 |
@@ -1594,7 +1594,7 @@ Day 21 的目标是补齐历史任务和历史报告，让系统从“能跑一�
 | Day 22 | 日志、trace、错误分类 | 结构化 JSON 日志入口、敏感字段脱敏、`ErrorLogStore`、API 错误写入、Worker/Crawler 分类错误、`GET /api/observability/errors` | `uv run pytest` 114 passed，ruff 通过，alembic head 正常，frontend lint/build 通过 | `80e372b` |
 | Day 23 | 测试体系加固与覆盖率门禁 | quality gate 配置测试、coverage fail-under 80、任务状态转换策略、核心 schema 契约测试 | targeted tests 22 passed，coverage full gate 136 passed，coverage 90.80% | 见本提交 |
 | Day 24 | 集成测试与回归样例 | API 提交、Worker 执行、Crawler fixture、采集入库、RAG indexing、报告保存和 evidence API 回查的主链路集成测试 | full pytest 137 passed，coverage 90.86%，ruff/build/audit 通过 | 见本提交 |
-| Day 25 | Docker Compose 一键启动 | 待记录 | 待记录 | 待记录 |
+| Day 25 | Docker Compose 一键启动 | `docker-compose.yml`、后端/前端 Dockerfile、migrate 服务、健康检查、数据卷、env 模板、compose 契约测试和运行手册 | full pytest 141 passed，coverage 90.86%，compose config/lint/build/audit 通过；真实 Docker build 因 daemon 未运行阻塞 | 见本提交 |
 | Day 26 | CI 与版本回退策略 | 待记录 | 待记录 | 待记录 |
 | Day 27 | 性能评估和 benchmark 数据 | 待记录 | 待记录 | 待记录 |
 | Day 28 | 失败重试和续跑机制 | 待记录 | 待记录 | 待记录 |
@@ -1756,6 +1756,62 @@ Day 24 原计划是“集成测试与回归样例”。经过 Day 23 的质量�
 - 报告仍使用确定性生成器，真实 LLM prompt 尚未接入。
 
 这些遗留项进入 Day 25 之后的 Docker Compose、CI、benchmark、E2E 和真实 provider 接入阶段。
+
+## Day 25 开发记录
+
+### 背景
+
+Day 24 已经证明业务模块可以在稳定测试替身下组成主链路，但真实项目还需要解决“别人怎么启动同一套环境”的问题。Day 25 因此不继续加业务功能，而是固化运行拓扑、环境变量和一键启动入口。
+
+### 实际完成
+
+- 新增 `docker-compose.yml`，声明 `postgres`、`redis`、`migrate`、`api`、`worker`、`frontend` 六个服务。
+- 新增 `Dockerfile.backend`，固化 Python 3.12、uv 依赖安装、Playwright Chromium 和 Uvicorn 启动命令。
+- 新增 `frontend/Dockerfile`，固化 Node 22、`npm ci`、Next.js build 和 production start。
+- 新增 `.dockerignore` 和 `frontend/.dockerignore`，避免 `.env`、虚拟环境、node_modules、构建产物和本地数据进入镜像上下文。
+- 扩展 `.env.example`，补充 `POSTGRES_USER`、`POSTGRES_PASSWORD`、`POSTGRES_DB`、`POSTGRES_PORT`、`REDIS_PORT`、`API_PORT`、`FRONTEND_PORT`。
+- 新增 `tests/test_day25_compose_contract.py`，用自动化测试约束 compose 服务、依赖顺序、内部 URL、Dockerfile 和 env 模板。
+- 重写 `doc/roadmap/day-25.md` 和 `doc/supporting/deployment.md`。
+- 新增 `doc/supporting/docker-compose-runbook.md`。
+
+### 当天为什么这样选
+
+今天最重要的选择是：先把运行拓扑写成可测试契约，再尝试真实构建。
+
+原因是 Docker Compose 配置很容易“看起来能跑”，但服务名、内部网络地址、迁移顺序或健康检查任何一个漂移，后续都会导致联调失败。把这些规则写进 `tests/test_day25_compose_contract.py` 后，未来即使没有启动 Docker daemon，也能先发现大部分配置漂移。
+
+另一个选择是新增独立 `migrate` 服务，而不是让 API 容器启动时顺手执行迁移。这样 API、Worker 和迁移职责更清楚，失败日志也更容易定位。
+
+### 当前验证
+
+- `uv run pytest tests\test_day25_compose_contract.py`：4 passed。
+- `uv run pytest tests\test_day25_compose_contract.py tests\test_day24_integration_flow.py`：5 passed。
+- `docker compose config`：通过。
+- `docker --version`：Docker version 29.3.1。
+- `docker compose version`：Docker Compose version v5.1.1。
+- `docker compose build api frontend`：阻塞，Docker Desktop Linux engine 未运行。
+- `uv run pytest`：141 passed。
+- `uv run pytest --cov=backend --cov-report=term-missing`：141 passed，backend coverage 90.86%，达到 80% 门槛。
+- `uv run ruff check backend tests migrations`：通过。
+- `uv run alembic heads`：`0002_task_queue_id (head)`。
+- `cd frontend; npm run lint`：通过。
+- `cd frontend; npm run build`：通过。
+- `cd frontend; npm audit --audit-level=high`：0 vulnerabilities。
+- `uvx pip-audit`：No known vulnerabilities found。
+
+阻塞信息：
+
+```text
+failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine
+```
+
+### 遗留问题
+
+- Docker Desktop Linux engine 启动后，需要补跑真实镜像 build。
+- 还没有执行 `docker compose up -d`。
+- 还没有在容器环境提交样例任务并检查 Worker 消费。
+- 后续 Day 26 做 CI 时，需要决定是否在 GitHub Actions 中跑 compose service health check。
+- 后续如果后端镜像过大，可以把 Playwright 采集能力拆成独立 `crawler-worker` 镜像。
 
 ## 30 天后优化记录
 

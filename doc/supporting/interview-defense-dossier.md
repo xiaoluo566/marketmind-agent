@@ -347,13 +347,19 @@ Day 24 做主链路集成测试时，我继续保留这个分层思路：业务�
 
 > 我把 Day 24 的集成测试设计成“真实业务模块 + 可控基础设施替身”。API、SQLAlchemy store、Worker 主体、Crawler 解析、RAG store、Report store 和 Evidence API 都是真的；Celery broker、外部网页和模型服务用稳定替身。这样测试能证明主链路数据契约闭环，又不会因为本机 Redis 没启动或外部网站波动导致回归不稳定。
 
+Day 25 做 Docker Compose 时，我没有只写一个 `docker-compose.yml` 就结束，而是新增 `tests/test_day25_compose_contract.py` 约束服务清单、健康检查、迁移服务、内部数据库/Redis URL、Dockerfile 构建命令和 `.dockerignore`。原因是部署配置也是工程契约，服务名或依赖顺序一旦漂移，后续 CI 和演示都会失败。
+
+面试可以这样说：
+
+> 我把 Compose 配置也纳入测试，是因为部署文件同样会发生回归。比如 API 容器应该连接 `postgres:5432` 而不是 `localhost:5432`，Worker 应该和 API 使用同一个 Redis broker，迁移应该在 API 启动前完成。这些都可以用轻量契约测试先锁住，再在 Docker daemon 可用时跑真实 `docker compose up`。
+
 ### 7. 我对“不要夸大进度”的思考
 
-这个项目目前推进到 Day 24，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
+这个项目目前推进到 Day 25，不应该说已经完成完整 Agent 系统。面试时我会明确区分：
 
-- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、工具 schema、工具注册机制、最小 ReAct 状态机、Agent step 落库、Agent step 查询 API、结构化输出 guardrails、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、`search_reviews_tool`、结构化报告生成骨架、报告入库、证据链回查 API、评论风险机会评分、前端真实任务提交、任务状态/事件/steps 轮询读取、历史任务、历史报告、报告详情、报告 evidence chain 前端接入、结构化错误日志、观测错误查询 API、coverage 门禁、状态转换策略、核心 schema 契约测试和主链路集成回归样例。
-- 正在做：第四周部署、CI、性能评估和演示准备。
-- 后续做：任务重试、全局 evidence 检索、真实 embedding provider、pgvector 原生检索、真实 LLM report prompt、Docker Compose、E2E、CI。
+- 已完成：后端骨架、数据库模型、任务创建、异步队列、状态快照、任务事件流、PostgreSQL 任务/事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、工具 schema、工具注册机制、最小 ReAct 状态机、Agent step 落库、Agent step 查询 API、结构化输出 guardrails、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、`search_reviews_tool`、结构化报告生成骨架、报告入库、证据链回查 API、评论风险机会评分、前端真实任务提交、任务状态/事件/steps 轮询读取、历史任务、历史报告、报告详情、报告 evidence chain 前端接入、结构化错误日志、观测错误查询 API、coverage 门禁、状态转换策略、核心 schema 契约测试、主链路集成回归样例和 Docker Compose 启动拓扑。
+- 正在做：第四周 CI、性能评估和演示准备。
+- 后续做：任务重试、全局 evidence 检索、真实 embedding provider、pgvector 原生检索、真实 LLM report prompt、Docker Desktop daemon 启动后的真实 compose up 验证、E2E、CI。
 
 我认为这反而是加分项。因为真实开发中，清楚知道自己完成了什么、没完成什么，比把项目包装得过满更可信。
 
@@ -1751,8 +1757,13 @@ Day 22 的自我思考：
 
 ## 目前最适合展示的代码点
 
-截至 Day 24，最适合展示：
+截至 Day 25，最适合展示：
 
+- `docker-compose.yml`：PostgreSQL/pgvector、Redis、迁移、API、Worker 和前端的服务拓扑、健康检查和依赖顺序。
+- `Dockerfile.backend`：Python 3.12、uv、Playwright Chromium 和 Uvicorn 的后端镜像构建方式。
+- `frontend/Dockerfile`：Node 22、`npm ci`、Next.js build 和 production start 的前端镜像构建方式。
+- `tests/test_day25_compose_contract.py`：把 Compose 配置、Dockerfile、env 示例和 `.dockerignore` 纳入自动化测试。
+- `doc/supporting/docker-compose-runbook.md`：一键启动、验证、清理和排错手册。
 - `tests/test_day24_integration_flow.py`：主链路集成测试，串联 API 提交、Worker 执行、采集入库、RAG indexing、报告保存和 evidence API 回查。
 - `backend/app/api/routes/tasks.py`：`GET /api/tasks` 如何支持历史任务查询、状态筛选、时间筛选和分页。
 - `pyproject.toml`：pytest 快速测试配置和 coverage fail-under 80 门禁。
@@ -1863,6 +1874,7 @@ Day 22 的自我思考：
 - Day 22：结构化日志、错误分类、`error_logs` 持久化和错误查询 API 已完成。
 - Day 23：coverage fail-under 80、状态转换策略和核心 schema 契约测试已完成。
 - Day 24：API、Worker、Crawler fixture、RAG、Report 和 evidence API 的主链路集成回归样例已完成。
+- Day 25：Docker Compose 服务拓扑、后端/前端 Dockerfile、迁移服务、运行手册和 compose 契约测试已完成。
 
 中期：
 
@@ -1874,7 +1886,7 @@ Day 22 的自我思考：
 后期：
 
 - 前端历史报告和证据链详情完善。
-- Docker Compose。
+- Docker Desktop daemon 启动后的真实 `docker compose build` / `docker compose up` 验证。
 - LLMOps 指标和 50 次任务复盘。
 
 ## 面试结尾总结
@@ -1889,4 +1901,4 @@ Day 22 的自我思考：
 
 如果让你说下一步：
 
-> 下一步我会补集成测试、Docker Compose 和 E2E，把现在已经有的后端能力变成更稳定的一键演示链路。
+> 下一步我会在 Docker Desktop daemon 可用时补真实 compose up 验证，并继续做 CI 和 E2E，把现在已经有的后端能力变成更稳定的一键演示链路。
