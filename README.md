@@ -1,86 +1,176 @@
 # MarketMind Agent
 
-电商评论洞察与证据链报告 Agent。
+MarketMind Agent 是一个面向电商运营场景的评论洞察与证据链报告系统。
 
-这个仓库用于开发 FastAPI + Celery + PostgreSQL/pgvector + Playwright + Next.js 的电商评论洞察 Agent 系统。
+它不是普通爬虫脚本，也不是只会把评论丢给大模型总结的套壳 demo。项目重点解决三个问题：
 
-## 当前状态
+- 评论分析是长任务，需要异步队列、状态持久化和失败恢复。
+- 运营报告必须有证据链，不能只给一段看起来合理的 AI 文案。
+- Agent 执行过程需要可追踪、可测试、可复盘，方便调试和面试展示。
 
-- `doc/`：30 天开发计划 + 横向设计文档
-- `backend/`：FastAPI 后端、Celery worker、SQLAlchemy 持久化、Playwright 采集、Agent 状态机、RAG 和报告模块
-- `frontend/`：Next.js 控制台，已接入真实任务提交、任务详情轮询、历史任务、历史报告、报告详情和报告证据链
-- `stitch_marketmind_control_center/`：本地 Stitch 原始设计导出，已被 `.gitignore` 忽略，只作为可选视觉参考
-- 本地 Git：已初始化
-- GitHub：私有仓库已创建并已推送初始版本
-- 分支策略：`main` 保持稳定演示版本，`dev` 用于 Day 2 以后日常开发
+截至 Day 29，仓库已经完成 Day 1-28 的核心工程链路，并在 Day 29 完成 README、演示脚本、简历表达和面试讲述材料整理。
 
-## 阅读顺序
+## 架构图
 
-1. [doc/README.md](doc/README.md)
-2. [doc/supporting/project-charter.md](doc/supporting/project-charter.md)
-3. [doc/supporting/dependency-map.md](doc/supporting/dependency-map.md)
-4. [doc/supporting/architecture.md](doc/supporting/architecture.md)
-5. [doc/supporting/data-model.md](doc/supporting/data-model.md)
-6. [doc/roadmap/30-day-master-plan.md](doc/roadmap/30-day-master-plan.md)
+```mermaid
+flowchart TD
+    UI[Next.js 控制台] --> API[FastAPI API Gateway]
+    API --> Queue[Celery + Redis Queue]
+    Queue --> Worker[Worker 主链路]
+    Worker --> Crawler[Playwright 采集]
+    Worker --> Agent[ReAct Agent 状态机]
+    Agent --> Tools[工具层: crawl_product_tool / search_reviews_tool]
+    Tools --> RAG[评论清洗 切片 Embedding 检索]
+    RAG --> Report[结构化报告与证据链]
+    API --> PG[(PostgreSQL + pgvector)]
+    Worker --> PG
+    Report --> PG
+    Queue --> Redis[(Redis 状态与事件缓存)]
+    API --> Redis
+```
 
-## 项目定位
+## 当前能力
 
-这不是一个单纯的爬虫项目，也不是一个只会聊天的 Agent demo。它要做的是把“采集、分析、证据链、报告、回退、复盘”串成一个能持续迭代的工程系统。
+已完成：
 
-更具体地说，它面向电商运营场景，重点解决评论洞察、证据链报告和长任务可追踪，而不是试图替代成熟卖家工具。
+- FastAPI 统一 API envelope、trace ID middleware 和错误封装。
+- Celery + Redis 长任务分发，API 立即返回 `task_id`。
+- Redis 状态快照、Redis 事件流、PostgreSQL 任务和事件持久化。
+- Playwright 最小采集链路、HTML artifact 保存和采集失败分类。
+- SQLAlchemy 数据模型：任务、事件、Agent runs/steps、商品、页面、评论、review chunks、报告、error logs。
+- Agent 工具 schema、工具注册、工具执行 envelope 和最小 ReAct 状态机。
+- Pydantic Guardrails、结构化输出修复和 self-heal 指标入口。
+- 短期记忆滑动窗口、评论清洗切片、deterministic embedding 和 review chunk 检索原型。
+- `search_reviews_tool`、结构化报告生成、证据链回查和风险机会评分。
+- Next.js 控制台：任务提交、任务详情轮询、Agent step 摘要、历史任务、历史报告、报告详情和 evidence chain。
+- 结构化错误日志、`error_logs` 持久化和观测错误查询 API。
+- Docker Compose 拓扑、后端/前端 Dockerfile、迁移服务和 compose 契约测试。
+- GitHub Actions CI、PR 模板、发布检查清单和回退运行手册。
+- Day27 fixture benchmark：20 个样例任务，成功率 95.00%，平均 338 ms，P95 391 ms。
+- Day28 失败任务 retry：`POST /api/tasks/{task_id}/retry`、`waiting_retry` 状态流和 Worker recovery resume 事件。
 
-## 当前阶段
+尚未完成：
 
-当前已完成 Day 1-28 的阶段性开发，并完成一次推主分支前审计。系统已经具备：
+- 前端 retry 按钮。
+- 全局 `GET /api/evidence`。
+- 真实 embedding provider 和 pgvector 原生排序。
+- 真实 LLM report prompt。
+- 真实 `docker compose build` / `docker compose up` 联调。
+- Playwright E2E 和 GitHub branch protection。
 
-- FastAPI 统一 API envelope 和 trace ID。
-- Celery + Redis 长任务分发与任务状态缓存。
-- PostgreSQL / SQLAlchemy 任务、事件、Agent step、评论、review chunk、报告和 artifact 持久化。
-- Playwright 最小采集链路和 HTML artifact 保存。
-- Agent 工具 schema、工具注册、最小 ReAct 状态机和 Agent step 落库。
-- Pydantic Guardrails、结构化输出修复和自愈统计入口。
-- 短期记忆滑动窗口、评论清洗切片、deterministic embedding、review chunk 检索。
-- `search_reviews_tool`、结构化报告生成、证据链回查和风险/机会评分。
-- Next.js 真实任务提交、任务详情轮询、Agent step 摘要、历史任务、历史报告、报告详情和报告 evidence chain 展示。
-- 结构化错误日志、`error_logs` 持久化、观测错误查询 API。
-- pytest 快速测试、coverage fail-under 80 门禁、状态转换策略、核心 schema 契约测试和主链路集成回归样例。
-- Docker Compose 服务拓扑、后端/前端 Dockerfile、迁移服务、健康检查、数据卷和 compose 契约测试。
-- GitHub Actions CI、PR 模板、发布检查清单、回退运行手册和 CI 契约测试。
-- Day27 fixture 主链路 benchmark、20 个样例任务、性能 JSON/Markdown artifact 和瓶颈分析。
-- Day28 失败重试策略、`POST /api/tasks/{task_id}/retry`、`waiting_retry` 状态流和 Worker recovery resume 事件。
+## 快速启动
 
-尚未完成的能力包括前端 retry 操作入口、全局 evidence 检索接口、真实 embedding provider、pgvector 原生排序、真实 LLM report prompt、Docker Desktop daemon 启动后的真实镜像 build / compose up 验证、Playwright E2E 和 GitHub branch protection。
+### 1. 后端本地开发
 
-## 验证命令
+```powershell
+uv sync
+uv run alembic upgrade head
+uv run uvicorn app.main:create_app --factory --app-dir backend --reload
+```
+
+默认 API：
+
+```text
+http://localhost:8000/api/health
+```
+
+### 2. 前端本地开发
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+默认前端：
+
+```text
+http://localhost:3000
+```
+
+### 3. Docker Compose
+
+当前已经验证 `docker compose config`，但还没有在本机完成真实镜像 build / compose up。Docker Desktop Linux engine 可用后再执行：
+
+```powershell
+Copy-Item .env.example .env
+docker compose up --build
+```
+
+详细步骤见 [docker-compose-runbook.md](doc/supporting/docker-compose-runbook.md)。
+
+## 常用验证
 
 ```powershell
 uv run pytest
 uv run pytest --cov=backend --cov-report=term-missing
 uv run ruff check backend tests migrations
 uv run alembic heads
-uv run pytest tests\test_day26_ci_contract.py
-uv run pytest tests\test_day27_benchmarking.py
-uv run pytest tests\test_day28_recovery.py
-uv run pytest tests\test_day25_compose_contract.py
 docker compose config
-$env:PYTHONPATH='backend'; uv run python -m app.benchmarking.main_path --iterations 20 --output-dir doc\supporting
+
 cd frontend
 npm run lint
 npm run build
 npm audit --audit-level=high
+cd ..
+
+uvx pip-audit
 ```
 
-## 开发原则
+最新 Day29 本地完整门禁：
 
-- 先做可跑通的闭环，再做规模化扩展
-- 先保证可观测和可回退，再优化性能
-- 所有长任务必须有状态持久化和失败恢复
-- 所有 Agent 输出必须经过结构化校验
-- 所有新功能都要能落到对应的文档和验收标准上
+- `uv run pytest`：162 passed。
+- coverage：90.79%。
+- ruff、alembic heads、compose config：通过。
+- frontend lint / build / audit：通过。
+- `uvx pip-audit`：No known vulnerabilities found。
 
-## 版本策略
+## 演示路径
 
-- `main`：可演示、可回退、可打标签的稳定版本
-- `dev`：日常开发汇总分支
-- `feature/*`：短周期功能分支
-- 每个里程碑都保留 Git tag 和 GitHub 版本记录
+推荐按 5-8 分钟演示：
+
+1. 打开 Next.js 控制台，说明系统定位是“评论洞察与证据链报告”。
+2. 提交一个 fixture / public URL 任务，展示 API 返回 `task_id`。
+3. 打开任务详情页，展示状态、事件流和 Agent step 摘要。
+4. 打开历史任务和历史报告，说明任务不是一次性脚本，结果可复盘。
+5. 打开报告详情和 evidence chain，说明报告结论如何回查到评论 chunk / artifact / Agent step。
+6. 展示 Day27 benchmark artifact，说明性能指标不是口头估计。
+7. 展示 Day28 retry API 和 recovery event，说明失败任务如何进入恢复链路。
+8. 最后展示 GitHub Actions 通过记录和开发日志。
+
+完整演示脚本见 [doc/supporting/demo-script.md](doc/supporting/demo-script.md)。
+
+## 简历与面试材料
+
+- 简历 bullet：见 [doc/supporting/resume-story.md](doc/supporting/resume-story.md)。
+- 2 分钟项目讲述：见 [doc/supporting/interview-story.md](doc/supporting/interview-story.md)。
+- 深度追问防守：见 [doc/supporting/interview-defense-dossier.md](doc/supporting/interview-defense-dossier.md)。
+- 开发过程复盘：见 [doc/supporting/development-log.md](doc/supporting/development-log.md)。
+
+## 已知边界
+
+这些边界需要在 README、面试和演示中如实说明：
+
+- Day27 benchmark 是 fixture benchmark，不代表真实外部网站吞吐。
+- 当前模型调用和 token 成本统计仍为 0，因为还没有接真实 LLM / embedding provider。
+- Day28 retry 是任务级恢复，不是精确到 Agent Thought / Action / Observation 的完整 replay。
+- `backoff_seconds` 当前只是 metadata，尚未接 Celery countdown。
+- Docker Compose 目前只验证了配置解析，真实容器 build/up 需要 Docker Desktop daemon 可用后补验。
+- 项目不承诺替代成熟卖家工具，也不承诺全网稳定采集或销量预测。
+
+## 阅读顺序
+
+1. [doc/README.md](doc/README.md)
+2. [doc/supporting/project-charter.md](doc/supporting/project-charter.md)
+3. [doc/supporting/architecture.md](doc/supporting/architecture.md)
+4. [doc/supporting/api-contract.md](doc/supporting/api-contract.md)
+5. [doc/supporting/testing-strategy.md](doc/supporting/testing-strategy.md)
+6. [doc/supporting/demo-script.md](doc/supporting/demo-script.md)
+7. [doc/supporting/resume-story.md](doc/supporting/resume-story.md)
+8. [doc/supporting/interview-story.md](doc/supporting/interview-story.md)
+
+## 分支策略
+
+- `main`：稳定演示和可回退版本。
+- `dev`：日常开发分支。
+- commit 使用中文 Conventional Commit，例如 `feat: 增加 Day 28 失败重试和恢复策略`。

@@ -440,6 +440,47 @@ npm audit: 0 vulnerabilities
 pip-audit: No known vulnerabilities found
 ```
 
+## Day 29 Demo 文档测试边界
+
+Day 29 新增 `tests/test_day29_demo_docs.py`，用于把 README、演示脚本、简历表达和面试讲述稿纳入自动化契约。
+
+这组测试覆盖：
+
+- `README.md` 必须包含 Day 29、快速启动、架构图、演示路径、已知边界，以及 demo / resume / interview 材料链接。
+- `doc/supporting/demo-script.md` 必须包含 5-8 分钟、演示前检查、主线演示流程、失败重试、备用路线和不要现场声称。
+- `doc/supporting/resume-story.md` 必须包含 Day27 fixture benchmark、Day28 失败任务 retry、90.79%、157 passed 和不建议写。
+- `doc/supporting/interview-story.md` 必须包含 2 分钟版本、不是套壳、Day 28、Day 29 和追问回答。
+- `doc/supporting/development-log.md` 必须记录 Day 29 开发记录。
+- `doc/supporting/testing-strategy.md` 必须记录 Day 29 Demo 文档测试边界。
+
+Day 29 当前不覆盖：
+
+- 截图是否真实生成。
+- 演示录屏是否真实录制。
+- Docker Compose 是否真实 build/up。
+- 面试官是否认可表达质量。
+
+当前验证命令：
+
+```powershell
+uv run pytest tests\test_day29_demo_docs.py
+```
+
+当前结果：
+
+```text
+Day29 demo docs tests: 5 passed
+Day27-Day29 targeted tests: 17 passed
+Full pytest: 162 passed
+Coverage gate: 162 passed, backend coverage 90.79%
+ruff: passed
+alembic heads: 0002_task_queue_id (head)
+docker compose config: passed
+frontend lint/build: passed
+npm audit: 0 vulnerabilities
+pip-audit: No known vulnerabilities found
+```
+
 ## 回归要求
 
 任何 bug 修复都要留下一个能复现旧问题的测试。没有测试的修复，后续很容易被重构再次破坏。

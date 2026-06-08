@@ -47,8 +47,8 @@
 | --- | --- |
 | 稳定分支 | `main` |
 | 日常开发分支 | `dev` |
-| 当前开发阶段 | Day 28 失败恢复与重试策略 |
-| 当前主链路 | 文档基线、Next.js 控制台骨架、前端真实 API client、真实任务提交表单、任务详情轮询面板、历史任务列表、历史报告列表、报告详情真实读取、报告 evidence chain 真实读取、FastAPI health、任务创建 API、public_url 安全校验、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、Agent step 查询 API、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、相似度检索原型、search_reviews_tool、结构化报告生成骨架、报告入库、证据链回查 API、风险机会评分、结构化错误日志、观测错误查询 API、主链路集成回归样例、Docker Compose 服务拓扑、数据库迁移服务、后端/前端 Dockerfile、GitHub Actions CI、PR 模板、发布检查清单、回退运行手册、Day27 benchmark harness、20 个 fixture 样例任务、性能 summary artifact、Day28 retry policy、任务 retry API、Worker recovery resume 事件、数据库模型、Alembic 迁移 |
+| 当前开发阶段 | Day 29 README、演示脚本与简历材料整理 |
+| 当前主链路 | 文档基线、Next.js 控制台骨架、前端真实 API client、真实任务提交表单、任务详情轮询面板、历史任务列表、历史报告列表、报告详情真实读取、报告 evidence chain 真实读取、FastAPI health、任务创建 API、public_url 安全校验、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、Agent step 查询 API、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、相似度检索原型、search_reviews_tool、结构化报告生成骨架、报告入库、证据链回查 API、风险机会评分、结构化错误日志、观测错误查询 API、主链路集成回归样例、Docker Compose 服务拓扑、数据库迁移服务、后端/前端 Dockerfile、GitHub Actions CI、PR 模板、发布检查清单、回退运行手册、Day27 benchmark harness、20 个 fixture 样例任务、性能 summary artifact、Day28 retry policy、任务 retry API、Worker recovery resume 事件、Day29 README/demo/resume/interview materials、数据库模型、Alembic 迁移 |
 | 最新开发提交 | 以 `git log -1 --oneline` 为准 |
 | 当前数据库决策 | PostgreSQL + pgvector，review chunk 使用 `vector(1536)` |
 | 当前模型决策 | 默认 `gpt-5.4-mini`，报告模型 `gpt-5.5`，embedding `text-embedding-3-small` |
@@ -107,7 +107,7 @@
 | Day 26 | Done | CI 与版本回退策略 | 见本提交 |
 | Day 27 | Done | 性能评估和 benchmark 数据 | 见本提交 |
 | Day 28 | Done | 失败重试和续跑机制 | 见本提交 |
-| Day 29 | Pending | README、demo 和演示素材 | 待记录 |
+| Day 29 | Done | README、demo 和演示素材 | 见本提交 |
 | Day 30 | Pending | 里程碑发布、tag、指标和复盘 | 待记录 |
 
 ## Day 01 记录
@@ -1387,7 +1387,7 @@ Day 20 的目标是补齐“任务提交后怎么观察运行过程”的缺口�
 - `GET /api/tasks` 尚未实现，任务列表页仍然 fallback 到 mock data。
 - `GET /api/reports` 和 `GET /api/reports/{report_id}` 尚未实现，报告列表和报告详情仍然 fallback。
 - steps API 当前展示摘要，不支持按 run 过滤或展开单步详情。
-- 失败任务重试 `POST /api/tasks/{task_id}/retry` 尚未实现。
+- 当时未提供失败任务重试 `POST /api/tasks/{task_id}/retry`；Day 28 已完成后端 retry API 和 Worker recovery event，前端按钮与 Agent step replay 仍是后续项。
 
 ### 下一步
 
@@ -1598,7 +1598,7 @@ Day 21 的目标是补齐历史任务和历史报告，让系统从“能跑一�
 | Day 26 | CI 与版本回退策略 | `.github/workflows/ci.yml`、PR 模板、release checklist、rollback runbook、CI 契约测试和 Day26 文档同步 | Day26 contract tests 4 passed；Day24-Day26 targeted tests 9 passed；full pytest 145 passed；coverage 90.86%；ruff/alembic/compose config/frontend lint/build/audit/pip-audit 通过 | 见本提交 |
 | Day 27 | 性能评估和 benchmark 数据 | `backend/app/benchmarking/*`、`tests/test_day27_benchmarking.py`、20 个 fixture 样例任务、benchmark JSON/Markdown artifact、性能文档和 LLMOps 指标补充 | Day27 tests 5 passed；benchmark 20 samples，success 95%，avg 338ms，P95 391ms；full pytest 150 passed；coverage 90.80%；ruff/alembic/compose/frontend/audit 通过 | 见本提交 |
 | Day 28 | 失败重试和续跑机制 | `backend/app/tasks/recovery.py`、`POST /api/tasks/{task_id}/retry`、`waiting_retry` 状态流、Worker recovery resume 事件、Day28 recovery tests 和文档同步 | Day28 recovery tests 7 passed；Day26-Day28 targeted tests 16 passed；full pytest 157 passed；coverage 90.79%；ruff/alembic/compose config/frontend lint/build/audit/pip-audit 通过 | 见本提交 |
-| Day 29 | README、demo 和演示素材 | 待记录 | 待记录 | 待记录 |
+| Day 29 | README、demo 和演示素材 | `README.md`、`doc/supporting/demo-script.md`、`doc/supporting/resume-story.md`、`doc/supporting/interview-story.md`、`tests/test_day29_demo_docs.py` 和 Day29 文档同步 | Day29 demo docs tests 5 passed；Day27-Day29 targeted tests 17 passed；full pytest 162 passed；coverage 90.79%；ruff/alembic/compose config/frontend lint/build/audit/pip-audit 通过 | 见本提交 |
 | Day 30 | 里程碑发布、tag、指标和复盘 | 待记录 | 待记录 | 待记录 |
 
 ## Day 22 开发记录
@@ -1646,7 +1646,7 @@ Day 22 因此选择先做“可排障闭环”，而不是直接做复杂 LLMOps
 
 - 错误日志查询接口还没有前端 UI。
 - 错误日志还没有按 `error_code` 聚合统计。
-- `POST /api/tasks/{task_id}/retry` 尚未实现，错误分类还没有和自动恢复策略打通。
+- 当时未提供 `POST /api/tasks/{task_id}/retry`；Day 28 已把错误分类接入后端 retry 策略，前端入口和 Celery countdown 仍未实现。
 - 当前结构化日志仍输出到应用日志流，后续可以接 Loguru、OpenTelemetry、ELK 或 Grafana Loki。
 
 ## Day 23 开发记录
@@ -1689,7 +1689,7 @@ Day 23 原计划是补单元测试和校验测试。但项目从 Day 4 起一直
 
 ### 遗留问题
 
-- `status_policy.py` 还没有接入 `SQLAlchemyTaskStatusStore` 或 retry / cancel API。
+- 当时 `status_policy.py` 还没有接入 `SQLAlchemyTaskStatusStore` 或 retry / cancel API；Day 28 已在 retry 业务入口使用 `waiting_retry` 状态流，底层 store 级策略下沉和 cancel API 仍未实现。
 - 还没有 Playwright E2E。
 - 还没有真实 PostgreSQL / Redis / Celery 的 Docker 集成测试。
 - 还没有 CI workflow。
@@ -2081,6 +2081,67 @@ message = "task recovery resumed"
 ### 下一步
 
 Day 29 优先做 README、demo script 和演示素材，确保 Day 1-28 的能力能被快速理解和演示。retry 能力后续需要接入前端失败任务详情页，并在 Day 30 复盘时加入恢复成功率指标。
+
+## Day 29 开发记录
+
+### 背景
+
+Day 1-28 已经完成了主链路、CI、benchmark 和失败任务 retry，但项目入口文档仍然偏开发备忘录，不够适合陌生人阅读、面试展示和简历复盘。Day 29 的重点是把已经完成的能力整理成可展示材料。
+
+今天没有新增业务功能，而是把文档也当作工程交付物处理：先写测试定义 README、demo script、resume story、interview story 和开发日志必须包含哪些内容，再重写这些文档。
+
+### 实际完成
+
+- 新增 `tests/test_day29_demo_docs.py`。
+- 重写 `README.md`，补充项目定位、架构图、快速启动、演示路径、已知边界和核心材料入口。
+- 重写 `doc/supporting/demo-script.md`，补充 5-8 分钟主线演示流程、演示前检查、失败重试讲法、备用路线和不要现场声称的内容。
+- 重写 `doc/supporting/resume-story.md`，把简历 bullet 收敛到已验证事实和指标。
+- 重写 `doc/supporting/interview-story.md`，补充 30 秒 / 2 分钟讲述、不是套壳、Day28 retry 和 Day29 文档交付怎么讲。
+- 重写 `doc/roadmap/day-29.md`，把原来的简略计划扩展成执行手册。
+- 更新 `doc/supporting/testing-strategy.md`，记录 Day 29 Demo 文档测试边界。
+- 修正历史开发日志中容易误导的 retry 旧表述，保留历史事实，同时标明 Day 28 已完成后端 retry。
+
+### 当天为什么这样选
+
+今天选择先补 README 和演示材料，而不是继续加功能，是因为 Day 30 要进入里程碑验收。如果项目入口说不清楚，即使后端能力已经很多，面试官或未来维护者也很难快速判断项目价值。
+
+另一个选择是把文档也纳入测试。原因是 Day29 的交付物不是单个 API，而是“项目能被理解和展示”。如果只人工检查 README，很容易漏掉快速启动、已知边界或简历指标来源。`tests/test_day29_demo_docs.py` 把这些要求固定下来，后续改文档时能及时发现缺口。
+
+今天还特别强调不要夸大：
+
+- Day27 benchmark 必须写成 fixture benchmark。
+- Day28 retry 必须写成任务级恢复。
+- Docker Compose 只能说 `config` 已验证，不能说真实 build/up 已完成。
+- 简历指标只能使用 `157 passed`、coverage `90.79%`、20 个 fixture 样例、95.00% 成功率、338 ms 平均耗时和 391 ms P95 这些已有数据。
+
+### 当前验证
+
+- `uv run pytest tests\test_day29_demo_docs.py`：开发中先 RED，5 failed。
+- `uv run pytest tests\test_day29_demo_docs.py`：5 passed。
+- `uv run pytest tests\test_day29_demo_docs.py tests\test_day28_recovery.py tests\test_day27_benchmarking.py`：17 passed。
+
+完整门禁：
+
+- `uv run pytest`：162 passed。
+- `uv run pytest --cov=backend --cov-report=term-missing`：162 passed，backend coverage 90.79%，达到 80% 门槛。
+- `uv run ruff check backend tests migrations`：All checks passed。
+- `uv run alembic heads`：`0002_task_queue_id (head)`。
+- `docker compose config`：通过。
+- `cd frontend; npm run lint`：通过。
+- `cd frontend; npm run build`：通过。
+- `cd frontend; npm audit --audit-level=high`：found 0 vulnerabilities。
+- `uvx pip-audit`：No known vulnerabilities found。
+
+### 遗留问题
+
+- README 和演示材料已经整理，但真实演示录屏 / 截图还没有生成。
+- 还没有真实 `docker compose build` / `docker compose up` 补验。
+- 还没有前端 retry 按钮。
+- 还没有 Day30 release candidate、tag 和总复盘指标表。
+
+### 下一步
+
+Day 30 进入里程碑验收：跑完整质量门禁、复核 release checklist、整理指标 summary、决定是否创建 release candidate tag，并把 30 天后优化方向从计划转成 backlog。
 
 ## 30 天后优化记录
 

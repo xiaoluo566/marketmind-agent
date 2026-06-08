@@ -183,7 +183,7 @@ OpenTelemetry 更标准，但 Day 22 的主要目标是让当前系统可排查�
 
 ## 遗留问题
 
-- `POST /api/tasks/{task_id}/retry` 尚未实现，错误分类暂时只能用于复盘，不能自动恢复。
+- 当时未提供 `POST /api/tasks/{task_id}/retry`，错误分类暂时只能用于复盘，不能自动恢复；Day 28 已完成后端 retry API，前端入口、Celery countdown 和 Agent step replay 仍未实现。
 - `GET /api/observability/errors` 还没有前端页面。
 - 还没有跨任务错误统计，例如按 `error_code` 聚合失败次数。
 - 还没有 LLM token / cost 维度的指标面板。

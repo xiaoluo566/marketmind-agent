@@ -286,7 +286,7 @@ Day 1-21 阶段审计时发现三个和 Day 21 强相关的问题，并已补齐
 
 ## 遗留问题
 
-- `POST /api/tasks/{task_id}/retry` 尚未实现。
+- 当时未提供 `POST /api/tasks/{task_id}/retry`；Day 28 已完成后端 retry API 和 Worker recovery event，前端按钮、Celery countdown 和 Agent step replay 仍未实现。
 - `GET /api/evidence` 仍未实现，证据总览页继续 mock fallback。
 - 前端报告 section 字段仍叫 `evidence_ids`，真实后端实际返回 evidence refs，后续需要统一命名。
 - 历史列表页面还没有 UI 筛选控件，目前筛选能力先落在 API 层。

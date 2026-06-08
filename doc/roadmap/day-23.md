@@ -151,7 +151,7 @@ Day 23 的真正价值是把测试体系变成工程门禁：
 
 ## 遗留问题
 
-- `status_policy.py` 还没有接入 `SQLAlchemyTaskStatusStore` 或 retry API。
+- 当时 `status_policy.py` 还没有接入 `SQLAlchemyTaskStatusStore` 或恢复入口；Day 28 已在 retry 业务入口使用 `waiting_retry` 状态流，store 级策略下沉和 cancel API 仍未实现。
 - 还没有 Playwright E2E 测试。
 - 还没有真实 PostgreSQL / Redis / Celery 的 Docker 集成测试。
 - 还没有 CI workflow。
