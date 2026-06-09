@@ -19,8 +19,8 @@ export function formatDuration(ms?: number): string {
 }
 
 export function formatDateTime(value: string): string {
-  return new Intl.DateTimeFormat("en", {
-    month: "short",
+  return new Intl.DateTimeFormat("zh-CN", {
+    month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
@@ -30,4 +30,3 @@ export function formatDateTime(value: string): string {
 export function percent(value: number): string {
   return `${Math.round(value * 100)}%`;
 }
-

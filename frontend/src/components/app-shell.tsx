@@ -18,12 +18,12 @@ import { getApiBaseUrl, getApiModeLabel, isRealApiEnabled } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/research/new", label: "New Research", icon: PlusCircle },
-  { href: "/tasks", label: "Tasks", icon: ListChecks },
-  { href: "/reports", label: "Reports", icon: FileText },
-  { href: "/evidence", label: "Evidence", icon: Search },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/", label: "工作台", icon: LayoutDashboard },
+  { href: "/research/new", label: "新建调研", icon: PlusCircle },
+  { href: "/tasks", label: "任务", icon: ListChecks },
+  { href: "/reports", label: "报告", icon: FileText },
+  { href: "/evidence", label: "证据链", icon: Search },
+  { href: "/settings", label: "设置", icon: Settings },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -39,7 +39,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div>
               <p className="text-sm font-semibold text-slate-950">MarketMind Agent</p>
               <p className="font-mono text-[11px] uppercase tracking-wide text-slate-500">
-                Evidence cockpit
+                证据链控制台
               </p>
             </div>
           </div>
@@ -72,9 +72,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="flex items-center gap-3">
               <Activity className="h-4 w-4 text-blue-700" aria-hidden="true" />
               <div>
-                <p className="text-sm font-semibold text-slate-950">Local Dev</p>
+                <p className="text-sm font-semibold text-slate-950">本地开发环境</p>
                 <p className="font-mono text-[11px] uppercase tracking-wide text-slate-500">
-                  {realApiEnabled ? getApiBaseUrl() : "API mock client active"}
+                  {realApiEnabled ? getApiBaseUrl() : "API 模拟客户端已启用"}
                 </p>
               </div>
             </div>
@@ -90,12 +90,12 @@ export function AppShell({ children }: { children: ReactNode }) {
                 {apiModeLabel}
               </span>
               <span className="hidden rounded border border-slate-200 bg-slate-50 px-2 py-1 font-mono text-[11px] font-semibold uppercase text-slate-600 sm:inline-flex">
-                OpenAI-compatible
+                OpenAI 兼容
               </span>
               <button
                 className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                 type="button"
-                aria-label="Refresh"
+                aria-label="刷新"
               >
                 <RefreshCw className="h-4 w-4" aria-hidden="true" />
               </button>

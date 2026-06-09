@@ -1914,6 +1914,32 @@ Day 30 的面试讲法重点是：我没有把项目硬包装成 v1.0，而是�
 
 > 最大缺口不是单个模块，而是真实生产化联调还没完成。具体包括真实 compose build/up、真实 embedding provider、真实 LLM report prompt、前端 retry 按钮和 Playwright E2E。我已经把它们写进 `day30-bug-summary.md` 和 `future-iterations.md`，第二阶段优先补这些，而不是继续发散新功能。
 
+## Day 31 中文界面基线怎么讲
+
+Day31 的面试讲法重点是：我没有把前端中文化当成简单翻译，而是把它作为第二阶段产品可用性和工程契约的一部分。
+
+可以这样介绍：
+
+> Day31 我先写 `tests/test_frontend_localization_contract.py`，让测试暴露 AppShell、Dashboard、NewResearchForm、任务、报告、证据链、设置页里的英文模板残留。然后再逐步把核心可见文案切换成中文，同时保留 `task_id`、`report_id`、`trace_id`、`source_type`、`enable_rag` 这些前后端契约字段。这样既提升演示和真实使用体验，也避免为了中文化破坏 API 对接。
+
+这一天可以强调的工程思考：
+
+- 中文化不是把所有英文都翻译掉，API 字段、枚举、trace id 和 provider 名称应该保留。
+- 设置页采用“中文 label + 技术 key”是有意设计：运营用户看到中文含义，开发者仍能看到真实配置字段。
+- 没有直接引入完整 i18n 框架，是因为当前目标只有中文运营场景；过早引入会增加不必要复杂度。
+- 日期格式也属于中文界面的一部分，所以把 `Intl.DateTimeFormat("en")` 改成 `zh-CN` 并写入测试。
+- HTML `lang` 和 metadata 也属于界面完整性，所以根布局从 `lang="en"` 改成 `lang="zh-CN"`。
+- `StatusBadge` 不能依赖 `status.replace` 这种英文 fallback，状态文案应该有明确映射。
+- 浏览器验收时发现 `NEXT_PUBLIC_USE_MOCKS` 在生产构建中会被内联，因此 mock 预览要用 dev server 或在 build 前注入变量。
+
+如果面试官问“为什么 Day31 先做界面中文化，而不是继续做模型能力”，可以回答：
+
+> 因为项目已经进入第二阶段，目标从完成工程化 RC 转为提高可用性和真实演示质量。前端是面试和用户最先看到的入口，如果页面还停留在英文模板状态，会削弱项目完成度。先统一中文术语，后续 retry、真实 provider、LLMOps 和 E2E 都能沿用同一套表达，减少返工。
+
+如果面试官问“你怎么保证中文化不会误伤前后端契约”，可以回答：
+
+> 我用测试明确区分了用户可见文案和技术字段。测试要求页面出现中文标题、按钮和状态，但同时要求 `source_type`、`use_rag`、`enable_rag` 等字段仍然存在。这样中文化只改展示层，不改 API 契约。
+
 ## 后续迭代计划怎么讲
 
 短期：
@@ -1966,4 +1992,4 @@ Day 30 的面试讲法重点是：我没有把项目硬包装成 v1.0，而是�
 
 如果让你说下一步：
 
-> 下一步我会做 README、demo script 和演示素材，把 Day 1-28 已经完成的异步任务、证据链、benchmark 和失败恢复能力整理成可演示链路；同时补前端 retry 按钮和真实 compose up 验证，让本地演示更接近完整产品。
+> 下一步我会进入第二阶段，先把前端界面中文化，统一任务、报告、证据链、重试、恢复等术语；然后补前端 retry 按钮、真实 compose build/up、真实 embedding provider、真实 LLM report prompt 和 Playwright E2E。第二阶段的重点不是继续堆新名词，而是提升系统的可用性、数据可信度和真实联调深度。

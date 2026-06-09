@@ -21,6 +21,29 @@ const styles: Record<string, string> = {
   healthy: "border-emerald-200 bg-emerald-50 text-emerald-700",
 };
 
+const labels: Record<string, string> = {
+  received: "已接收",
+  queued: "排队中",
+  running: "运行中",
+  crawling: "采集中",
+  reasoning: "推理中",
+  retrieving: "检索中",
+  reporting: "生成报告",
+  waiting_retry: "等待重试",
+  completed: "已完成",
+  failed: "失败",
+  cancelled: "已取消",
+  success: "成功",
+  pending: "待处理",
+  offline: "离线",
+  mock: "模拟",
+  delayed: "延迟",
+  healthy: "健康",
+  low: "低风险",
+  medium: "中风险",
+  high: "高风险",
+};
+
 export function StatusBadge({
   status,
   className,
@@ -36,8 +59,7 @@ export function StatusBadge({
         className,
       )}
     >
-      {status.replace("_", " ")}
+      {labels[status] ?? status}
     </span>
   );
 }
-

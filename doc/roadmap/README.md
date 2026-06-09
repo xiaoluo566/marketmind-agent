@@ -40,3 +40,12 @@
 - 采集数据必须有来源
 - 报告必须有证据链
 - 失败必须可追踪和可恢复
+
+## 第二阶段路线
+
+Day 30 之后不再继续扩写“30 天计划”，而是进入第二阶段：
+
+- `phase-2-master-plan.md`：第二阶段总计划。
+- `day-31.md`：中文界面与术语统一。
+
+第二阶段仍然按“前一天检查 -> 当天开发 -> 文档同步 -> 测试验证 -> 提交推送”的节奏执行。第一批重点是中文界面、前端 retry 按钮、真实 compose build/up、真实 embedding provider、真实 LLM report prompt、Playwright E2E 和 branch protection。

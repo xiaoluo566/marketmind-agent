@@ -11,20 +11,20 @@ export default async function TasksPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Tasks"
-        title="Research task history"
-        description="Track queued, running, failed, and completed research tasks with trace IDs and report links."
+        eyebrow="任务"
+        title="调研任务历史"
+        description="跟踪排队、运行、失败和完成的调研任务，并查看 Trace ID 与报告链接。"
       />
       <div className="p-6">
         <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
           <table className="min-w-full divide-y divide-slate-100 text-sm">
             <thead className="bg-slate-50 text-left font-mono text-[11px] uppercase tracking-wide text-slate-500">
               <tr>
-                <th className="px-4 py-3">Task</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Mode</th>
-                <th className="px-4 py-3">Duration</th>
-                <th className="px-4 py-3">Created</th>
+                <th className="px-4 py-3">任务</th>
+                <th className="px-4 py-3">状态</th>
+                <th className="px-4 py-3">模式</th>
+                <th className="px-4 py-3">耗时</th>
+                <th className="px-4 py-3">创建时间</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -49,4 +49,3 @@ export default async function TasksPage() {
     </>
   );
 }
-

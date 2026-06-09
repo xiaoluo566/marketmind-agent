@@ -44,7 +44,7 @@ export function isRealApiEnabled() {
 }
 
 export function getApiModeLabel() {
-  return isRealApiEnabled() ? "Real API" : "Mock";
+  return isRealApiEnabled() ? "真实 API" : "模拟模式";
 }
 
 export function getApiBaseUrl() {
@@ -351,7 +351,7 @@ function mapBackendEvidenceSource(source: BackendEvidenceSource, taskId: string)
     source_url: source.source_url ?? source.evidence_ref,
     similarity: source.available ? 1 : 0,
     rating: numericMetadataValue(source.metadata.rating),
-    content: source.content_preview ?? source.missing_reason ?? "Evidence source unavailable.",
+    content: source.content_preview ?? source.missing_reason ?? "证据来源不可用。",
     task_id: source.task_id ?? taskId,
     metadata: stringifyMetadata({
       ...source.metadata,

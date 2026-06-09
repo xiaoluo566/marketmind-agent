@@ -3,7 +3,7 @@ import type { AgentStep, Evidence, Report, SystemService, Task, TaskEvent } from
 export const tasks: Task[] = [
   {
     task_id: "tsk_9A21",
-    title: "Portable espresso maker competitor scan",
+    title: "便携咖啡机竞品扫描",
     target: "https://example.com/products/portable-espresso",
     mode: "complete_report",
     status: "reasoning",
@@ -15,7 +15,7 @@ export const tasks: Task[] = [
   },
   {
     task_id: "tsk_8B77",
-    title: "Desk lamp poor review analysis",
+    title: "台灯差评分析",
     target: "demo://desk-lamp-reviews.csv",
     mode: "review_risk_scan",
     status: "completed",
@@ -29,7 +29,7 @@ export const tasks: Task[] = [
   },
   {
     task_id: "tsk_7C03",
-    title: "Pet water fountain opportunity report",
+    title: "宠物饮水机机会点报告",
     target: "demo://pet-fountain-reviews.json",
     mode: "opportunity_analysis",
     status: "reporting",
@@ -41,7 +41,7 @@ export const tasks: Task[] = [
   },
   {
     task_id: "tsk_6D44",
-    title: "USB-C hub crawler run",
+    title: "USB-C 拓展坞采集任务",
     target: "https://example.com/products/usbc-hub",
     mode: "competitor_review",
     status: "failed",
@@ -54,7 +54,7 @@ export const tasks: Task[] = [
   },
   {
     task_id: "tsk_5E19",
-    title: "Smart scale return reason scan",
+    title: "智能体脂秤退货原因扫描",
     target: "demo://smart-scale-reviews.csv",
     mode: "risk_scan",
     status: "completed",
@@ -75,7 +75,7 @@ export const taskEvents: TaskEvent[] = [
     module: "api",
     event_type: "task.accepted",
     status: "received",
-    message: "Task accepted and persisted.",
+    message: "任务已接收并持久化。",
     created_at: "2026-05-25T01:15:00+08:00",
   },
   {
@@ -84,7 +84,7 @@ export const taskEvents: TaskEvent[] = [
     module: "worker",
     event_type: "task.started",
     status: "running",
-    message: "Celery worker started Agent run.",
+    message: "Celery Worker 已启动 Agent 执行。",
     created_at: "2026-05-25T01:15:08+08:00",
   },
   {
@@ -93,7 +93,7 @@ export const taskEvents: TaskEvent[] = [
     module: "crawler",
     event_type: "crawler.product_saved",
     status: "crawling",
-    message: "Product page snapshot and extracted fields saved.",
+    message: "商品页快照和抽取字段已保存。",
     created_at: "2026-05-25T01:15:41+08:00",
   },
   {
@@ -102,7 +102,7 @@ export const taskEvents: TaskEvent[] = [
     module: "rag",
     event_type: "rag.retrieval",
     status: "retrieving",
-    message: "Retrieved 8 review chunks for defect analysis.",
+    message: "已召回 8 条评论切片用于缺陷分析。",
     created_at: "2026-05-25T01:17:12+08:00",
   },
   {
@@ -111,7 +111,7 @@ export const taskEvents: TaskEvent[] = [
     module: "agent",
     event_type: "agent.reasoning",
     status: "reasoning",
-    message: "Agent is comparing defect clusters against opportunity criteria.",
+    message: "Agent 正在对照机会点评估标准比较缺陷聚类。",
     created_at: "2026-05-25T01:18:02+08:00",
   },
   {
@@ -120,7 +120,7 @@ export const taskEvents: TaskEvent[] = [
     module: "crawler",
     event_type: "crawler.failed",
     status: "failed",
-    message: "PAGE_TIMEOUT while waiting for review container.",
+    message: "等待评论容器时发生 PAGE_TIMEOUT。",
     created_at: "2026-05-24T21:11:02+08:00",
   },
 ];
@@ -134,7 +134,7 @@ export const agentSteps: AgentStep[] = [
     step_type: "thought",
     status: "success",
     duration_ms: 810,
-    observation_summary: "User requested a complete competitor research report.",
+    observation_summary: "用户请求生成完整竞品调研报告。",
   },
   {
     step_id: "stp_9A21_002",
@@ -145,8 +145,8 @@ export const agentSteps: AgentStep[] = [
     tool_name: "crawl_product_tool",
     status: "success",
     duration_ms: 32900,
-    input_summary: "Fetch product page and save screenshot artifacts.",
-    observation_summary: "Saved title, price, rating summary, and 43 review snippets.",
+    input_summary: "抓取商品页并保存截图 artifact。",
+    observation_summary: "已保存标题、价格、评分摘要和 43 条评论片段。",
   },
   {
     step_id: "stp_9A21_003",
@@ -157,8 +157,8 @@ export const agentSteps: AgentStep[] = [
     tool_name: "search_reviews_tool",
     status: "success",
     duration_ms: 7800,
-    input_summary: "Search for build quality, leakage, returns, and shipping complaints.",
-    observation_summary: "Top defects: seal leakage, low battery life, slow support.",
+    input_summary: "检索做工质量、漏液、退货和物流投诉。",
+    observation_summary: "主要缺陷：密封漏液、电池续航短、客服响应慢。",
   },
   {
     step_id: "stp_9A21_004",
@@ -168,7 +168,7 @@ export const agentSteps: AgentStep[] = [
     step_type: "self_check",
     status: "running",
     duration_ms: 420,
-    observation_summary: "Validating evidence coverage before report generation.",
+    observation_summary: "生成报告前正在校验证据覆盖度。",
   },
   {
     step_id: "stp_6D44_002",
@@ -179,9 +179,9 @@ export const agentSteps: AgentStep[] = [
     tool_name: "crawl_product_tool",
     status: "failed",
     duration_ms: 58000,
-    input_summary: "Fetch USB-C hub page and reviews.",
+    input_summary: "抓取 USB-C 拓展坞页面和评论。",
     error_code: "PAGE_TIMEOUT",
-    observation_summary: "Review container did not appear before timeout.",
+    observation_summary: "评论容器在超时前没有出现。",
   },
 ];
 
@@ -192,7 +192,7 @@ export const evidence: Evidence[] = [
     source_url: "demo://portable-espresso/reviews/31",
     similarity: 0.91,
     rating: 2,
-    content: "The seal started leaking after a week and support asked for a video twice.",
+    content: "密封圈一周后开始漏水，客服两次要求补发视频。",
     task_id: "tsk_9A21",
     metadata: { cluster: "quality", language: "en" },
   },
@@ -202,7 +202,7 @@ export const evidence: Evidence[] = [
     source_url: "demo://portable-espresso/reviews/44",
     similarity: 0.87,
     rating: 1,
-    content: "Battery life is nowhere near the listing. It failed during a short trip.",
+    content: "续航远低于商品页描述，短途旅行中就没电了。",
     task_id: "tsk_9A21",
     metadata: { cluster: "battery", language: "en" },
   },
@@ -211,7 +211,7 @@ export const evidence: Evidence[] = [
     source_type: "crawler_artifact",
     source_url: "artifact://tsk_9A21/product-page.png",
     similarity: 0.82,
-    content: "Screenshot and DOM snapshot for the competitor product detail page.",
+    content: "竞品商品详情页的截图和 DOM 快照。",
     task_id: "tsk_9A21",
     metadata: { artifact_type: "screenshot" },
   },
@@ -221,7 +221,7 @@ export const evidence: Evidence[] = [
     source_url: "demo://desk-lamp/reviews/18",
     similarity: 0.89,
     rating: 2,
-    content: "The hinge loosens after a few days and the lamp head drops overnight.",
+    content: "转轴几天后就松动，灯头会在夜里自己下垂。",
     task_id: "tsk_8B77",
     metadata: { cluster: "mechanical" },
   },
@@ -231,7 +231,7 @@ export const evidence: Evidence[] = [
     source_url: "demo://smart-scale/reviews/52",
     similarity: 0.85,
     rating: 1,
-    content: "App pairing failed repeatedly and customer service only sent generic steps.",
+    content: "App 多次配对失败，客服只发送通用操作步骤。",
     task_id: "tsk_5E19",
     metadata: { cluster: "app_support" },
   },
@@ -241,22 +241,22 @@ export const reports: Report[] = [
   {
     report_id: "rpt_1024",
     task_id: "tsk_8B77",
-    title: "Desk lamp poor review analysis",
+    title: "台灯差评分析",
     summary:
-      "The strongest defect cluster is mechanical durability. Users complain about hinge looseness, unstable brightness memory, and packaging damage.",
+      "最集中的缺陷聚类是机械耐用性。用户反复提到转轴松动、亮度记忆不稳定和包装破损。",
     risk_level: "medium",
     risk_score: 64,
     evidence_count: 16,
     created_at: "2026-05-24T22:43:41+08:00",
     sections: [
       {
-        title: "Primary pain point",
-        body: "Durability complaints concentrate around the hinge, which creates a clear product improvement opportunity.",
+        title: "主要痛点",
+        body: "耐用性投诉集中在转轴结构，这为产品改进提供了明确机会。",
         evidence_ids: ["ev_1004"],
       },
       {
-        title: "Positioning opportunity",
-        body: "A reinforced hinge and explicit warranty messaging could separate a new entrant from low-cost competitors.",
+        title: "定位机会",
+        body: "强化转轴并明确质保承诺，可以让新品和低价竞品形成差异。",
         evidence_ids: ["ev_1004"],
       },
     ],
@@ -264,17 +264,17 @@ export const reports: Report[] = [
   {
     report_id: "rpt_1023",
     task_id: "tsk_5E19",
-    title: "Smart scale return reason scan",
+    title: "智能体脂秤退货原因扫描",
     summary:
-      "Returns are driven less by measurement accuracy and more by app pairing failures, onboarding confusion, and slow support loops.",
+      "退货原因更多来自 App 配对失败、上手流程混乱和客服响应慢，而不是测量准确性本身。",
     risk_level: "high",
     risk_score: 78,
     evidence_count: 21,
     created_at: "2026-05-24T19:34:22+08:00",
     sections: [
       {
-        title: "Support risk",
-        body: "The app onboarding flow creates avoidable support demand. A simpler Bluetooth pairing path would reduce returns.",
+        title: "售后风险",
+        body: "App 上手流程制造了可避免的售后需求。更简单的蓝牙配对路径能降低退货。",
         evidence_ids: ["ev_1005"],
       },
     ],
@@ -282,11 +282,11 @@ export const reports: Report[] = [
 ];
 
 export const services: SystemService[] = [
-  { name: "API", status: "mock", detail: "Next.js mock client" },
-  { name: "Redis", status: "offline", detail: "planned Day 05" },
-  { name: "Celery Worker", status: "offline", detail: "planned Day 05" },
-  { name: "PostgreSQL", status: "offline", detail: "planned Day 03" },
-  { name: "pgvector", status: "offline", detail: "planned Day 14" },
-  { name: "Crawler", status: "mock", detail: "Stitch reference available" },
-  { name: "Agent", status: "mock", detail: "state machine planned" },
+  { name: "API", status: "mock", detail: "Next.js 模拟客户端" },
+  { name: "Redis", status: "offline", detail: "Day 05 已规划" },
+  { name: "Celery Worker", status: "offline", detail: "Day 05 已规划" },
+  { name: "PostgreSQL", status: "offline", detail: "Day 03 已规划" },
+  { name: "pgvector", status: "offline", detail: "Day 14 已规划" },
+  { name: "Crawler", status: "mock", detail: "Stitch 参考稿可用" },
+  { name: "Agent", status: "mock", detail: "状态机已接入" },
 ];

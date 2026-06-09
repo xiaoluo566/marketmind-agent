@@ -18,12 +18,12 @@ const jetBrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "MarketMind Agent",
-  description: "E-commerce review intelligence and evidence-backed report cockpit.",
+  description: "面向电商评论洞察和证据链报告的 Agent 控制台。",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${jetBrainsMono.variable}`}>
+    <html lang="zh-CN" className={`${inter.variable} ${jetBrainsMono.variable}`}>
       <body>
         <AppShell>{children}</AppShell>
       </body>

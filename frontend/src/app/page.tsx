@@ -19,25 +19,25 @@ export default async function DashboardPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Dashboard"
-        title="Agent research operations"
-        description="Monitor async research jobs, crawler health, Agent state, RAG evidence, and report output from one control surface."
+        eyebrow="工作台"
+        title="Agent 调研工作台"
+        description="集中查看异步调研任务、采集状态、Agent 步骤、RAG 证据和报告输出。"
       />
       <div className="space-y-6 p-6">
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-          <StatCard label="Tasks today" value={String(taskItems.length)} detail="mock dataset" icon={Activity} />
-          <StatCard label="Success rate" value={`${successRate}%`} detail="completed tasks" icon={ShieldCheck} />
-          <StatCard label="Avg duration" value="3m 22s" detail="end-to-end" icon={Clock3} />
-          <StatCard label="Queued" value="2" detail="worker backlog" icon={TimerReset} />
-          <StatCard label="Validation errors" value="3" detail="self-heal samples" icon={Database} />
+          <StatCard label="今日任务" value={String(taskItems.length)} detail="演示数据集" icon={Activity} />
+          <StatCard label="成功率" value={`${successRate}%`} detail="已完成任务" icon={ShieldCheck} />
+          <StatCard label="平均耗时" value="3m 22s" detail="端到端" icon={Clock3} />
+          <StatCard label="排队中" value="2" detail="Worker 积压" icon={TimerReset} />
+          <StatCard label="校验错误" value="3" detail="自愈样例" icon={Database} />
         </section>
 
         <section className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
           <div className="rounded-lg border border-slate-200 bg-white">
             <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-              <h2 className="text-sm font-semibold text-slate-950">Recent tasks</h2>
+              <h2 className="text-sm font-semibold text-slate-950">最近任务</h2>
               <Link href="/tasks" className="text-sm font-medium text-blue-700 hover:text-blue-900">
-                View all
+                查看全部
               </Link>
             </div>
             <div className="divide-y divide-slate-100">
@@ -60,7 +60,7 @@ export default async function DashboardPage() {
 
           <div className="rounded-lg border border-slate-200 bg-white">
             <div className="border-b border-slate-200 px-4 py-3">
-              <h2 className="text-sm font-semibold text-slate-950">System chain</h2>
+              <h2 className="text-sm font-semibold text-slate-950">系统链路</h2>
             </div>
             <div className="divide-y divide-slate-100">
               {serviceItems.map((service) => (
@@ -78,7 +78,7 @@ export default async function DashboardPage() {
 
         <section className="rounded-lg border border-slate-200 bg-white">
           <div className="border-b border-slate-200 px-4 py-3">
-            <h2 className="text-sm font-semibold text-slate-950">Recent reports</h2>
+            <h2 className="text-sm font-semibold text-slate-950">最近报告</h2>
           </div>
           <div className="divide-y divide-slate-100">
             {reportItems.map((report) => (
@@ -92,7 +92,7 @@ export default async function DashboardPage() {
                   <p className="mt-1 text-sm text-slate-600">{report.summary}</p>
                 </div>
                 <StatusBadge status={report.risk_level} />
-                <p className="font-mono text-sm text-slate-700">{report.evidence_count} refs</p>
+                <p className="font-mono text-sm text-slate-700">{report.evidence_count} 条证据</p>
                 <p className="text-sm text-slate-500">{formatDateTime(report.created_at)}</p>
               </Link>
             ))}
@@ -102,4 +102,3 @@ export default async function DashboardPage() {
     </>
   );
 }
-

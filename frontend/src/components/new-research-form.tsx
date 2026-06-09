@@ -12,17 +12,17 @@ const sourceOptions: Array<{
   label: string;
   value: TaskCreateInput["source_type"];
 }> = [
-  { label: "Demo Dataset", value: "demo_dataset" },
-  { label: "URL Crawl", value: "public_url" },
-  { label: "CSV/JSON Upload", value: "manual_upload" },
+  { label: "演示数据集", value: "demo_dataset" },
+  { label: "公开 URL 采集", value: "public_url" },
+  { label: "CSV/JSON 上传", value: "manual_upload" },
 ];
 
 const modeOptions = [
-  { label: "Competitive research", value: "competitive_research" },
-  { label: "Complete report", value: "complete_report" },
-  { label: "Poor review analysis", value: "review_risk_scan" },
-  { label: "Opportunity scan", value: "opportunity_analysis" },
-  { label: "Risk scan", value: "risk_scan" },
+  { label: "竞品调研", value: "competitive_research" },
+  { label: "完整报告", value: "complete_report" },
+  { label: "差评分析", value: "review_risk_scan" },
+  { label: "机会点扫描", value: "opportunity_analysis" },
+  { label: "风险扫描", value: "risk_scan" },
 ];
 
 export function NewResearchForm() {
@@ -62,7 +62,7 @@ export function NewResearchForm() {
       if (exc instanceof ApiClientError) {
         setError(`${exc.code}: ${exc.message}`);
       } else {
-        setError("Task submission failed. Check API base URL and backend status.");
+        setError("任务提交失败，请检查 API 地址和后端状态。");
       }
     } finally {
       setPending(false);
@@ -74,16 +74,16 @@ export function NewResearchForm() {
       <section className="space-y-4 rounded-lg border border-slate-200 bg-white p-5">
         <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
           <p className="font-mono text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-            {isRealApiEnabled() ? "Real API" : "Mock mode"}
+            {isRealApiEnabled() ? "真实 API" : "模拟模式"}
           </p>
           <p className="mt-1 break-all text-sm text-slate-700">{getApiBaseUrl()}</p>
         </div>
 
         <label className="block">
-          <span className="text-sm font-semibold text-slate-700">Product URL or dataset</span>
+          <span className="text-sm font-semibold text-slate-700">商品 URL 或数据集</span>
           <input
             className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-            placeholder="https://example.com/product/123 or demo://reviews.csv"
+            placeholder="https://example.com/product/123 或 demo://reviews.csv"
             type="text"
             value={target}
             onChange={(event) => setTarget(event.target.value)}
@@ -93,7 +93,7 @@ export function NewResearchForm() {
 
         <div className="grid gap-4 md:grid-cols-2">
           <label className="block">
-            <span className="text-sm font-semibold text-slate-700">Data source</span>
+            <span className="text-sm font-semibold text-slate-700">数据来源</span>
             <select
               className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
               value={sourceType}
@@ -109,7 +109,7 @@ export function NewResearchForm() {
             </select>
           </label>
           <label className="block">
-            <span className="text-sm font-semibold text-slate-700">Analysis mode</span>
+            <span className="text-sm font-semibold text-slate-700">分析模式</span>
             <select
               className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
               value={mode}
@@ -125,18 +125,18 @@ export function NewResearchForm() {
         </div>
 
         <div className="grid gap-3 md:grid-cols-2">
-          <Toggle label="Enable RAG retrieval" checked={useRag} onChange={setUseRag} />
+          <Toggle label="启用 RAG 检索" checked={useRag} onChange={setUseRag} />
           <Toggle
-            label="Save crawler screenshot"
+            label="保存采集截图"
             checked={saveScreenshot}
             onChange={setSaveScreenshot}
           />
           <Toggle
-            label="Generate Markdown report"
+            label="生成 Markdown 报告"
             checked={generateMarkdown}
             onChange={setGenerateMarkdown}
           />
-          <Toggle label="Auto retry on failure" checked={autoRetry} onChange={setAutoRetry} />
+          <Toggle label="失败后自动重试" checked={autoRetry} onChange={setAutoRetry} />
         </div>
 
         {error ? (
@@ -163,12 +163,12 @@ export function NewResearchForm() {
           ) : (
             <SendHorizontal className="h-4 w-4" aria-hidden="true" />
           )}
-          Create task
+          创建任务
         </button>
       </section>
 
       <aside className="rounded-lg border border-slate-200 bg-white p-5">
-        <h2 className="text-sm font-semibold text-slate-950">Request payload</h2>
+        <h2 className="text-sm font-semibold text-slate-950">请求载荷</h2>
         <pre className="mt-4 overflow-x-auto rounded-lg bg-slate-950 p-4 font-mono text-xs text-slate-100">
 {`POST /api/tasks
 {

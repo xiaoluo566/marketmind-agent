@@ -13,9 +13,9 @@ export default async function ReportDetailPage({
   return (
     <>
       <PageHeader
-        eyebrow="Report detail"
+        eyebrow="报告详情"
         title={report.title}
-        description="Structured report output with evidence references and risk reasoning."
+        description="查看结构化报告、证据引用和风险推理链路。"
       />
       <div className="p-6">
         <ReportViewer report={report} evidence={evidence} />

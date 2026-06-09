@@ -7,11 +7,11 @@ export function TaskTimeline({ events }: { events: TaskEvent[] }) {
   return (
     <div className="rounded-lg border border-slate-200 bg-white">
       <div className="border-b border-slate-200 px-4 py-3">
-        <h2 className="text-sm font-semibold text-slate-950">Event timeline</h2>
+        <h2 className="text-sm font-semibold text-slate-950">事件时间线</h2>
       </div>
       <div className="divide-y divide-slate-100">
         {events.length === 0 ? (
-          <div className="px-4 py-5 text-sm text-slate-500">No task events recorded.</div>
+          <div className="px-4 py-5 text-sm text-slate-500">暂无任务事件记录。</div>
         ) : null}
         {events.map((event) => (
           <div key={event.event_id} className="grid gap-3 px-4 py-3 md:grid-cols-[140px_120px_1fr]">

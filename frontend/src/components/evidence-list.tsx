@@ -19,7 +19,7 @@ export function EvidenceList({ items }: { items: Evidence[] }) {
           </div>
           <div className="mt-3 flex flex-wrap gap-2 font-mono text-[11px] uppercase tracking-wide text-slate-500">
             <span>{item.source_url}</span>
-            {item.rating ? <span>rating {item.rating}/5</span> : null}
+            {item.rating ? <span>评分 {item.rating}/5</span> : null}
             <span>{item.task_id}</span>
           </div>
         </article>
@@ -27,4 +27,3 @@ export function EvidenceList({ items }: { items: Evidence[] }) {
     </div>
   );
 }
-

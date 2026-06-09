@@ -65,3 +65,15 @@
 - 每天只认当天文档和前置依赖文档
 - 每个文档都写清楚目标、任务、验收、风险和回退
 - 任何超出文档范围的想法先写入 `supporting/open-questions.md`
+
+## 第二阶段入口
+
+Day 1-30 完成后，第二阶段从“可展示 RC”推进到“更实用的中文产品雏形”。后续开发先读：
+
+1. `roadmap/phase-2-master-plan.md`
+2. `roadmap/day-31.md`
+3. `supporting/frontend-localization-contract.md`
+4. `supporting/phase-2-practicality-plan.md`
+5. `supporting/phase-2-acceptance-and-risk.md`
+
+第二阶段继续保持先文档后开发。中文界面、前端 retry 按钮、真实 provider、真实 compose build/up、Playwright E2E 和 branch protection 都必须在这些文档约束下推进。

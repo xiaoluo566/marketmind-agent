@@ -11,9 +11,9 @@ export default async function ReportsPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Reports"
-        title="Generated research reports"
-        description="Browse structured competitor reports with risk scores, evidence counts, and source-linked conclusions."
+        eyebrow="报告"
+        title="已生成调研报告"
+        description="浏览结构化竞品报告、风险评分、证据数量和可追溯结论。"
       />
       <div className="grid gap-4 p-6 xl:grid-cols-2">
         {reportItems.map((report) => (
@@ -29,8 +29,8 @@ export default async function ReportsPage() {
             </div>
             <p className="mt-3 text-sm leading-6 text-slate-600">{report.summary}</p>
             <div className="mt-4 flex flex-wrap gap-3 font-mono text-xs uppercase tracking-wide text-slate-500">
-              <span>{report.evidence_count} evidence refs</span>
-              <span>score {report.risk_score}</span>
+              <span>{report.evidence_count} 条证据</span>
+              <span>评分 {report.risk_score}</span>
               <span>{formatDateTime(report.created_at)}</span>
             </div>
           </Link>
@@ -39,4 +39,3 @@ export default async function ReportsPage() {
     </>
   );
 }
-

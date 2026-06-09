@@ -47,7 +47,7 @@ export function TaskProgressPanel({
       if (exc instanceof ApiClientError) {
         setRefreshError(`${exc.code}: ${exc.message}`);
       } else {
-        setRefreshError("Task progress refresh failed.");
+        setRefreshError("任务进度刷新失败。");
       }
     } finally {
       setRefreshing(false);
@@ -76,7 +76,7 @@ export function TaskProgressPanel({
             {task.error_code || task.error_message ? (
               <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
                 {task.error_code ? `${task.error_code}: ` : ""}
-                {task.error_message ?? "Task failed."}
+                {task.error_message ?? "任务失败。"}
               </p>
             ) : null}
             {refreshError ? (
@@ -91,7 +91,7 @@ export function TaskProgressPanel({
               {formatDuration(task.duration_ms)}
             </span>
             <span className="rounded border border-slate-200 px-2 py-1 font-mono text-[11px] uppercase text-slate-500">
-              {refreshing ? "Refreshing" : shouldPoll ? "Polling" : "Final"}
+              {refreshing ? "刷新中" : shouldPoll ? "轮询中" : "已结束"}
             </span>
             <button
               className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400"
@@ -99,14 +99,14 @@ export function TaskProgressPanel({
               onClick={() => void refreshTaskProgress()}
               disabled={refreshing}
             >
-              Refresh
+              刷新
             </button>
             {task.report_id ? (
               <Link
                 href={`/reports/${task.report_id}`}
                 className="rounded-lg bg-blue-700 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-800"
               >
-                Open report
+                打开报告
               </Link>
             ) : null}
           </div>

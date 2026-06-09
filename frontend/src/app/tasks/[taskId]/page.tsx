@@ -13,9 +13,9 @@ export default async function TaskDetailPage({ params }: { params: Promise<{ tas
   return (
     <>
       <PageHeader
-        eyebrow="Task detail"
+        eyebrow="任务详情"
         title={task.title}
-        description="Review task state, trace ID, event timeline, Agent steps, and recovery actions."
+        description="查看任务状态、Trace ID、事件时间线、Agent 步骤和恢复动作。"
       />
       <TaskProgressPanel initialTask={task} initialEvents={events} initialSteps={steps} />
     </>

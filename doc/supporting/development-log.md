@@ -2205,6 +2205,87 @@ Day 30 的任务不是继续堆功能，而是把第一阶段收口成一个可�
 
 如果本地完整门禁和 GitHub Actions 都通过，则可以把当前提交作为 Day30 release candidate 推送到 `dev`，并在合适时创建 `v0.1-day30-rc1` tag。第二阶段从 `future-iterations.md` 的优先级开始，而不是重新发散需求。
 
+## 第二阶段启动记录
+
+### 2026-06-09
+
+分支：`dev`
+
+背景：
+
+Day 1-30 已经推送到 `main`，并通过主分支 GitHub Actions。第二阶段从 Day31 开始，目标从“完成工程化 RC”转为“提升实用性和中文演示质量”。
+
+实际完成：
+
+- 新增 `doc/roadmap/phase-2-master-plan.md`。
+- 新增 `doc/roadmap/day-31.md`。
+- 新增 `doc/supporting/frontend-localization-contract.md`。
+- 新增 `doc/supporting/phase-2-practicality-plan.md`。
+- 新增 `doc/supporting/phase-2-acceptance-and-risk.md`。
+- 新增 `tests/test_phase2_planning_docs.py`，把第二阶段文档入口、中文界面、前端 retry、真实 provider、真实 compose 和 E2E 的规划纳入测试。
+
+当天选择思考：
+
+今天没有直接修改前端 UI，而是先写第二阶段文档。原因是中文界面、retry、provider、E2E 和 compose 补验会互相影响，如果没有统一术语和验收边界，后续很容易出现“代码改了但文档不知道”“UI 叫任务，API 叫 research，报告又叫 run”的混乱。
+
+下一步：
+
+Day31 按 `day-31.md` 开始前端中文界面开发，先写 `tests/test_frontend_localization_contract.py`，再修改 Next.js 页面和组件。
+
+## Day 31 开发记录
+
+### 背景
+
+第二阶段的第一件事是把控制台从英文模板界面切到中文运营工作台。这个选择不是为了“好看”，而是为了让项目定位、演示口径、面试讲述和真实用户场景一致。项目面向的是电商运营评论洞察，如果核心页面还在使用 `Dashboard`、`New Research`、`Event timeline` 这类英文模板文案，面试时会显得像未完成的脚手架。
+
+### 实际完成
+
+- 新增并扩展 `tests/test_frontend_localization_contract.py`，先用 RED 暴露英文残留，再推动实现修复。
+- `AppShell` 导航、顶部环境状态、API 模式提示和刷新按钮中文化。
+- Dashboard、新建调研、任务列表、任务详情、报告列表、报告详情、证据链、设置页完成中文化。
+- `TaskTimeline` 修复 `Event timeline` / `No task events recorded.` 英文残留。
+- 设置页功能开关改成中文 label + 技术 key 双层展示，既让用户看懂，也不丢工程字段。
+- `StatusBadge` 改成中文状态映射，不再依赖 `status.replace` 生成英文 fallback。
+- `formatDateTime()` 从 `en` 切到 `zh-CN`，避免中文界面出现英文月份。
+- `layout.tsx` 从 `lang="en"` 改为 `lang="zh-CN"`，metadata description 改成中文。
+- `mock-data.ts` 中用户可见的任务标题、事件消息、证据内容、报告摘要和服务状态说明同步中文化。
+- 更新 `day-31.md`、`frontend-localization-contract.md`、本文、`testing-strategy.md` 和 `interview-defense-dossier.md`。
+
+### 当天为什么这样选
+
+今天没有直接引入 `next-intl` 或完整多语言字典。原因是当前项目目标是中文演示和中文运营场景，多语言切换不是主要矛盾。过早引入 i18n 会增加 routing、dictionary、server/client boundary 和测试复杂度，反而会拖慢后续 retry、真实 provider、E2E 和真实 compose 补验。
+
+今天也没有翻译 API 字段、枚举和技术 ID。`task_id`、`report_id`、`trace_id`、`source_type`、`enable_rag` 这些是系统契约，翻译掉会破坏前后端对接和调试体验。设置页采用“中文 label + 技术 key”的方式，是为了同时兼顾运营用户和工程调试。
+
+### 当前验证
+
+- `uv run pytest tests\test_frontend_localization_contract.py tests\test_phase2_planning_docs.py`：12 passed。
+- `uv run pytest`：180 passed。
+- `uv run pytest --cov=backend --cov-report=term-missing`：180 passed，backend coverage 90.77%。
+- `uv run ruff check backend tests migrations`：All checks passed。
+- `uv run alembic heads`：`0002_task_queue_id (head)`。
+- `docker compose config`：通过。
+- `cd frontend; npm run lint`：通过。
+- `cd frontend; npm run build`：通过。
+- `cd frontend; npm audit --audit-level=high`：found 0 vulnerabilities。
+- HTTP 验收：mock dev server 下 `/`、`/research/new`、`/tasks`、`/reports`、`/evidence`、`/settings` 全部 200。
+- 浏览器验收：`agent-browser-cli` 扫描确认首页、任务、报告、证据链、设置页显示中文核心标题。
+
+补充发现：
+
+`NEXT_PUBLIC_USE_MOCKS` 在生产构建中会被 Next.js 内联。只在 `next start` 时临时设置该变量，会出现服务端数据走 mock、客户端顶部 badge 仍显示真实 API 的不一致。Day31 的视觉验收因此改用 `NEXT_PUBLIC_USE_MOCKS=true npm run dev`，后续如要做生产 mock 预览，需要在 `npm run build` 前设置该变量。
+
+### 遗留问题
+
+- 仍未做真实 `docker compose build/up`，因为真实 Docker daemon 可用性需要单独补验。
+- 仍未补前端 retry 按钮，Day32 优先处理。
+- 仍未接真实 embedding provider 和真实 LLM report prompt。
+- 仍未补 Playwright E2E 页面级验收。
+
+### 下一步
+
+Day32 优先做前端失败任务 retry 闭环。前端按钮、状态提示、错误提示和恢复事件要沿用 Day31 的中文术语，例如 `重试任务`、`正在重新投递`、`恢复事件`、`重试失败`。
+
 ## 30 天后优化记录
 
 30 天之后不再按 Day 编号推进，改用优化主题记录。

@@ -510,6 +510,51 @@ uv run pytest tests\test_day30_release_candidate.py
 
 当前结果会在 Day30 提交前更新到 `development-log.md`。Day30 的测试重点是防止发布材料夸大项目状态，确保 RC 边界、指标和缺口能被自动化检查。
 
+## Day 31 前端中文化测试边界
+
+Day 31 新增并扩展 `tests/test_frontend_localization_contract.py`，用于防止第二阶段控制台继续残留英文模板文案。
+
+这组测试覆盖：
+
+- AppShell 导航必须使用 工作台、新建调研、任务、报告、证据链、设置。
+- Dashboard 必须使用中文运营文案，例如 Agent 调研工作台、今日任务、成功率、最近任务、系统链路、最近报告。
+- NewResearchForm 必须使用中文 label、placeholder、按钮和错误提示。
+- status badge 必须使用中文状态映射，不能依赖 `status.replace` 生成英文 fallback。
+- mock service 中用户可见文案必须中文化。
+- 任务、报告、证据链、设置页面必须使用中文标题和中文核心字段名。
+- TaskProgressPanel、TaskTimeline、AgentStepsTable 必须使用中文进度和空状态文案。
+- `formatDateTime()` 必须使用 `zh-CN` 日期格式。
+- 根布局必须使用 `lang="zh-CN"` 和中文 metadata description。
+- API 字段名和技术 key 仍必须保留，例如 `source_type`、`use_rag`、`enable_rag`、`task_id`。
+
+Day 31 当前不覆盖：
+
+- Playwright 视觉回归。
+- 中文文本在所有移动端宽度下的布局截图。
+- 多语言切换。
+- 前端 retry 按钮点击流程。
+
+当前验证命令：
+
+```powershell
+uv run pytest tests\test_frontend_localization_contract.py tests\test_phase2_planning_docs.py
+```
+
+当前结果：
+
+```text
+12 passed
+Full pytest: 180 passed
+Coverage gate: 180 passed, backend coverage 90.77%
+ruff: passed
+alembic heads: 0002_task_queue_id (head)
+docker compose config: passed
+frontend lint/build: passed
+npm audit: 0 vulnerabilities
+HTTP smoke: /, /research/new, /tasks, /reports, /evidence, /settings all 200 in mock dev mode
+agent-browser-cli: Chinese page titles verified for dashboard, tasks, reports, evidence and settings
+```
+
 ## 回归要求
 
 任何 bug 修复都要留下一个能复现旧问题的测试。没有测试的修复，后续很容易被重构再次破坏。

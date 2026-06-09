@@ -26,7 +26,7 @@ export function ReportViewer({ report, evidence }: { report: Report; evidence: E
             <p className="mt-2 font-mono text-2xl font-semibold text-slate-950">
               {report.risk_score}
             </p>
-            <p className="text-xs text-slate-500">risk score</p>
+            <p className="text-xs text-slate-500">风险评分</p>
           </div>
         </div>
       </section>
@@ -52,10 +52,9 @@ export function ReportViewer({ report, evidence }: { report: Report; evidence: E
       </section>
 
       <section>
-        <h3 className="mb-3 text-sm font-semibold text-slate-950">Evidence references</h3>
+        <h3 className="mb-3 text-sm font-semibold text-slate-950">证据引用</h3>
         <EvidenceList items={linkedEvidence} />
       </section>
     </div>
   );
 }
-

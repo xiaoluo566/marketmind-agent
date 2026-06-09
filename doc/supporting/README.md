@@ -28,3 +28,13 @@
 - `stitch-generation-prompt.md` 用来保存可直接复制给 Stitch 的详细提示词
 - `stitch-export-review.md` 用来记录 Stitch 导出内容的评审和 Next.js 重构方向
 - `model-and-data-decisions.md` 用来集中记录模型、embedding、首发数据源、CSV/JSON schema、用户和项目隔离策略
+
+## 第二阶段 supporting 文档
+
+Day 30 release candidate 之后，新增这些第二阶段文档：
+
+- `frontend-localization-contract.md`：前端中文界面术语、范围、非目标和测试契约。
+- `phase-2-practicality-plan.md`：用户可用性、工程深度和数据可信度的深化路线。
+- `phase-2-acceptance-and-risk.md`：第二阶段验收门槛、风险、Docker daemon 不可用时的处理和回退策略。
+
+这些文档和 `future-iterations.md`、`day30-bug-summary.md`、`testing-strategy.md`、`development-log.md` 共同决定第二阶段的开发顺序。后续不能绕开它们直接写功能。
