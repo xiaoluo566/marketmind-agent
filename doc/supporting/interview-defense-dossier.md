@@ -1940,6 +1940,113 @@ Day31 的面试讲法重点是：我没有把前端中文化当成简单翻译�
 
 > 我用测试明确区分了用户可见文案和技术字段。测试要求页面出现中文标题、按钮和状态，但同时要求 `source_type`、`use_rag`、`enable_rag` 等字段仍然存在。这样中文化只改展示层，不改 API 契约。
 
+## Day32-Day40 面试讲述准备
+
+Day32-Day40 的面试讲述要围绕一个主线：第二阶段不是堆技术名词，而是把第一阶段 RC 补成更可用、更可信、更可演示的中文产品雏形。
+
+### Day 32：前端失败任务重试闭环
+
+讲法重点：
+
+> Day 32 我把后端 retry API 接到任务详情页。失败任务不再需要开发者手动调接口，而是可以在前端点击 `重试任务`，并看到重新投递和状态刷新。
+
+可强调的思考：
+
+- retry 不是 API 成功就结束，必须变成用户可操作闭环。
+- 前端要防止非 failed 任务误触发。
+- 错误码和 trace id 要保留，方便定位。
+
+### Day 33：重试链路联调与恢复事件验收
+
+讲法重点：
+
+> Day 33 我验证 retry 不是假按钮。验收标准是 `waiting_retry` 状态、恢复事件、Worker recovery payload、前端刷新和浏览器文本都能对应上。
+
+可强调的思考：
+
+- 用户操作、任务状态、事件流和日志必须一致。
+- 如果 Docker daemon 不可用，只声明 mock / 测试层通过，不夸大真实容器链路。
+
+### Day 34：真实 embedding provider 接入设计
+
+讲法重点：
+
+> Day 34 我把 fake embedding 升级成可配置的 `EmbeddingProvider` 架构。测试默认走 fake provider，真实运行可以配置 OpenAI-compatible embedding，并有 provider fallback 和错误分类。
+
+可强调的思考：
+
+- fake provider 是测试隔离手段，不是产品能力。
+- 真实 provider 要处理维度校验、超时、限流和 bad response。
+- API key 不进入代码和测试。
+
+### Day 35：RAG 检索质量与 provider 指标
+
+讲法重点：
+
+> Day 35 我增加 RAG 评估集和 provider_metrics，让检索质量、空召回、fallback 和 latency 可以被衡量。
+
+可强调的思考：
+
+- 小型评估集是 fixture baseline，不是线上准确率。
+- RAG 项目不能只说“用了向量数据库”，还要说明怎么评估召回质量。
+
+### Day 36：真实 LLM 报告生成 Prompt
+
+讲法重点：
+
+> Day 36 我把报告生成接入真实 LLM prompt，但输出必须经过 `StructuredReport`、`evidence_refs` 和 Pydantic 校验，坏 JSON 走 self-correction，失败后 fallback。
+
+可强调的思考：
+
+- 真实模型能力和结构化约束要同时存在。
+- 不允许模型编造证据 ID。
+- prompt version 要可追踪。
+
+### Day 37：Playwright E2E 主链路
+
+讲法重点：
+
+> Day 37 我补 Playwright E2E，用真实浏览器覆盖首页、新建调研、任务详情、报告详情、证据链和 retry 入口。
+
+可强调的思考：
+
+- E2E 首版先走 mock 模式，保证浏览器路径稳定。
+- 真实 API E2E 是下一层，不和 Docker / provider 稳定性混在一起。
+
+### Day 38：报告导出与证据包
+
+讲法重点：
+
+> Day 38 我把报告变成可交付 artifact：Markdown 报告和 evidence package。运营同学可以保存、分享、复盘，并追溯到证据链。
+
+可强调的思考：
+
+- 先做 Markdown 和 JSON 证据包，暂不做 PDF，避免排版复杂度抢走核心价值。
+- 导出内容必须脱敏，不泄露内部配置。
+
+### Day 39：LLMOps 运营指标面板
+
+讲法重点：
+
+> Day 39 我把模型调用、结构化解析失败、自愈成功率、provider latency、retry 恢复成功率汇总成 LLMOps summary。
+
+可强调的思考：
+
+- 指标必须标注来源：fixture、mock 还是 real provider。
+- 没有真实 token 数据时，不估算成本。
+
+### Day 40：第二阶段阶段验收与发布候选
+
+讲法重点：
+
+> Day 40 我做 Phase 2 RC，不是简单说完成，而是按 Day31-Day39 逐项审计代码、测试、文档、CI、指标、缺口和回退。
+
+可强调的思考：
+
+- release candidate 不是最终生产版。
+- 未验证能力进入 bug summary / future iterations。
+- CI 通过后才考虑 main 合并。
+
 ## 后续迭代计划怎么讲
 
 短期：

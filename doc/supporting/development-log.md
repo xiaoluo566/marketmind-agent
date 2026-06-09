@@ -2286,6 +2286,48 @@ Day31 按 `day-31.md` 开始前端中文界面开发，先写 `tests/test_fronte
 
 Day32 优先做前端失败任务 retry 闭环。前端按钮、状态提示、错误提示和恢复事件要沿用 Day31 的中文术语，例如 `重试任务`、`正在重新投递`、`恢复事件`、`重试失败`。
 
+## Day32-Day40 开发前置记录
+
+### 背景
+
+Day31 已完成中文界面基线，第二阶段不能继续凭临时想法往下写功能。Day32-Day40 需要先把开发文档补齐，再进入实现。这样做的原因是后续内容会同时触碰前端交互、后端 API、RAG provider、真实 LLM prompt、E2E、导出、LLMOps 和阶段发布，如果没有统一顺序和文档边界，后续很容易出现重复实现、文档遗漏或面试口径不一致。
+
+### Day32-Day40 执行顺序
+
+| Day | 主题 | 本日开发前置判断 |
+| --- | --- | --- |
+| Day 32 | 前端失败任务重试闭环 | 先把 Day28 后端 retry 能力接到任务详情页，解决用户无法操作失败恢复的问题。 |
+| Day 33 | 重试链路联调与恢复事件验收 | 不继续堆 UI，先验证 `waiting_retry`、恢复事件、前端刷新和浏览器行为是否一致。 |
+| Day 34 | 真实 embedding provider 接入设计 | 在真实 RAG 前先加固 `EmbeddingProvider`、provider fallback、配置和失败分类。 |
+| Day 35 | RAG 检索质量与 provider 指标 | 建立 RAG 评估集和 provider_metrics，避免只说“能检索”但无法衡量。 |
+| Day 36 | 真实 LLM 报告生成 Prompt | 引入真实模型报告前，必须用 `StructuredReport`、`evidence_refs`、Pydantic 约束输出。 |
+| Day 37 | Playwright E2E 主链路 | 把关键用户路径纳入真实浏览器回归，而不是只依赖单元测试和手动扫描。 |
+| Day 38 | 报告导出与证据包 | 让报告从控制台展示变成可交付 Markdown 和 evidence package。 |
+| Day 39 | LLMOps 运营指标面板 | 汇总成本统计、失败率、自愈成功率和恢复成功率，展示工程化深度。 |
+| Day 40 | 第二阶段阶段验收与发布候选 | 对 Day31-Day39 做 Phase 2 RC、阶段验收、release candidate 和回归门禁。 |
+
+### 统一开发要求
+
+- 每天先检查前一天是否有遗漏，再开始当天实现。
+- 每天必须先读当天 `day-xx.md` 和前置依赖。
+- 每天必须先写测试或契约，再写实现。
+- 每天完成后必须更新本文、`interview-defense-dossier.md` 和 `testing-strategy.md`。
+- 如果修改 API、模型、RAG、报告、部署或安全边界，必须同步对应 supporting 文档。
+- 不允许把 mock / fixture / fake provider 的结果包装成真实生产指标。
+- 不允许因为赶进度绕过 `dev` 分支和 CI。
+
+### 当前状态
+
+本记录只表示 Day32-Day40 的开发文档已经准备，具体功能尚未实现。后续每天完成后，要在对应 Day 下补实际完成、验证命令、失败问题、修复方式和是否可写进简历。
+
+### 当前验证
+
+- `uv run pytest tests\test_phase2_day32_40_docs.py`：3 passed。
+- `uv run pytest tests\test_phase2_day32_40_docs.py tests\test_phase2_planning_docs.py tests\test_frontend_localization_contract.py tests\test_day30_release_candidate.py`：21 passed。
+- `uv run pytest`：183 passed。
+- `uv run ruff check backend tests migrations`：All checks passed。
+- `git diff --check`：无输出。
+
 ## 30 天后优化记录
 
 30 天之后不再按 Day 编号推进，改用优化主题记录。

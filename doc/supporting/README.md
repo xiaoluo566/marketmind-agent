@@ -38,3 +38,24 @@ Day 30 release candidate 之后，新增这些第二阶段文档：
 - `phase-2-acceptance-and-risk.md`：第二阶段验收门槛、风险、Docker daemon 不可用时的处理和回退策略。
 
 这些文档和 `future-iterations.md`、`day30-bug-summary.md`、`testing-strategy.md`、`development-log.md` 共同决定第二阶段的开发顺序。后续不能绕开它们直接写功能。
+
+## Day32-Day40 关联要求
+
+Day32-Day40 的每日开发文档已经提前写好：
+
+- `../roadmap/day-32.md`：前端失败任务重试闭环。
+- `../roadmap/day-33.md`：重试链路联调与恢复事件验收。
+- `../roadmap/day-34.md`：真实 embedding provider 接入设计。
+- `../roadmap/day-35.md`：RAG 检索质量与 provider 指标。
+- `../roadmap/day-36.md`：真实 LLM 报告生成 Prompt。
+- `../roadmap/day-37.md`：Playwright E2E 主链路。
+- `../roadmap/day-38.md`：报告导出与证据包。
+- `../roadmap/day-39.md`：LLMOps 运营指标面板。
+- `../roadmap/day-40.md`：第二阶段阶段验收与发布候选。
+
+每天开发后必须同步：
+
+- `development-log.md`
+- `interview-defense-dossier.md`
+- `testing-strategy.md`
+- 如果改 API、模型、RAG、报告、部署或安全边界，还要同步对应 supporting 文档。

@@ -47,5 +47,16 @@ Day 30 之后不再继续扩写“30 天计划”，而是进入第二阶段：
 
 - `phase-2-master-plan.md`：第二阶段总计划。
 - `day-31.md`：中文界面与术语统一。
+- `day-32.md`：前端失败任务重试闭环。
+- `day-33.md`：重试链路联调与恢复事件验收。
+- `day-34.md`：真实 embedding provider 接入设计。
+- `day-35.md`：RAG 检索质量与 provider 指标。
+- `day-36.md`：真实 LLM 报告生成 Prompt。
+- `day-37.md`：Playwright E2E 主链路。
+- `day-38.md`：报告导出与证据包。
+- `day-39.md`：LLMOps 运营指标面板。
+- `day-40.md`：第二阶段阶段验收与发布候选。
 
 第二阶段仍然按“前一天检查 -> 当天开发 -> 文档同步 -> 测试验证 -> 提交推送”的节奏执行。第一批重点是中文界面、前端 retry 按钮、真实 compose build/up、真实 embedding provider、真实 LLM report prompt、Playwright E2E 和 branch protection。
+
+Day32-Day40 已经提前写成执行文档。后续开发不要跳过这些文档，也不要只写代码不更新开发日志、测试策略和面试材料。

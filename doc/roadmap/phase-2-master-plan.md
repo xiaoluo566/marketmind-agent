@@ -36,13 +36,15 @@ Day 1-30 已经把 MarketMind Agent 做成了第一阶段 release candidate：�
 | 模块 | 目标 | 关联文档 | 首个交付 |
 | --- | --- | --- | --- |
 | 前端中文化 | 所有可见核心页面使用中文术语 | `../supporting/frontend-localization-contract.md` | Day31 |
-| Retry 前端闭环 | failed 任务详情页可点击重试并展示恢复状态 | `../supporting/phase-2-practicality-plan.md` | Day32 |
-| 真实 Compose 联调 | Docker daemon 可用后完成真实 build/up 和容器内主链路 | `../supporting/phase-2-acceptance-and-risk.md` | Day33/补验 |
-| 真实 embedding provider | 从 deterministic fake provider 过渡到可配置 provider | `../supporting/phase-2-practicality-plan.md` | Day34 |
-| 真实 LLM report prompt | 保留 schema/evidence refs 约束，接入真实模型报告生成 | `../supporting/phase-2-practicality-plan.md` | Day35 |
-| Playwright E2E | 覆盖任务提交、进度、报告、证据链、retry | `../supporting/phase-2-acceptance-and-risk.md` | Day36 |
-| 分支保护 | main/dev required checks 与 PR 合并约束 | `../supporting/phase-2-acceptance-and-risk.md` | Day37 |
-| LLMOps 深化 | 成本、耗时、失败率、自愈率、恢复成功率 | `../supporting/llmops-metrics.md` | 后续 |
+| Retry 前端闭环 | failed 任务详情页可点击重试并展示恢复状态 | `../supporting/phase-2-practicality-plan.md` | `day-32.md` |
+| Retry 联调验收 | 校验 `waiting_retry`、恢复事件、事件流和浏览器行为 | `../supporting/phase-2-acceptance-and-risk.md` | `day-33.md` |
+| 真实 embedding provider | 从 deterministic fake provider 过渡到可配置 provider | `../supporting/phase-2-practicality-plan.md` | `day-34.md` |
+| RAG 质量指标 | 建立 RAG 评估集、召回质量和 provider_metrics | `../supporting/llmops-metrics.md` | `day-35.md` |
+| 真实 LLM 报告生成 | 保留 schema/evidence refs 约束，接入真实模型报告生成 | `../supporting/phase-2-practicality-plan.md` | `day-36.md` |
+| Playwright E2E | 覆盖任务提交、进度、报告、证据链、retry | `../supporting/phase-2-acceptance-and-risk.md` | `day-37.md` |
+| 报告导出 | Markdown 导出和证据包 artifact | `../supporting/reporting`、`../supporting/security-compliance.md` | `day-38.md` |
+| LLMOps 深化 | 成本、耗时、失败率、自愈率、恢复成功率 | `../supporting/llmops-metrics.md` | `day-39.md` |
+| Phase 2 RC | 阶段验收、release candidate、回归门禁和 main 合并判断 | `../supporting/release-checklist.md` | `day-40.md` |
 
 具体顺序可以按环境调整。比如 Docker daemon 如果仍不可用，真实 compose build/up 不阻塞其他开发，但必须保留为未补验项。
 
@@ -85,14 +87,25 @@ Day 1-30 已经把 MarketMind Agent 做成了第一阶段 release candidate：�
 - main 只保留稳定版本，dev 用于日常开发。
 - 所有新能力都有测试、文档和开发日志。
 
-## 第一周建议节奏
+## Day32-Day40 执行路线
 
-| Day | 主题 | 目的 |
-| --- | --- | --- |
-| Day 31 | 中文界面与术语统一 | 让项目展示不再像英文模板 |
-| Day 32 | 前端 retry 按钮 | 打通失败恢复的用户操作闭环 |
-| Day 33 | Retry 前端 E2E / 手动验证 | 确认页面、API、事件流一致 |
-| Day 34 | 真实 embedding provider 设计和 provider 抽象加固 | 为真实 RAG 做准备 |
-| Day 35 | provider 成本和失败指标 | 给 LLMOps 面板提供数据 |
-| Day 36 | 真实 LLM report prompt | 从确定性报告过渡到模型报告 |
-| Day 37 | Playwright E2E 和分支保护 | 提升协作和回归可靠性 |
+Day32-Day40 是第二阶段第一轮深化开发。它不是继续增加新名词，而是沿着 Day30 缺口和 Day31 中文界面基线，把项目从“可展示 RC”推进到“更实用的中文产品雏形”。
+
+| Day | 文档 | 主题 | 目的 | 主要依赖 |
+| --- | --- | --- | --- | --- |
+| Day 32 | `day-32.md` | 前端失败任务重试闭环 | 把后端 retry API 变成用户可点击的恢复能力 | Day28、Day31 |
+| Day 33 | `day-33.md` | 重试链路联调与恢复事件验收 | 校验 `waiting_retry`、恢复事件、前端刷新和浏览器行为 | Day28、Day32 |
+| Day 34 | `day-34.md` | 真实 embedding provider 接入设计 | 加固 `EmbeddingProvider`、真实 provider 配置和 provider fallback | Day14、Day15、模型决策 |
+| Day 35 | `day-35.md` | RAG 检索质量与 provider 指标 | 建立 RAG 评估集、召回质量和 provider_metrics | Day34、LLMOps |
+| Day 36 | `day-36.md` | 真实 LLM 报告生成 Prompt | 用 `StructuredReport`、`evidence_refs`、Pydantic 约束真实模型报告 | Day12、Day16、Day17 |
+| Day 37 | `day-37.md` | Playwright E2E 主链路 | 用真实浏览器覆盖新建调研、任务、报告、证据链和 retry 入口 | Day31、Day32 |
+| Day 38 | `day-38.md` | 报告导出与证据包 | 让报告具备 Markdown 导出、证据包和 artifact 交付能力 | Day16、Day17 |
+| Day 39 | `day-39.md` | LLMOps 运营指标面板 | 展示成本统计、失败率、自愈成功率和恢复成功率 | Day35、Day36 |
+| Day 40 | `day-40.md` | 第二阶段阶段验收与发布候选 | 建立 Phase 2 RC、阶段验收、release candidate 和回归门禁 | Day31-Day39 |
+
+这 9 个执行日必须继续遵守：
+
+- 每天先跑前一天验收，确认没有遗漏。
+- 每天开发前先更新或确认当天文档。
+- 每天开发后更新 `development-log.md`、`interview-defense-dossier.md` 和 `testing-strategy.md`。
+- 任何真实 provider、真实 compose build/up、真实 LLM 调用，都必须把 mock / fixture / real 的边界写清楚。

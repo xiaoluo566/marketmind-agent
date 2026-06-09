@@ -555,6 +555,46 @@ HTTP smoke: /, /research/new, /tasks, /reports, /evidence, /settings all 200 in 
 agent-browser-cli: Chinese page titles verified for dashboard, tasks, reports, evidence and settings
 ```
 
+## Day32-Day40 文档契约测试边界
+
+Day32-Day40 在正式开发前先新增 `tests/test_phase2_day32_40_docs.py`，用于锁定第二阶段后续 9 天的文档完整性。这个测试不验证业务功能已经实现，只验证开发前置文档、索引、开发日志、测试策略和面试材料已经准备好。
+
+这组测试覆盖：
+
+- `doc/roadmap/day-32.md` 必须存在，并记录 Day 32：前端失败任务重试闭环。
+- `doc/roadmap/day-33.md` 必须存在，并记录 Day 33：重试链路联调与恢复事件验收。
+- `doc/roadmap/day-34.md` 必须存在，并记录 Day 34：真实 embedding provider 接入设计。
+- `doc/roadmap/day-35.md` 必须存在，并记录 Day 35：RAG 检索质量与 provider 指标。
+- `doc/roadmap/day-36.md` 必须存在，并记录 Day 36：真实 LLM 报告生成 Prompt。
+- `doc/roadmap/day-37.md` 必须存在，并记录 Day 37：Playwright E2E 主链路。
+- `doc/roadmap/day-38.md` 必须存在，并记录 Day 38：报告导出与证据包。
+- `doc/roadmap/day-39.md` 必须存在，并记录 Day 39：LLMOps 运营指标面板。
+- `doc/roadmap/day-40.md` 必须存在，并记录 Day 40：第二阶段阶段验收与发布候选。
+- 每个每日文档必须包含：当天目标、前置依赖、当天交付物、实施步骤、测试计划、验收标准、风险与回退、文档同步清单、面试讲法、建议提交。
+- `phase-2-master-plan.md`、`doc/README.md`、`roadmap/README.md` 必须索引 Day32-Day40。
+- `development-log.md` 必须包含 Day32-Day40 开发前置记录。
+- `interview-defense-dossier.md` 必须包含 Day32-Day40 面试讲述准备。
+- `testing-strategy.md` 必须包含 Day32-Day40 文档契约测试边界。
+
+当前不覆盖：
+
+- Day32-Day40 的实际业务功能是否已经实现。
+- Playwright E2E 是否已接入。
+- 真实 provider 是否已经可用。
+- Phase 2 RC 是否已经发布。
+
+这些内容会在对应开发日写独立测试验证。这个测试的作用是防止后续开发跳过文档、索引和面试材料。
+
+当前验证：
+
+```text
+tests/test_phase2_day32_40_docs.py: 3 passed
+Phase 2 + Day30 documentation contract tests: 21 passed
+Full pytest: 183 passed
+ruff: passed
+git diff --check: passed
+```
+
 ## 回归要求
 
 任何 bug 修复都要留下一个能复现旧问题的测试。没有测试的修复，后续很容易被重构再次破坏。

@@ -77,3 +77,21 @@ Day 1-30 完成后，第二阶段从“可展示 RC”推进到“更实用的�
 5. `supporting/phase-2-acceptance-and-risk.md`
 
 第二阶段继续保持先文档后开发。中文界面、前端 retry 按钮、真实 provider、真实 compose build/up、Playwright E2E 和 branch protection 都必须在这些文档约束下推进。
+
+## Day32-Day40 执行文档
+
+第二阶段第一轮深化开发已经拆成这些执行文档：
+
+| Day | 文档 | 主题 |
+| --- | --- | --- |
+| Day 32 | `roadmap/day-32.md` | 前端失败任务重试闭环 |
+| Day 33 | `roadmap/day-33.md` | 重试链路联调与恢复事件验收 |
+| Day 34 | `roadmap/day-34.md` | 真实 embedding provider 接入设计 |
+| Day 35 | `roadmap/day-35.md` | RAG 检索质量与 provider 指标 |
+| Day 36 | `roadmap/day-36.md` | 真实 LLM 报告生成 Prompt |
+| Day 37 | `roadmap/day-37.md` | Playwright E2E 主链路 |
+| Day 38 | `roadmap/day-38.md` | 报告导出与证据包 |
+| Day 39 | `roadmap/day-39.md` | LLMOps 运营指标面板 |
+| Day 40 | `roadmap/day-40.md` | 第二阶段阶段验收与发布候选 |
+
+这些文档和 `supporting/development-log.md`、`supporting/interview-defense-dossier.md`、`supporting/testing-strategy.md` 绑定使用。每天开发完成后必须同步实际完成、验证结果、问题处理和面试讲法。
