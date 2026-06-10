@@ -1956,6 +1956,17 @@ Day32-Day40 的面试讲述要围绕一个主线：第二阶段不是堆技术�
 - 前端要防止非 failed 任务误触发。
 - 错误码和 trace id 要保留，方便定位。
 
+实际完成后可以补充：
+
+- 我先写了 `tests/test_frontend_retry_contract.py`，让测试明确要求 `retryTask()`、`POST /api/tasks/${taskId}/retry`、失败态按钮、中文文案、刷新任务/事件/步骤和 mock recovery event。
+- 实现时我没有让前端自己伪造业务成功，而是把真实 API 和 mock API 放在同一个 `retryTask()` 入口下。真实模式继续走后端 envelope，mock 模式只为演示返回 queued 快照和 `task.retry_submitted` 事件。
+- 按钮只在 `task.status === "failed"` 时出现，并且 `retrying || refreshing` 时禁用，避免用户连续点击造成重复投递。
+- 错误展示保留 `TASK_NOT_RETRYABLE`、`QUEUE_UNAVAILABLE` 这类后端错误码和 `trace id`，因为长任务排障需要从 UI 一路追到后端日志。
+
+如果面试官追问“为什么要为 mock 模式也做 retry 状态”，可以回答：
+
+> 因为这个项目需要演示和调试。在没有后端或 Docker daemon 不可用时，mock 模式不能只是静态页面。它至少要模拟关键状态变化，帮助我验证 UI 交互、中文文案和事件时间线是否正确。但我会明确说明这是 mock，不把它当成真实恢复成功率。
+
 ### Day 33：重试链路联调与恢复事件验收
 
 讲法重点：

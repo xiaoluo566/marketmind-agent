@@ -3,6 +3,7 @@ import type { AgentStep, Evidence, Report, Task, TaskAccepted, TaskCreateInput, 
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 const USE_MOCKS = process.env.NEXT_PUBLIC_USE_MOCKS === "true";
+const mockRetriedTaskIds = new Set<string>();
 
 export type ApiEnvelope<T> = {
   success: boolean;
@@ -97,6 +98,21 @@ export async function createTask(payload: TaskCreateInput) {
   });
 }
 
+export async function retryTask(taskId: string) {
+  if (USE_MOCKS) {
+    mockRetriedTaskIds.add(taskId);
+    return {
+      task_id: taskId,
+      status: "queued",
+      trace_id: `mock_retry_${taskId}`,
+      queue_task_id: `mock_retry_${taskId}`,
+    };
+  }
+  return request<TaskAccepted>(`/api/tasks/${taskId}/retry`, {
+    method: "POST",
+  });
+}
+
 export async function listTasks() {
   if (USE_MOCKS) {
     return tasks;
@@ -107,7 +123,8 @@ export async function listTasks() {
 
 export async function getTask(taskId: string) {
   if (USE_MOCKS) {
-    return tasks.find((task) => task.task_id === taskId) ?? tasks[0];
+    const task = tasks.find((item) => item.task_id === taskId) ?? tasks[0];
+    return mockRetriedTaskIds.has(task.task_id) ? buildMockRetriedTask(task) : task;
   }
   const task = await request<BackendTaskStatus>(`/api/tasks/${taskId}`);
   return mapBackendTask(task);
@@ -115,7 +132,25 @@ export async function getTask(taskId: string) {
 
 export async function getTaskEvents(taskId: string) {
   if (USE_MOCKS) {
-    return taskEvents.filter((event) => event.task_id === taskId);
+    const events = taskEvents.filter((event) => event.task_id === taskId);
+    if (!mockRetriedTaskIds.has(taskId)) {
+      return events;
+    }
+    const retryEvent: TaskEvent = {
+      event_id: `evt_mock_retry_${taskId}`,
+      task_id: taskId,
+      module: "api",
+      event_type: "task.retry_submitted",
+      status: "queued",
+      message: "重试任务已提交，任务已重新进入队列。",
+      created_at: new Date().toISOString(),
+      trace_id: `mock_retry_${taskId}`,
+      payload: { queue_task_id: `mock_retry_${taskId}` },
+    };
+    return [
+      ...events,
+      retryEvent,
+    ];
   }
   const payload = await request<BackendTaskEvents>(`/api/tasks/${taskId}/events`);
   return payload.events.map(mapBackendTaskEvent);
@@ -430,6 +465,19 @@ function mapBackendTaskEvent(event: BackendTaskEvent): TaskEvent {
     created_at: event.created_at,
     trace_id: event.trace_id,
     payload: event.payload,
+  };
+}
+
+function buildMockRetriedTask(task: Task): Task {
+  return {
+    ...task,
+    status: "queued",
+    queue_task_id: `mock_retry_${task.task_id}`,
+    error_code: null,
+    error_message: null,
+    finished_at: undefined,
+    duration_ms: undefined,
+    updated_at: new Date().toISOString(),
   };
 }
 

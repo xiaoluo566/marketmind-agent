@@ -90,6 +90,20 @@ Day28 已有后端 `POST /api/tasks/{task_id}/retry`。第二阶段前端 retry 
 - 不给 completed / running / queued 任务展示 retry。
 - 不在 Day32 做完整 Agent step replay。
 
+Day32 当前状态：
+
+- 已实现 `retryTask(taskId)` 前端 API client，真实模式调用 `POST /api/tasks/${task_id}/retry`。
+- 已在 `TaskProgressPanel` 中增加 failed-only `重试任务` 按钮。
+- 已实现 `正在重新投递`、`重试任务已提交`、`重试失败` 和 trace id 展示。
+- 已在 mock 模式下追加 queued 快照和 `task.retry_submitted` 事件，用于无后端 UI 验证。
+- 已新增 `tests/test_frontend_retry_contract.py` 和中文化契约补充。
+- 已用浏览器 mock 页面验证 `/tasks/tsk_6D44`：点击 `重试任务` 后显示 `重试任务已提交`、`排队中` 和 `api / task.retry_submitted`。
+
+Day33 需要继续确认：
+
+- 真实 API 模式下 `waiting_retry`、恢复事件、Redis/Celery 队列和 Worker recovery payload 是否一致。
+- 重复点击之外的后端幂等和 retry limit 是否能被前端错误文案清楚表达。
+
 ## 真实 provider 设计边界
 
 真实 provider 接入必须保留测试可控性：

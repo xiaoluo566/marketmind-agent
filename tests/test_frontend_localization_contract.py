@@ -151,7 +151,15 @@ def test_task_progress_components_use_chinese_operational_copy() -> None:
     for english_copy in ["Event timeline", "No task events recorded.", "Open report"]:
         assert english_copy not in progress_panel + timeline + steps_table
 
-    for chinese_copy in ["刷新中", "轮询中", "已结束", "打开报告"]:
+    for chinese_copy in [
+        "刷新中",
+        "轮询中",
+        "已结束",
+        "打开报告",
+        "重试任务",
+        "正在重新投递",
+        "重试失败",
+    ]:
         assert chinese_copy in progress_panel
 
     for chinese_copy in ["事件时间线", "暂无任务事件记录"]:

@@ -2318,7 +2318,7 @@ Day31 已完成中文界面基线，第二阶段不能继续凭临时想法往�
 
 ### 当前状态
 
-本记录只表示 Day32-Day40 的开发文档已经准备，具体功能尚未实现。后续每天完成后，要在对应 Day 下补实际完成、验证命令、失败问题、修复方式和是否可写进简历。
+本记录最初表示 Day32-Day40 的开发文档已经准备。当前 Day32 已进入实际实现并记录在下方，Day33-Day40 仍按对应每日文档继续推进。后续每天完成后，都要在对应 Day 下补实际完成、验证命令、失败问题、修复方式和是否可写进简历。
 
 ### 当前验证
 
@@ -2327,6 +2327,74 @@ Day31 已完成中文界面基线，第二阶段不能继续凭临时想法往�
 - `uv run pytest`：183 passed。
 - `uv run ruff check backend tests migrations`：All checks passed。
 - `git diff --check`：无输出。
+
+## Day 32 实际开发记录
+
+### 背景
+
+Day28 已经实现后端 `POST /api/tasks/{task_id}/retry`、`waiting_retry` 状态和 Worker recovery payload，但 Day31 完成中文界面后，用户仍然只能通过 API 调试工具触发失败恢复。Day32 的目标是把这个能力接到任务详情页，形成“失败任务可见、用户可点击、状态可刷新、错误可追踪”的前端闭环。
+
+### 当天为什么这样选
+
+今天没有先做真实 embedding provider 或真实 LLM prompt，而是先做 retry 前端闭环。原因是长任务系统的实用性首先取决于失败后能不能恢复。如果失败恢复只能靠开发者手动调接口，系统即使有 Agent、RAG 和报告生成，也很难被认为是一个可用的运营工具。
+
+今天也没有新建一个复杂的 `RetryTaskButton` 抽象，而是把按钮先放在 `TaskProgressPanel` 内部。原因是 retry 的可见性、当前任务状态、刷新任务详情、刷新事件时间线和刷新 Agent steps 都依赖同一个面板状态。先保持局部内聚，比提前抽组件更容易避免状态分散。后续如果任务操作变多，再抽成 `TaskActionBar` 会更自然。
+
+mock 模式没有直接“点击后静默成功”，而是在 `api.ts` 中增加 `mockRetriedTaskIds`，让 `getTask()` 返回 queued 快照，让 `getTaskEvents()` 追加 `task.retry_submitted` 事件。这样无后端演示也能看到恢复证据，而不是只看到一个成功 toast。
+
+### 实际改动
+
+- 新增 `tests/test_frontend_retry_contract.py`，按 TDD 先确认 RED：未实现前 5 个测试全部失败。
+- `frontend/src/lib/api.ts` 新增 `retryTask(taskId: string)`。
+- `retryTask()` 在真实 API 模式下调用 `POST /api/tasks/${taskId}/retry`。
+- mock 模式新增重试后的任务快照和恢复事件，不修改原始 fixture 对象。
+- `frontend/src/components/task-progress-panel.tsx` 新增 `重试任务` 按钮。
+- 仅 `failed` 任务展示重试入口，点击时展示 `正在重新投递` 并禁用重复点击。
+- 成功后展示 `重试任务已提交` 并刷新任务详情、事件时间线和 Agent steps。
+- 失败时展示 `重试失败`，保留后端错误码和 `trace id`。
+- `tests/test_frontend_localization_contract.py` 把 retry 文案纳入中文化契约。
+
+### 当前验证
+
+```powershell
+uv run pytest tests\test_frontend_retry_contract.py
+# 5 passed
+
+uv run pytest tests\test_frontend_retry_contract.py tests\test_frontend_localization_contract.py tests\test_frontend_api_integration_contract.py tests\test_frontend_task_progress_contract.py tests\test_day28_recovery.py
+# 26 passed
+```
+
+最终收尾验证：
+
+- `uv run pytest`：188 passed。
+- `uv run pytest --cov=backend --cov-report=term-missing`：188 passed，backend coverage 90.79%。
+- `uv run ruff check backend tests migrations`：All checks passed。
+- `uv run alembic heads`：`0002_task_queue_id (head)`。
+- `docker compose config`：通过。
+- `cd frontend; npm run lint`：通过。
+- `cd frontend; npm run build`：通过。
+- `cd frontend; npm audit --audit-level=high`：found 0 vulnerabilities。
+- `uvx pip-audit`：No known vulnerabilities found。
+- `git diff --check`：无输出。
+
+浏览器验收：
+
+- mock dev server 下 `/tasks/tsk_6D44` 返回 200。
+- `agent-browser-cli` 扫描确认失败任务详情页显示 `重试任务`。
+- 点击后页面显示 `重试任务已提交`、`排队中` 和 `api / task.retry_submitted`。
+
+安全扫描说明：
+
+- `rg -n "sk-|OPENAI_API_KEY|API_KEY|SECRET|PASSWORD|TOKEN|TOKEN=" ...` 只有测试假 key、环境变量占位、package-lock URL 和文档字段命中，没有发现真实密钥。
+
+### 遗留问题
+
+- 真实 API 模式下的 Redis/Celery 恢复链路仍需 Day33 验证。
+- 当前前端只做了按钮级防重复点击，后端幂等和恢复事件顺序仍然以后端 Day28 policy 为准，Day33 继续审计。
+
+### 下一步
+
+Day33 要围绕“这个按钮是不是真联通恢复链路”做验证：mock 浏览器点击、真实 API 可用时的 `waiting_retry -> queued/running`、恢复事件顺序、错误码映射和 Worker recovery payload 一致性。
 
 ## 30 天后优化记录
 

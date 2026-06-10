@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AgentStepsTable } from "@/components/agent-steps-table";
 import { StatusBadge } from "@/components/status-badge";
 import { TaskTimeline } from "@/components/task-timeline";
-import { ApiClientError, getTask, getTaskEvents, getTaskSteps } from "@/lib/api";
+import { ApiClientError, getTask, getTaskEvents, getTaskSteps, retryTask } from "@/lib/api";
 import type { AgentStep, Task, TaskEvent } from "@/lib/types";
 import { formatDuration } from "@/lib/utils";
 
@@ -27,8 +27,12 @@ export function TaskProgressPanel({
   const [steps, setSteps] = useState(initialSteps);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
+  const [retrying, setRetrying] = useState(false);
+  const [retryMessage, setRetryMessage] = useState<string | null>(null);
+  const [retryError, setRetryError] = useState<string | null>(null);
 
   const shouldPoll = useMemo(() => !TERMINAL_STATUSES.has(task.status), [task.status]);
+  const canRetryTask = task.status === "failed";
   const taskId = task.task_id;
 
   const refreshTaskProgress = useCallback(async () => {
@@ -53,6 +57,29 @@ export function TaskProgressPanel({
       setRefreshing(false);
     }
   }, [taskId]);
+
+  const handleRetryTask = useCallback(async () => {
+    if (!canRetryTask || retrying) {
+      return;
+    }
+    setRetrying(true);
+    setRetryMessage(null);
+    setRetryError(null);
+    try {
+      await retryTask(taskId);
+      setRetryMessage("重试任务已提交");
+      await refreshTaskProgress();
+    } catch (exc) {
+      if (exc instanceof ApiClientError) {
+        const traceText = exc.traceId ? `，trace id: ${exc.traceId}` : "";
+        setRetryError(`重试失败：${exc.code}: ${exc.message}${traceText}`);
+      } else {
+        setRetryError("重试投递失败，请稍后再试。");
+      }
+    } finally {
+      setRetrying(false);
+    }
+  }, [canRetryTask, refreshTaskProgress, retrying, taskId]);
 
   useEffect(() => {
     if (!shouldPoll) {
@@ -84,6 +111,16 @@ export function TaskProgressPanel({
                 {refreshError}
               </p>
             ) : null}
+            {retryMessage ? (
+              <p className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                {retryMessage}
+              </p>
+            ) : null}
+            {retryError ? (
+              <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                {retryError}
+              </p>
+            ) : null}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge status={task.status} />
@@ -101,6 +138,16 @@ export function TaskProgressPanel({
             >
               刷新
             </button>
+            {canRetryTask ? (
+              <button
+                className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800 hover:bg-amber-100 disabled:cursor-not-allowed disabled:text-amber-400"
+                type="button"
+                onClick={() => void handleRetryTask()}
+                disabled={retrying || refreshing}
+              >
+                {retrying ? "正在重新投递" : "重试任务"}
+              </button>
+            ) : null}
             {task.report_id ? (
               <Link
                 href={`/reports/${task.report_id}`}

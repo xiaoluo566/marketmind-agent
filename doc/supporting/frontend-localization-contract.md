@@ -29,7 +29,12 @@
 | Success rate | 成功率 | 不写成“通过率”，避免和测试通过率混淆 |
 | Validation errors | 校验错误 | Pydantic / Guardrails 错误 |
 | Retry | 重试 | failed 任务再次投递 |
+| Retry task | 重试任务 | 失败任务详情页的用户操作按钮 |
+| Retrying | 正在重新投递 | 点击 retry 后的 loading 状态 |
+| Retry submitted | 重试任务已提交 | retry API 成功后的正向提示 |
+| Retry failed | 重试失败 | retry API 或网络失败后的错误提示 |
 | Recovery | 恢复 | retry 后的恢复状态和事件 |
+| Recovery event | 恢复事件 | retry 后写入事件时间线的恢复证据 |
 | Evidence refs | 证据引用 | 报告中引用的证据 ID |
 | Trace ID | Trace ID | 技术标识保留英文 |
 | Task ID | Task ID | 技术标识保留英文 |
@@ -118,6 +123,23 @@ npm audit --audit-level=high
 ```
 
 浏览器验收使用 `NEXT_PUBLIC_USE_MOCKS=true` 的 dev server。注意 `NEXT_PUBLIC_*` 在生产构建中会被内联，不能只在 `next start` 时注入变量来判断客户端顶部模式 badge。
+
+## Day32 Retry 中文化补充
+
+Day32 已把失败任务重试入口接入任务详情页，新增中文文案必须继续遵守本契约：
+
+- 按钮默认态：`重试任务`。
+- loading 态：`正在重新投递`。
+- 成功提示：`重试任务已提交`。
+- 失败提示：`重试失败`。
+- 通用失败兜底：`重试投递失败，请稍后再试。`。
+- mock recovery event：`重试任务已提交，任务已重新进入队列。`。
+
+注意：
+
+- `TASK_NOT_RETRYABLE`、`QUEUE_UNAVAILABLE`、`trace id` 等错误码和技术排障字段不翻译。
+- `waiting_retry`、`queued`、`failed` 等状态枚举不翻译，只在 `StatusBadge` 和页面展示层映射为中文。
+- retry 的 mock 行为只能用于本地演示和 UI 验证，不能在文档中写成真实恢复成功率。
 
 ## 后续扩展
 

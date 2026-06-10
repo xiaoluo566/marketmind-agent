@@ -595,6 +595,42 @@ ruff: passed
 git diff --check: passed
 ```
 
+## Day 32 前端 Retry 契约测试边界
+
+Day32 新增 `tests/test_frontend_retry_contract.py`，用于验证 Day28 后端 retry 能力已经被前端正确消费。这个测试不是浏览器 E2E，而是源码级契约测试，目标是防止后续重构误删 API route、按钮状态、中文文案或 mock recovery 行为。
+
+这组测试覆盖：
+
+- `frontend/src/lib/api.ts` 必须导出 `retryTask(taskId: string)`。
+- `retryTask()` 必须调用真实后端路径 `POST /api/tasks/${taskId}/retry`，不能只做 mock-only 行为。
+- `TaskProgressPanel` 必须导入并调用 `retryTask()`。
+- 只有 `task.status === "failed"` 时展示 `重试任务` 入口。
+- 重试过程中按钮必须显示 `正在重新投递`，并通过 `disabled={retrying || refreshing}` 禁用重复点击。
+- 成功后必须展示 `重试任务已提交`，并调用 `refreshTaskProgress()` 刷新任务详情、事件时间线和 Agent steps。
+- 失败时必须展示 `重试失败`，保留 `trace id` 作为排障字段。
+- mock 模式必须更新任务快照和追加 `task.retry_submitted` 事件，方便无后端时验证 UI。
+
+这组测试不覆盖：
+
+- 真实浏览器点击。
+- Redis / Celery 是否真的重新消费任务。
+- `waiting_retry -> queued/running` 的真实端到端状态迁移。
+- 后端幂等锁和 retry limit 的全部组合，这些仍由 `tests/test_day28_recovery.py` 和 Day33 联调覆盖。
+
+当前验证：
+
+```text
+tests/test_frontend_retry_contract.py: 5 passed
+Day32 targeted retry regression: 29 passed
+Full pytest: 188 passed
+Coverage gate: 188 passed, backend coverage 90.79%
+ruff: passed
+frontend lint/build: passed
+npm audit: 0 vulnerabilities
+pip-audit: No known vulnerabilities found
+Browser mock click: /tasks/tsk_6D44 retry submitted and task.retry_submitted event visible
+```
+
 ## 回归要求
 
 任何 bug 修复都要留下一个能复现旧问题的测试。没有测试的修复，后续很容易被重构再次破坏。
