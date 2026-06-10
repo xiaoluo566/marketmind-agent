@@ -134,6 +134,31 @@ uv run python -m app.benchmarking.main_path --iterations 20 --output-dir doc\sup
 
 注意：Day 27 benchmark 是 fixture benchmark，不调用真实 LLM / embedding API，所以模型调用次数和 token 总量必须记录为 0。后续接真实 provider 后，才允许统计真实 token、成本、模型失败率和 self-heal 成功率。
 
+## Day 33 已补充 Retry 恢复指标口径
+
+Day33 尚未统计真实恢复成功率，因为 Docker daemon 不可用，真实 Redis/Celery 容器链路没有完成补验。当前只固化指标口径，等待后续真实运行数据填充。
+
+建议新增恢复类指标：
+
+- `retry_requested_count`：用户或系统触发 retry 的次数。
+- `retry_requeued_count`：成功重新入队次数，对应 `task requeued`。
+- `recovery_resumed_count`：Worker 重新开始恢复执行次数，对应 `task recovery resumed`。
+- `retry_queue_unavailable_count`：重试投递队列不可用次数，对应 `task retry queue unavailable`。
+- `retry_recovery_success_rate`：恢复后最终完成数 / retry requested 数。
+- `retry_recovery_latency_ms`：从 retry accepted 到 worker recovery resumed 的耗时。
+
+当前 Day33 可验证事实：
+
+- 后端单进程测试中存在 `task waiting retry`、`task requeued`、`task recovery resumed`。
+- 前端展示层已将 retry/recovery 常见事件翻译为中文说明。
+- mock 浏览器层可以看到 `task.retry_submitted`。
+
+当前不能写成指标：
+
+- 真实容器恢复成功率。
+- 真实 Redis/Celery 消费耗时。
+- 真实生产 retry 成本。
+
 ## 注意
 
 没有真实跑出来的数据不要写成确定指标。简历中要写“统计得到”，而不是“理论上”。

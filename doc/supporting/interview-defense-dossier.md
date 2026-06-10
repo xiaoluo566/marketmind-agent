@@ -1978,6 +1978,18 @@ Day32-Day40 的面试讲述要围绕一个主线：第二阶段不是堆技术�
 - 用户操作、任务状态、事件流和日志必须一致。
 - 如果 Docker daemon 不可用，只声明 mock / 测试层通过，不夸大真实容器链路。
 
+实际完成后可以补充：
+
+- 我把 SDD 规格直接写进 `day-33.md`，没有另开 specs 文档，因为当天要求是集中维护 roadmap。
+- 我先写 `tests/test_day33_retry_linkage_contract.py`，让测试确认 Day33 不是只补文档，而是要约束真实后端事件进入中文控制台的展示。
+- Day33 发现的真实缺口是：后端 retry/recovery message 是稳定英文，进入中文界面后会显得割裂。所以我在前端 API 映射层新增 `translateBackendTaskEventMessage()`，只翻译展示文案，不改 `event_type`、`trace_id`、payload 等技术字段。
+- 浏览器层用 mock 页面验证了 `重试任务 -> 重试任务已提交 -> 排队中 -> task.retry_submitted`。
+- Docker daemon 仍不可用，所以没有把这次验收说成真实 Redis/Celery 容器链路通过。
+
+如果面试官追问“为什么不把后端 message 也改成中文”，可以回答：
+
+> 后端事件 message 更像稳定审计日志和跨系统契约，直接改成中文会影响测试、日志检索和未来国际化。我的做法是在前端展示层做白名单翻译，既保证中文控制台可读，也保留后端 event_type 和 trace 字段的稳定性。
+
 ### Day 34：真实 embedding provider 接入设计
 
 讲法重点：

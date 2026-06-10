@@ -141,6 +141,19 @@ Day32 已把失败任务重试入口接入任务详情页，新增中文文案�
 - `waiting_retry`、`queued`、`failed` 等状态枚举不翻译，只在 `StatusBadge` 和页面展示层映射为中文。
 - retry 的 mock 行为只能用于本地演示和 UI 验证，不能在文档中写成真实恢复成功率。
 
+## Day33 Retry / Recovery 事件中文化补充
+
+Day33 已补充真实后端 retry/recovery 事件进入前端后的展示映射。注意：后端 `event_type`、`trace_id`、`payload` 和原始技术字段仍保持英文，中文化只发生在前端展示层。
+
+| 后端 message | 中文展示 |
+| --- | --- |
+| `task waiting retry` | `任务正在等待重试。` |
+| `task requeued` | `任务已重新进入队列。` |
+| `task recovery resumed` | `任务恢复执行已开始。` |
+| `task retry queue unavailable` | `重试队列不可用。` |
+
+这个设计用于解决中文控制台混入英文流程消息的问题，同时避免破坏后端审计日志和测试契约。
+
 ## 后续扩展
 
 如果未来需要英文版或多语言：

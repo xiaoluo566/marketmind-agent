@@ -88,6 +88,19 @@ Retry 前端完成标准：
 - 成功后刷新任务状态和事件流。
 - 失败时展示错误码和用户可读原因。
 
+Day33 补充验收：
+
+- Day33 已确认 mock 浏览器层可以完成 `重试任务 -> 重试任务已提交 -> 排队中 -> task.retry_submitted`。
+- Day33 已确认后端单进程测试覆盖 `task waiting retry`、`task requeued` 和 `task recovery resumed`。
+- Day33 已在前端展示层把真实后端 retry/recovery message 映射为中文说明。
+- Day33 未声明真实 Redis/Celery 容器链路通过，因为 Docker daemon 仍不可用。
+
+Day33 仍未完成：
+
+- 真实 `docker compose up`。
+- 容器内 Worker 消费 recovery payload。
+- 真实容器链路恢复成功率统计。
+
 ## Provider 验收
 
 真实 provider 完成标准：

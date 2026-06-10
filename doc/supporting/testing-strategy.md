@@ -656,6 +656,43 @@ Spec Kit 接入属于开发流程和仓库结构变更，不改变业务代码�
 - 新 `specs/` 功能目录，因为本次只接入工具和流程，不创建具体功能规格。
 - Spec Kit 每个 skill 的完整端到端执行，这会在 Day33+ 的具体功能开发中验证。
 
+## Day 33 Retry 链路联调测试边界
+
+Day33 新增 `tests/test_day33_retry_linkage_contract.py`，用于验证 Day28 后端 retry/recovery 和 Day32 前端 retry 按钮之间的链路证据。它不是完整真实容器 E2E，而是把当前可自动化的合同固定下来。
+
+这组测试覆盖：
+
+- `doc/roadmap/day-33.md` 必须内嵌 SDD 规格，并明确不另开 `specs/` 文档。
+- `frontend/src/lib/api.ts` 必须存在 `translateBackendTaskEventMessage()`。
+- 真实后端 retry/recovery message 必须在前端展示层映射为中文：
+  - `task waiting retry`
+  - `task requeued`
+  - `task recovery resumed`
+  - `task retry queue unavailable`
+- `inferEventModule()` 必须显式识别 `recovery` 和 `retry`。
+- 后端仍必须保留可审计 message 和 recovery payload keys：
+  - `retry_count`
+  - `resume_from_event_id`
+  - `resume_from_event_type`
+  - `last_error_code`
+
+这组测试不覆盖：
+
+- 真实 Docker Compose 启动。
+- Redis/Celery 容器内消费。
+- 真实浏览器 E2E CI job。
+- 未来新增后端事件 message 的全部中文映射。
+
+当前验证：
+
+```text
+tests/test_day33_retry_linkage_contract.py: 4 passed
+Day28 + Day32 + Day33 retry regression: 20 passed
+frontend lint/build: passed
+Browser mock click: /tasks/tsk_6D44 retry submitted and task.retry_submitted event visible
+Docker daemon: unavailable, real compose retry validation not claimed
+```
+
 ## 与其他文档关系
 
 - 数据样例见 `data-contract-examples.md`

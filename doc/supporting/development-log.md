@@ -2440,6 +2440,81 @@ Spec Kit SDD -> tdd-workflow -> 代码实现 -> verification-loop -> 开发日�
 - 本次只接入流程，不开发 Day33 功能。
 - 后续 Day33 开工前，需要按 Spec Kit 流程创建或检查 Day33 的 retry 联调规格。
 
+## Day 33 实际开发记录
+
+### 背景
+
+Day32 已经把失败任务 `重试任务` 按钮接到前端，但 Day33 需要回答一个更严格的问题：这个按钮是否真的和后端 retry API、恢复事件、Worker recovery payload、事件时间线和浏览器可见行为对得上。
+
+### 当天为什么这样选
+
+今天没有继续开发 Day34 的 embedding provider，也没有扩大前端 UI。原因是长任务系统的可靠性不是“按钮能点”就结束，必须能证明状态、事件、payload 和页面展示一致。
+
+今天按新的 SDD 流程执行，但没有另开 `specs/` 文档，而是把 SDD 规格直接写进 `doc/roadmap/day-33.md`。这是因为用户明确要求 Day33 的开发内容集中在当天 roadmap，避免同一个功能存在两份规格。
+
+### 实际改动
+
+- 在 `doc/roadmap/day-33.md` 新增 `SDD 规格`，写清用户故事、接口契约、非目标、成功标准和 Docker 验证边界。
+- 新增 `tests/test_day33_retry_linkage_contract.py`。
+- 按 TDD 先确认 RED：Day33 新测试最初 `2 failed, 2 passed`。
+- `frontend/src/lib/api.ts` 新增 `translateBackendTaskEventMessage()`。
+- 真实后端 retry / recovery message 在前端展示层映射为中文：
+  - `task waiting retry` -> `任务正在等待重试。`
+  - `task requeued` -> `任务已重新进入队列。`
+  - `task recovery resumed` -> `任务恢复执行已开始。`
+  - `task retry queue unavailable` -> `重试队列不可用。`
+- `inferEventModule()` 显式识别 `recovery` 为 `worker`，`retry` 为 `api`。
+
+### 当前验证
+
+```powershell
+uv run pytest tests\test_day33_retry_linkage_contract.py
+# 4 passed
+
+uv run pytest tests\test_frontend_retry_contract.py tests\test_frontend_localization_contract.py tests\test_day28_recovery.py
+# 20 passed
+
+cd frontend
+npm run lint
+npm run build
+# passed
+```
+
+最终门禁：
+
+- `uv run pytest`：192 passed。
+- `uv run pytest --cov=backend --cov-report=term-missing`：192 passed，backend coverage 90.77%。
+- `uv run ruff check backend tests migrations`：All checks passed。
+- `uv run alembic heads`：`0002_task_queue_id (head)`。
+- `docker compose config`：通过。
+- `cd frontend; npm audit --audit-level=high`：found 0 vulnerabilities。
+- `uvx pip-audit`：No known vulnerabilities found。
+- `git diff --check`：无输出。
+
+安全扫描说明：
+
+- `rg -n "sk-|OPENAI_API_KEY|API_KEY|SECRET|PASSWORD|TOKEN|TOKEN=" ...` 只有测试假 key、环境变量占位、package-lock URL 和文档字段命中，没有发现真实密钥。
+
+浏览器验收：
+
+- mock dev server 下 `/tasks/tsk_6D44` 返回 200。
+- `agent-browser-cli` 扫描确认初始页面显示 `失败`、`刷新`、`重试任务`。
+- 点击后页面显示 `重试任务已提交`、`排队中`、`api / task.retry_submitted` 和 `重试任务已提交，任务已重新进入队列。`
+
+Docker 验证边界：
+
+- `docker info --format '{{.ServerVersion}}'` 失败，原因是无法连接 `dockerDesktopLinuxEngine`。
+- 本日不声明真实 `docker compose up`、Redis/Celery 容器消费或真实容器 worker recovery 已通过。
+
+### 遗留问题
+
+- 真实 Docker daemon 可用后，仍需补真实 compose build/up 和容器内 retry recovery 验收。
+- Day33 只做常见后端 retry/recovery message 的前端中文映射，未来若后端新增事件消息，需要继续扩展映射表。
+
+### 下一步
+
+Day34 进入真实 embedding provider 接入设计。开工前仍然先在当天 roadmap 内写 SDD 规格，再进入 TDD。
+
 ## 30 天后优化记录
 
 30 天之后不再按 Day 编号推进，改用优化主题记录。

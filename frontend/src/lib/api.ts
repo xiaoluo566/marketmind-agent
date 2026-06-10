@@ -461,11 +461,21 @@ function mapBackendTaskEvent(event: BackendTaskEvent): TaskEvent {
     module: inferEventModule(event.event_type),
     event_type: event.event_type,
     status: normalizeTaskStatus(event.status),
-    message: event.message,
+    message: translateBackendTaskEventMessage(event),
     created_at: event.created_at,
     trace_id: event.trace_id,
     payload: event.payload,
   };
+}
+
+function translateBackendTaskEventMessage(event: BackendTaskEvent): string {
+  const translations: Record<string, string> = {
+    "task waiting retry": "任务正在等待重试。",
+    "task requeued": "任务已重新进入队列。",
+    "task recovery resumed": "任务恢复执行已开始。",
+    "task retry queue unavailable": "重试队列不可用。",
+  };
+  return translations[event.message] ?? event.message;
 }
 
 function buildMockRetriedTask(task: Task): Task {
@@ -511,6 +521,12 @@ function normalizeTaskStatus(status: string): Task["status"] {
 }
 
 function inferEventModule(eventType: string): TaskEvent["module"] {
+  if (eventType.includes("recovery")) {
+    return "worker";
+  }
+  if (eventType.includes("retry")) {
+    return "api";
+  }
   if (eventType.includes("crawler")) {
     return "crawler";
   }
