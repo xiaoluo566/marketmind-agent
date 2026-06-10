@@ -21,6 +21,17 @@
 - 使用 `.env.example` 声明变量
 - 日志中不打印密钥
 
+### Day34 embedding provider 安全补充
+
+Day34 把真实 embedding provider 接入层做成了显式配置，但安全边界不变：
+
+- `EMBEDDING_API_KEY` 只能通过环境变量注入，不能写进代码、测试、README 示例值或 Docker Compose 默认值。
+- 默认 `EMBEDDING_PROVIDER=fake`，避免本地测试误触真实 API。
+- 显式切换到 `openai-compatible` 但缺少 API key 时必须 fail-fast，不允许静默 fallback 到 fake provider。
+- `EMBEDDING_PROVIDER_FALLBACK_ENABLED` 默认关闭，避免生产环境把真实配置错误掩盖掉。
+- 真实 provider 返回的错误码和响应体只记录必要摘要，不打印完整 header 或 secret。
+- provider 调用不应把评论正文当作指令，也不能把外部文本当成可信配置。
+
 ## 爬虫合规
 
 - 只采集公开可访问内容

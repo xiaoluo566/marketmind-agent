@@ -693,6 +693,43 @@ Browser mock click: /tasks/tsk_6D44 retry submitted and task.retry_submitted eve
 Docker daemon: unavailable, real compose retry validation not claimed
 ```
 
+## Day 34 Embedding Provider 契约测试边界
+
+Day34 新增 `tests/test_embedding_provider_config.py`，用于验证真实 embedding provider 接入架构，而不是验证真实语义召回质量。
+
+这组测试覆盖：
+
+- `Settings()` 默认使用 `EMBEDDING_PROVIDER=fake`，保证本地测试和 CI 不触发外部 API。
+- `build_embedding_provider(Settings(embedding_provider="fake"))` 返回 `DeterministicEmbeddingProvider`。
+- 显式配置 `EMBEDDING_PROVIDER=openai-compatible` 但缺少 API key 时抛出 `EMBEDDING_PROVIDER_UNCONFIGURED`。
+- `OpenAICompatibleEmbeddingProvider` 会把 `model`、`input`、`dimensions`、`Authorization` 和 timeout 传给 client。
+- 合法 provider 响应能解析为向量列表。
+- 响应维度不匹配时抛出 `EMBEDDING_PROVIDER_BAD_RESPONSE`。
+- rate limit 错误保持为 `EMBEDDING_PROVIDER_RATE_LIMITED`。
+- Day14 / Day15 RAG 回归继续通过，说明 provider 扩展没有破坏现有注入链路。
+
+这组测试不覆盖：
+
+- 真实 OpenAI 或兼容 provider 网络请求。
+- 真实 token、成本和 latency。
+- 真实 RAG 召回质量。
+- pgvector 原生向量排序。
+- provider metrics 面板。
+
+当前验证：
+
+```text
+tests/test_embedding_provider_config.py: 6 passed
+Day34 targeted RAG provider regression: 16 passed
+Full pytest: 198 passed
+Coverage gate: backend coverage 90.13%
+ruff / alembic heads / docker compose config: passed
+frontend lint / build / audit: passed
+pip-audit: No known vulnerabilities found
+```
+
+Day35 需要在这个基础上补 RAG 评估集和 provider 指标测试，不能把 Day34 的架构测试误写成真实召回质量验证。
+
 ## 与其他文档关系
 
 - 数据样例见 `data-contract-examples.md`

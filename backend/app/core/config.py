@@ -27,8 +27,13 @@ class Settings(BaseSettings):
     model_provider: str = "openai-compatible"
     model_name: str = "gpt-5.4-mini"
     report_model_name: str = "gpt-5.5"
+    embedding_provider: str = "fake"
     embedding_model: str = "text-embedding-3-small"
     embedding_dimensions: int = 1536
+    embedding_api_base_url: str = "https://api.openai.com/v1"
+    embedding_api_key: str | None = None
+    embedding_request_timeout_seconds: float = 15.0
+    embedding_provider_fallback_enabled: bool = False
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -46,6 +51,13 @@ class Settings(BaseSettings):
         if isinstance(value, list):
             return [str(item).strip() for item in value if str(item).strip()]
         return []
+
+    @field_validator("embedding_provider", mode="before")
+    @classmethod
+    def normalize_embedding_provider(cls, value: object) -> str:
+        if value is None:
+            return "fake"
+        return str(value).strip().lower()
 
 
 @lru_cache

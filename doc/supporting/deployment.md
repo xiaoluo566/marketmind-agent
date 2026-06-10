@@ -121,12 +121,27 @@ docker compose down -v
 - `MODEL_PROVIDER`
 - `MODEL_NAME`
 - `REPORT_MODEL_NAME`
+- `EMBEDDING_PROVIDER`
 - `EMBEDDING_MODEL`
 - `EMBEDDING_DIMENSIONS`
+- `EMBEDDING_API_BASE_URL`
+- `EMBEDDING_API_KEY`
+- `EMBEDDING_REQUEST_TIMEOUT_SECONDS`
+- `EMBEDDING_PROVIDER_FALLBACK_ENABLED`
 - `NEXT_PUBLIC_API_BASE_URL`
 - `NEXT_PUBLIC_USE_MOCKS`
 
 不要把真实 API Key、Cookie、代理账号或生产数据库密码提交到仓库。真实部署时通过 `.env`、GitHub Actions secrets 或 secret manager 注入。
+
+Day34 以后，Compose 默认仍使用 `EMBEDDING_PROVIDER=fake`，用于无密钥环境下验证服务拓扑。真实部署时如果要启用 embedding API，需要显式配置：
+
+```env
+EMBEDDING_PROVIDER=openai-compatible
+EMBEDDING_API_KEY=...
+EMBEDDING_API_BASE_URL=https://api.openai.com/v1
+```
+
+显式启用真实 provider 但缺少 `EMBEDDING_API_KEY` 时，后端会 fail-fast。不要在生产环境默认打开 `EMBEDDING_PROVIDER_FALLBACK_ENABLED`，否则会掩盖真实 provider 配置错误。
 
 ## 当前验证边界
 

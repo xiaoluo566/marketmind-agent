@@ -83,6 +83,33 @@ Day 14 的 `SQLAlchemyReviewChunkStore.index_task_reviews` 返回 `ReviewChunkIn
 - embedding 失败次数。
 - embedding 总成本估算。
 
+## Day 34 provider 指标边界
+
+Day34 已经把 embedding provider 接入层做成可配置架构，但还没有开始真实 provider 质量评估，因此当前指标只能分成两类：
+
+### 架构级可统计项
+
+- `embedding_provider_name`
+- `embedding_provider_mode`：`fake` / `openai-compatible`
+- `embedding_request_timeout_seconds`
+- `embedding_provider_error_code`
+- `embedding_provider_fallback_enabled`
+
+### 真实运行后才能统计的项
+
+- embedding 调用次数
+- embedding 输入字符数或 token 数
+- embedding 平均耗时和 P95
+- embedding 失败率
+- 真实 token 成本
+- 真实召回质量指标
+
+当前要特别注意：
+
+- `EMBEDDING_PROVIDER_FALLBACK_ENABLED=true` 时，不能把 fallback 结果写成真实 provider 指标。
+- `fake` provider 的结果只能用于测试、演示和 baseline，不代表真实语义效果。
+- `EMBEDDING_PROVIDER_UNCONFIGURED` 应计入配置错误，而不是模型失败。
+
 ## 简历可用数据
 
 - 平均任务耗时

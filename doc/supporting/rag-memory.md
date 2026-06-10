@@ -114,6 +114,35 @@ reviews.content
 
 Day 15 做 `search_reviews_tool` 时，可以复用这个 store 的输出契约。后续接真实 PostgreSQL 时，可以把 Python cosine 替换成 pgvector 原生排序，但不要改变工具返回字段。
 
+## Day 34 provider 架构
+
+Day34 在 `backend/app/rag/embeddings.py` 中新增了真实 provider 接入层，但没有改变 Day14 / Day15 的 RAG store 和工具输出契约。
+
+当前 provider 结构：
+
+- `EmbeddingProvider`：稳定协议，要求 `dimensions`、`model_name` 和 `embed_texts()`。
+- `DeterministicEmbeddingProvider`：本地测试、CI 和离线演示使用。
+- `OpenAICompatibleEmbeddingProvider`：真实 OpenAI-compatible `/embeddings` 接入。
+- `build_embedding_provider(settings)`：根据 `Settings` 构建 provider。
+- `EmbeddingProviderError`：携带结构化错误码，便于后续写入错误日志和 LLMOps 指标。
+
+Day34 错误码：
+
+- `EMBEDDING_PROVIDER_UNCONFIGURED`：显式启用真实 provider 但没有 API key，或 provider 名不支持。
+- `EMBEDDING_PROVIDER_TIMEOUT`：真实 provider 超时。
+- `EMBEDDING_PROVIDER_RATE_LIMITED`：真实 provider 返回 429 或注入 client 抛出限流错误。
+- `EMBEDDING_PROVIDER_BAD_RESPONSE`：响应结构、数量、维度或数值类型异常。
+
+设计约束：
+
+- 默认 provider 是 `fake`，保证自动化测试不触网。
+- 显式选择 `openai-compatible` 但缺少 key 时默认 fail-fast。
+- fallback 默认关闭，只能在本地演示或临时降级时显式打开。
+- 即使 fallback 打开，也不能把结果写成真实 provider 质量指标。
+- provider 返回维度必须等于 `EMBEDDING_DIMENSIONS`，否则失败。
+
+Day35 可以基于这些错误码继续补 provider metrics、latency 和 RAG 质量评估，不需要再重写 provider 接口。
+
 ## Day 15 Agent 检索工具
 
 Day 15 新增 `search_reviews_tool`，把 Day 14 的检索能力包装成 Agent 工具。

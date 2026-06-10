@@ -42,8 +42,13 @@
 - `MODEL_PROVIDER`
 - `MODEL_NAME`
 - `REPORT_MODEL_NAME`
+- `EMBEDDING_PROVIDER`
 - `EMBEDDING_MODEL`
 - `EMBEDDING_DIMENSIONS`
+- `EMBEDDING_API_BASE_URL`
+- `EMBEDDING_API_KEY`
+- `EMBEDDING_REQUEST_TIMEOUT_SECONDS`
+- `EMBEDDING_PROVIDER_FALLBACK_ENABLED`
 - `APP_ENV`
 - `LOG_LEVEL`
 
@@ -51,8 +56,13 @@
 
 - `MODEL_NAME=gpt-5.4-mini`
 - `REPORT_MODEL_NAME=gpt-5.5`
+- `EMBEDDING_PROVIDER=fake`
 - `EMBEDDING_MODEL=text-embedding-3-small`
 - `EMBEDDING_DIMENSIONS=1536`
+- `EMBEDDING_API_BASE_URL=https://api.openai.com/v1`
+- `EMBEDDING_API_KEY=`，本地默认留空，不提交真实密钥
+- `EMBEDDING_REQUEST_TIMEOUT_SECONDS=15`
+- `EMBEDDING_PROVIDER_FALLBACK_ENABLED=false`
 - `CELERY_BROKER_URL=redis://localhost:6379/1`
 - `CELERY_RESULT_BACKEND=redis://localhost:6379/2`
 - `TASK_STATUS_REDIS_URL=redis://localhost:6379/3`
@@ -75,6 +85,15 @@ uv run playwright install chromium
 ```
 
 当前 HTML artifact 默认写入 `data/artifacts/crawler`，该目录属于本地运行产物，不进入 Git。
+
+Day34 以后，本地默认 embedding provider 是 `fake`。如果要验证真实 provider，需要在本机 `.env` 中显式配置：
+
+```env
+EMBEDDING_PROVIDER=openai-compatible
+EMBEDDING_API_KEY=你的本地密钥
+```
+
+不要把 `.env` 提交到 Git。真实 provider 开启后仍要确认 `EMBEDDING_DIMENSIONS=1536` 和数据库 `review_chunks.embedding vector(1536)` 一致。
 
 ```powershell
 uv run alembic upgrade head

@@ -2002,6 +2002,34 @@ Day32-Day40 的面试讲述要围绕一个主线：第二阶段不是堆技术�
 - 真实 provider 要处理维度校验、超时、限流和 bad response。
 - API key 不进入代码和测试。
 
+实际完成后可以补充：
+
+- 我先写 `tests/test_embedding_provider_config.py`，让测试因缺少 provider 常量、factory 和真实 provider 类而失败，再补实现。
+- 默认 `EMBEDDING_PROVIDER=fake`，保证本地测试、CI 和 fixture benchmark 不依赖外部网络。
+- 真实 provider 通过 `EMBEDDING_PROVIDER=openai-compatible` 显式开启，配置项包括 `EMBEDDING_API_BASE_URL`、`EMBEDDING_API_KEY`、`EMBEDDING_REQUEST_TIMEOUT_SECONDS` 和 `EMBEDDING_DIMENSIONS`。
+- 显式选择真实 provider 但没有 API key 时抛 `EMBEDDING_PROVIDER_UNCONFIGURED`，而不是自动 fallback。
+- `OpenAICompatibleEmbeddingProvider` 对响应数量、向量维度和数值类型做严格校验，避免把坏向量写入 `review_chunks`。
+- provider 错误码分成配置错误、超时、限流和坏响应，后续 Day35 可以直接进入 provider metrics。
+- 真实 provider HTTP 逻辑使用标准库 `urllib`，测试通过注入 fake client 验证契约，没有引入新的运行时依赖。
+
+如果面试官追问“为什么不直接用真实 embedding，把 fake 删掉”，可以回答：
+
+> 因为 fake provider 是测试隔离层，不是为了冒充真实能力。CI、单元测试和主链路回归不能依赖外部模型、网络和费用。真实 provider 应该通过同一个接口接入，并被配置、错误分类和维度校验约束。这样后续换 provider 或做成本控制时，不会污染 RAG 业务代码。
+
+如果面试官追问“为什么真实 provider 缺 key 不自动 fallback”，可以回答：
+
+> 这是为了防止生产环境误报成功。如果部署者显式设置了 `openai-compatible`，说明他期望真实 embedding；缺 key 时应该立刻失败，让配置问题暴露出来。fallback 只适合本地演示或临时降级，而且必须在指标里标注为 fake/fallback，不能写成真实召回效果。
+
+Day34 开发中还修了一个全量回归暴露的问题：
+
+> 全量测试时，Day24 主链路偶发出现 `task running` 和 `crawl started` 顺序错乱。根因不是 Worker 写入顺序错了，而是 SQL 查询按 `created_at, event_id` 排序；当多条事件在同一时间精度内写入时，随机 event id 会打乱顺序。我没有改测试糊过去，而是在 `SQLAlchemyTaskEventStore` 里只对同任务同 `created_at` 的事件做 1 微秒 tie-break，同时保留历史事件按原始 `created_at` 排序的语义。
+
+这个问题可以用来说明：
+
+- 全量回归比局部测试更容易发现跨模块隐患。
+- 时间线数据不能依赖随机 ID 作为稳定排序。
+- 修复要收窄到实际问题，不能破坏“按事件时间排序”的既有契约。
+
 ### Day 35：RAG 检索质量与 provider 指标
 
 讲法重点：

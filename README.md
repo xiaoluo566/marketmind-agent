@@ -48,12 +48,12 @@ flowchart TD
 - GitHub Actions CI、PR 模板、发布检查清单和回退运行手册。
 - Day27 fixture benchmark：20 个样例任务，成功率 95.00%，平均 338 ms，P95 391 ms。
 - Day28 失败任务 retry：`POST /api/tasks/{task_id}/retry`、`waiting_retry` 状态流和 Worker recovery resume 事件。
+- Day34 可配置 embedding provider 架构：默认 fake provider 保证测试稳定，显式配置可接 OpenAI-compatible embedding，并包含缺 key、限流、超时和 bad response 错误分类。
 
 尚未完成：
 
-- 前端 retry 按钮。
 - 全局 `GET /api/evidence`。
-- 真实 embedding provider 和 pgvector 原生排序。
+- 真实 embedding provider 付费调用、召回质量评估和 pgvector 原生排序。
 - 真实 LLM report prompt。
 - 真实 `docker compose build` / `docker compose up` 联调。
 - Playwright E2E 和 GitHub branch protection。
@@ -117,10 +117,10 @@ cd ..
 uvx pip-audit
 ```
 
-最新 Day30 本地完整门禁：
+最新 Day34 本地完整门禁：
 
-- `uv run pytest`：168 passed。
-- coverage：90.77%。
+- `uv run pytest`：198 passed。
+- coverage：90.13%。
 - ruff、alembic heads、compose config：通过。
 - frontend lint / build / audit：通过。
 - `uvx pip-audit`：No known vulnerabilities found。
@@ -157,14 +157,14 @@ Day30 相关材料：
 - 指标汇总：[doc/supporting/day30-metrics-summary.md](doc/supporting/day30-metrics-summary.md)
 - 缺口与 bug 汇总：[doc/supporting/day30-bug-summary.md](doc/supporting/day30-bug-summary.md)
 
-当前仍需如实说明：真实 `docker compose build/up`、真实 embedding provider、真实 LLM report prompt、前端 retry 按钮和 Playwright E2E 尚未完成。
+当前仍需如实说明：真实 `docker compose build/up`、真实 embedding provider 付费调用和召回质量评估、真实 LLM report prompt、Playwright E2E 尚未完成。
 
 ## 已知边界
 
 这些边界需要在 README、面试和演示中如实说明：
 
 - Day27 benchmark 是 fixture benchmark，不代表真实外部网站吞吐。
-- 当前模型调用和 token 成本统计仍为 0，因为还没有接真实 LLM / embedding provider。
+- 当前模型调用和 token 成本统计仍为 0，因为还没有跑真实 LLM / embedding provider 付费调用。
 - Day28 retry 是任务级恢复，不是精确到 Agent Thought / Action / Observation 的完整 replay。
 - `backoff_seconds` 当前只是 metadata，尚未接 Celery countdown。
 - Docker Compose 目前只验证了配置解析，真实容器 build/up 需要 Docker Desktop daemon 可用后补验。

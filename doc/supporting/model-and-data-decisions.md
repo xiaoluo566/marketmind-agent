@@ -36,8 +36,13 @@ Day 3 会开始设计数据库模型。模型、embedding、数据源、用户�
 第一版固定：
 
 ```env
+EMBEDDING_PROVIDER=fake
 EMBEDDING_MODEL=text-embedding-3-small
 EMBEDDING_DIMENSIONS=1536
+EMBEDDING_API_BASE_URL=https://api.openai.com/v1
+EMBEDDING_API_KEY=
+EMBEDDING_REQUEST_TIMEOUT_SECONDS=15
+EMBEDDING_PROVIDER_FALLBACK_ENABLED=false
 ```
 
 这样做的好处：
@@ -47,6 +52,20 @@ EMBEDDING_DIMENSIONS=1536
 - 召回质量足够支持“质量差、物流慢、退货、售后”等评论检索场景。
 
 如果后续升级到 `text-embedding-3-large`，不能直接混写旧向量。必须新建 embedding 版本或重建索引，因为默认维度会变成 3072，除非显式使用 `dimensions` 参数压缩。
+
+### Day34 provider 架构更新
+
+Day34 已把 embedding 从单一 deterministic fake provider 升级为可配置 provider 架构：
+
+- 默认 `EMBEDDING_PROVIDER=fake`，用于本地开发、CI、fixture benchmark 和无密钥演示。
+- 真实运行可以显式设置 `EMBEDDING_PROVIDER=openai-compatible`。
+- 显式真实 provider 必须配置 `EMBEDDING_API_KEY`，否则 fail-fast。
+- `EMBEDDING_API_BASE_URL` 默认为 `https://api.openai.com/v1`，也可以指向兼容 OpenAI `/embeddings` 协议的内部网关。
+- `EMBEDDING_PROVIDER_FALLBACK_ENABLED=false` 是默认值，避免生产环境悄悄把真实 provider 配置错误降级成 fake embedding。
+
+当前已完成的是 provider 架构和 contract，不等于已经验证真实语义召回质量。真实 provider 启用后仍需要 Day35 的 RAG 评估集和 provider 指标来证明召回效果。
+
+维度约束保持不变：`review_chunks.embedding` 仍是 `vector(1536)`。真实 provider 返回向量数量、维度或数值类型异常时必须失败，不能自动截断、补零或写入半成品向量。
 
 ## 数据源策略
 

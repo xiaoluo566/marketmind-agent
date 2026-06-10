@@ -47,8 +47,8 @@
 | --- | --- |
 | 稳定分支 | `main` |
 | 日常开发分支 | `dev` |
-| 当前开发阶段 | Day 30 release candidate、指标复盘与里程碑验收 |
-| 当前主链路 | 文档基线、Next.js 控制台骨架、前端真实 API client、真实任务提交表单、任务详情轮询面板、历史任务列表、历史报告列表、报告详情真实读取、报告 evidence chain 真实读取、FastAPI health、任务创建 API、public_url 安全校验、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、Agent step 查询 API、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、review chunk 入库、相似度检索原型、search_reviews_tool、结构化报告生成骨架、报告入库、证据链回查 API、风险机会评分、结构化错误日志、观测错误查询 API、主链路集成回归样例、Docker Compose 服务拓扑、数据库迁移服务、后端/前端 Dockerfile、GitHub Actions CI、PR 模板、发布检查清单、回退运行手册、Day27 benchmark harness、20 个 fixture 样例任务、性能 summary artifact、Day28 retry policy、任务 retry API、Worker recovery resume 事件、Day29 README/demo/resume/interview materials、数据库模型、Alembic 迁移 |
+| 当前开发阶段 | Day 34 真实 embedding provider 架构接入 |
+| 当前主链路 | 文档基线、Next.js 控制台骨架、前端真实 API client、真实任务提交表单、任务详情轮询面板、历史任务列表、历史报告列表、报告详情真实读取、报告 evidence chain 真实读取、FastAPI health、任务创建 API、public_url 安全校验、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、Agent step 查询 API、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、可配置 embedding provider 架构、review chunk 入库、相似度检索原型、search_reviews_tool、结构化报告生成骨架、报告入库、证据链回查 API、风险机会评分、结构化错误日志、观测错误查询 API、主链路集成回归样例、Docker Compose 服务拓扑、数据库迁移服务、后端/前端 Dockerfile、GitHub Actions CI、PR 模板、发布检查清单、回退运行手册、Day27 benchmark harness、20 个 fixture 样例任务、性能 summary artifact、Day28 retry policy、任务 retry API、Worker recovery resume 事件、Day29 README/demo/resume/interview materials、数据库模型、Alembic 迁移 |
 | 最新开发提交 | 以 `git log -1 --oneline` 为准 |
 | 当前数据库决策 | PostgreSQL + pgvector，review chunk 使用 `vector(1536)` |
 | 当前模型决策 | 默认 `gpt-5.4-mini`，报告模型 `gpt-5.5`，embedding `text-embedding-3-small` |
@@ -2514,6 +2514,79 @@ Docker 验证边界：
 ### 下一步
 
 Day34 进入真实 embedding provider 接入设计。开工前仍然先在当天 roadmap 内写 SDD 规格，再进入 TDD。
+
+## Day 34 实际开发记录
+
+### 背景
+
+Day14 已经有 `EmbeddingProvider` 抽象和 deterministic fake provider，但那一版只解决了“RAG 数据链路能不能稳定测试”。进入第二阶段后，项目需要从可测原型推进到真实 provider 可接入状态。Day34 的目标不是夸大成“真实 RAG 已经上线”，而是把 provider 的配置、错误分类、维度校验和测试隔离先做好。
+
+### 当天为什么这样选
+
+今天没有先做 RAG 召回质量评估，是因为没有真实 provider 接入边界时，评估集会缺少稳定执行入口。也没有直接把 OpenAI SDK 硬写进 RAG store，因为那会让 `SQLAlchemyReviewChunkStore` 同时承担 HTTP、鉴权、错误分类和入库职责，后续很难测试。
+
+我选择保留默认 `fake` provider，是因为本地测试、CI 和 fixture benchmark 必须稳定、便宜、可复现。真实 provider 通过 `EMBEDDING_PROVIDER=openai-compatible` 显式启用；如果显式启用但缺少 API key，则 fail-fast，而不是静默 fallback。这个取舍能防止生产环境把 fake embedding 误当成真实语义能力。
+
+### 实际改动
+
+- 在 `doc/roadmap/day-34.md` 直接补充 SDD 规格，没有另开 `specs/` 文档，延续 Day33 的用户要求。
+- 新增 `tests/test_embedding_provider_config.py`，按 TDD 先让测试因缺少 provider 常量、factory 和真实 provider 类而失败。
+- `backend/app/core/config.py` 新增：
+  - `embedding_provider`
+  - `embedding_api_base_url`
+  - `embedding_api_key`
+  - `embedding_request_timeout_seconds`
+  - `embedding_provider_fallback_enabled`
+- `backend/app/rag/embeddings.py` 新增：
+  - `EmbeddingProviderError`
+  - `OpenAICompatibleEmbeddingProvider`
+  - `build_embedding_provider(settings)`
+  - `EMBEDDING_PROVIDER_UNCONFIGURED`
+  - `EMBEDDING_PROVIDER_TIMEOUT`
+  - `EMBEDDING_PROVIDER_RATE_LIMITED`
+  - `EMBEDDING_PROVIDER_BAD_RESPONSE`
+- 真实 provider 使用标准库 `urllib`，测试通过注入 fake client 验证请求和响应，不触发真实网络。
+- 响应解析强制校验向量数量、维度和数值类型。
+- `.env.example` 和 `docker-compose.yml` 补齐 provider 环境变量占位，不写真实密钥。
+- 更新模型决策、RAG、部署、安全、LLMOps、测试策略、README 和面试文档。
+- 全量回归时顺手修复了 `SQLAlchemyTaskEventStore` 的同时间戳事件 tie-break 问题，避免 SQLite / PostgreSQL 在同任务多条事件同一 `created_at` 时打乱顺序。
+
+### 当前验证
+
+```powershell
+uv run pytest tests\test_embedding_provider_config.py
+# 6 passed
+
+uv run pytest tests\test_embedding_provider_config.py tests\test_config.py tests\test_review_rag_indexing.py tests\test_search_reviews_tool.py
+# 16 passed
+```
+
+完整 verification-loop 结果：
+
+- `uv run pytest`：198 passed。
+- `uv run pytest --cov=backend --cov-report=term-missing`：198 passed，backend coverage 90.13%。
+- `uv run ruff check backend tests migrations`：All checks passed。
+- `uv run alembic heads`：`0002_task_queue_id (head)`。
+- `docker compose config`：通过。
+- `cd frontend; npm run lint`：通过。
+- `cd frontend; npm run build`：通过。
+- `cd frontend; npm audit --audit-level=high`：found 0 vulnerabilities。
+- `uvx pip-audit`：No known vulnerabilities found。
+- `git diff --check`：无输出。
+- `rg` 安全扫描：只命中示例密码、测试假 key、占位 key 和路径名，没有发现真实密钥。
+
+当前已确认 Day34 新 provider 架构没有破坏 Day14 / Day15 的 RAG 注入和检索回归，也没有破坏 Day24 的主链路集成测试。
+
+### 遗留问题
+
+- 今天没有真实调用 embedding provider，因此不能写真实 token、成本、latency 或召回质量指标。
+- `EMBEDDING_PROVIDER_FALLBACK_ENABLED` 只完成配置和 factory 行为，尚未接入 LLMOps 面板。
+- pgvector 原生 `<=>` 排序仍未替换 Python cosine。
+- Day35 需要补 RAG 评估集、provider metrics 和空召回质量边界。
+
+### 下一步
+
+Day35 基于 Day34 provider 架构继续做 RAG 检索质量与 provider 指标。重点不是再扩 provider，而是把“query 是否命中预期 evidence”“provider 失败如何计数”“fallback 是否被标注”这些质量问题纳入测试和文档。
 
 ## 30 天后优化记录
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -181,6 +181,7 @@ class SQLAlchemyTaskEventStore:
         with self._session_scope() as session:
             with session.begin():
                 event_row = session.get(TaskEvent, event.event_id)
+                created_at = self._stable_created_at(session, event)
                 if event_row is None:
                     event_row = TaskEvent(
                         id=event.event_id,
@@ -190,7 +191,7 @@ class SQLAlchemyTaskEventStore:
                         event_type=event.event_type,
                         payload=event.payload,
                         trace_id=event.trace_id,
-                        created_at=event.created_at,
+                        created_at=created_at,
                     )
                     session.add(event_row)
                 else:
@@ -200,7 +201,7 @@ class SQLAlchemyTaskEventStore:
                     event_row.event_type = event.event_type
                     event_row.payload = event.payload
                     event_row.trace_id = event.trace_id
-                    event_row.created_at = event.created_at
+                    event_row.created_at = created_at
                 session.flush()
                 return self._to_data(event_row)
 
@@ -233,6 +234,20 @@ class SQLAlchemyTaskEventStore:
             trace_id=event_row.trace_id,
             created_at=event_row.created_at,
         )
+
+    def _stable_created_at(self, session: Session, event: TaskEventData) -> datetime:
+        last_created_at = session.scalar(
+            select(TaskEvent.created_at)
+            .where(TaskEvent.task_id == event.task_id)
+            .where(TaskEvent.id != event.event_id)
+            .order_by(TaskEvent.created_at.desc())
+            .limit(1)
+        )
+        if last_created_at is None:
+            return event.created_at
+        if _compare_datetime(event.created_at) != _compare_datetime(last_created_at):
+            return event.created_at
+        return last_created_at + timedelta(microseconds=1)
 
 
 class MirroredTaskStatusStore:
@@ -334,3 +349,9 @@ def _task_filters(
     if created_before:
         filters.append(Task.created_at <= created_before)
     return filters
+
+
+def _compare_datetime(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value
+    return value.astimezone(UTC).replace(tzinfo=None)
