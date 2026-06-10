@@ -2396,6 +2396,50 @@ uv run pytest tests\test_frontend_retry_contract.py tests\test_frontend_localiza
 
 Day33 要围绕“这个按钮是不是真联通恢复链路”做验证：mock 浏览器点击、真实 API 可用时的 `waiting_retry -> queued/running`、恢复事件顺序、错误码映射和 Worker recovery payload 一致性。
 
+## Spec Kit SDD 接入记录
+
+### 背景
+
+Day32 已完成前端失败任务重试入口并提交到 `dev`。在继续 Day33 真实重试链路联调之前，项目需要先把开发方法升级为更正式的 Spec-Driven Development，避免第二阶段后续功能继续依赖临时口头拆解。
+
+### 实际执行
+
+执行命令：
+
+```powershell
+specify init . --force --integration codex --integration-options="--skills" --script ps
+```
+
+生成内容：
+
+- `.specify/`：Spec Kit 模板、PowerShell 脚本、workflow、Codex integration metadata 和 extension 配置。
+- `.agents/skills/speckit-*`：Codex 可调用的 Spec Kit skills。
+- `AGENTS.md`：仓库级 Codex 指令。
+- `.specify/memory/constitution.md`：本项目 Day33+ SDD 宪法。
+
+### 为什么这样选
+
+第二阶段会继续做真实 retry 联调、真实 embedding provider、RAG 质量评估、真实 LLM prompt、Playwright E2E、报告导出和 LLMOps 指标。这些内容会同时影响 API、数据库、前端、Agent 状态机、报告 schema、测试和文档。如果继续只按“当天文档 + 直接开发”推进，很容易出现接口契约和验收标准漂移。
+
+Spec Kit 的价值不是替代现有 roadmap，而是把单个功能先变成可审计规格，再进入 TDD 和实现。后续固定流程调整为：
+
+```text
+Spec Kit SDD -> tdd-workflow -> 代码实现 -> verification-loop -> 开发日志/面试文档/测试文档回填
+```
+
+### 当前验证
+
+- `specify version`：CLI Version 0.10.1，Platform Windows。
+- `.specify/integration.json`：`installed_integrations` 包含 `codex`，`parsed_options.skills` 为 `true`。
+- `.agents/skills/`：已存在 `speckit-specify`、`speckit-plan`、`speckit-tasks`、`speckit-implement`、`speckit-analyze`、`speckit-checklist`、`speckit-clarify` 等 skills。
+- `AGENTS.md`：已补充本项目 Day33+ 固定流程和项目边界。
+- `doc/supporting/dev-workflow.md`：已写入 Spec Kit SDD 固定流程。
+
+### 遗留问题
+
+- 本次只接入流程，不开发 Day33 功能。
+- 后续 Day33 开工前，需要按 Spec Kit 流程创建或检查 Day33 的 retry 联调规格。
+
 ## 30 天后优化记录
 
 30 天之后不再按 Day 编号推进，改用优化主题记录。

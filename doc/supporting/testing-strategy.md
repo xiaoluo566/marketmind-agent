@@ -635,6 +635,27 @@ Browser mock click: /tasks/tsk_6D44 retry submitted and task.retry_submitted eve
 
 任何 bug 修复都要留下一个能复现旧问题的测试。没有测试的修复，后续很容易被重构再次破坏。
 
+## Spec Kit 接入验证边界
+
+Spec Kit 接入属于开发流程和仓库结构变更，不改变业务代码、API、数据库 schema 或前端页面行为。因此本次验证重点不是跑新的业务测试，而是确认工具链、生成目录和文档流程没有破坏现有 Day1-Day32 结构。
+
+本次验证覆盖：
+
+- `specify version` 可以正常执行。
+- `.specify/integration.json` 记录 Codex integration。
+- `.specify/init-options.json` 记录 `ai_skills: true`、`script: ps` 和当前 Spec Kit 版本。
+- `.agents/skills/` 存在 `speckit-specify`、`speckit-plan`、`speckit-tasks`、`speckit-implement`、`speckit-analyze`、`speckit-checklist`、`speckit-clarify` 等 skills。
+- `AGENTS.md` 已补充 Day33+ 固定开发流程。
+- `doc/supporting/dev-workflow.md` 已记录：
+  `Spec Kit SDD -> tdd-workflow -> 代码实现 -> verification-loop -> 开发日志/面试文档/测试文档回填`。
+- `.specify/memory/constitution.md` 不再保留模板占位，而是写入本项目的 SDD 原则。
+
+本次不覆盖：
+
+- Day33 retry 真实联调功能。
+- 新 `specs/` 功能目录，因为本次只接入工具和流程，不创建具体功能规格。
+- Spec Kit 每个 skill 的完整端到端执行，这会在 Day33+ 的具体功能开发中验证。
+
 ## 与其他文档关系
 
 - 数据样例见 `data-contract-examples.md`

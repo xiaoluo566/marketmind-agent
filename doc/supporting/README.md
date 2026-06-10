@@ -11,9 +11,11 @@
 - 再看 `model-and-data-decisions.md`，确认模型、embedding、数据源和用户边界
 - 接着看 `agent-state-machine.md`、`prompt-strategy.md`、`crawler-strategy.md`、`rag-memory.md`
 - 最后参考 `deployment.md`、`testing-strategy.md`、`risk-register.md`、`release-checklist.md`
+- Day33 之后开发前必须参考 `dev-workflow.md` 中的 Spec Kit SDD 固定流程
 
 ## 交付和复盘
 
+- `dev-workflow.md` 用来约束 Day33+ 的 Spec Kit SDD、TDD、验证和文档回填流程
 - `milestones-and-acceptance.md` 用来判断每周是否真的完成
 - `market-positioning.md` 用来约束项目市场定位、用户价值和简历口径
 - `llmops-metrics.md` 用来收集可写进简历的数据
@@ -38,6 +40,23 @@ Day 30 release candidate 之后，新增这些第二阶段文档：
 - `phase-2-acceptance-and-risk.md`：第二阶段验收门槛、风险、Docker daemon 不可用时的处理和回退策略。
 
 这些文档和 `future-iterations.md`、`day30-bug-summary.md`、`testing-strategy.md`、`development-log.md` 共同决定第二阶段的开发顺序。后续不能绕开它们直接写功能。
+
+## Spec Kit SDD 接入
+
+Day32 之后，本仓库已接入 GitHub Spec Kit：
+
+- `.specify/` 保存 Spec Kit 模板、脚本、workflow、Codex integration metadata 和项目 constitution。
+- `.agents/skills/speckit-*` 保存 Codex 可调用的 Spec Kit skills。
+- `AGENTS.md` 保存仓库级 Codex 指令。
+- `.specify/memory/constitution.md` 保存 Day33+ SDD 原则。
+
+后续每日开发固定顺序为：
+
+```text
+Spec Kit SDD -> tdd-workflow -> 代码实现 -> verification-loop -> 开发日志/面试文档/测试文档回填
+```
+
+任何 Day33+ 功能在写代码前，都要先写或检查规格、接口契约和验收标准。
 
 ## Day32-Day40 关联要求
 
