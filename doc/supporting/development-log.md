@@ -2667,6 +2667,57 @@ uvx pip-audit
 
 Day36 可以基于 Day35 的 evidence 质量边界进入真实 LLM 报告 prompt。重点是把模型输出限制在 `StructuredReport`、`evidence_refs` 和 Pydantic Guardrails 内，不能让模型自由编造证据。
 
+## Day 36 实际开发记录
+
+### 背景
+
+Day16 已经有确定性报告生成器，Day17 已经有证据链回查，Day35 已经有 RAG 评估和 provider metrics。Day36 的目标是把报告生成推进到真实 LLM prompt 契约，但仍然保持证据引用、结构化输出和 fallback 可控。
+
+### 当天为什么这样选
+
+今天没有直接把 OpenAI SDK 写进报告模块，而是先做 `LLMReportClient` 协议和 fake client 测试。原因是模型调用涉及密钥、费用、网络和输出不稳定；在这些外部因素进入前，必须先把 prompt version、allowed evidence refs、bad JSON repair 和 deterministic fallback 这些工程边界固定下来。
+
+今天也没有改 `StructuredReport` schema。已有报告、证据链、Markdown 渲染和报告详情 API 都依赖这个 schema，Day36 只增加 LLM 生成入口，不破坏既有报告契约。
+
+### 实际改动
+
+- 新增 `backend/app/reporting/llm_prompt.py`。
+- 新增 `REPORT_PROMPT_VERSION=report.evidence_chain.v1`。
+- 新增 `ReportPromptBundle`，把 prompt 拆成 system、developer、evidence context 和 output contract。
+- 新增 `LLMReportClient` 协议，测试中使用 fake client，不调用真实网络。
+- 新增 `LLMStructuredReportGenerator`：
+  - 有 evidence 时调用 LLM client。
+  - 使用 `StructuredOutputGuardrail` 解析为 `StructuredReport`。
+  - bad JSON 进入 repair。
+  - repair 失败或 evidence refs 校验失败时 fallback deterministic generator。
+  - 无 evidence 时跳过 LLM，输出 `insufficient_evidence`。
+- 新增 `tests/test_llm_report_prompt_contract.py`。
+- 更新 `prompt-strategy.md`、`llmops-metrics.md`、`day-36.md`、本文、`testing-strategy.md` 和 `interview-defense-dossier.md`。
+
+### 当前验证
+
+```powershell
+uv run pytest tests\test_llm_report_prompt_contract.py
+# 4 passed
+
+uv run pytest tests\test_llm_report_prompt_contract.py tests\test_report_generation.py tests\test_structured_output_guardrails.py tests\test_report_evidence_chain.py tests\test_report_scoring.py
+# 26 passed
+
+uv run ruff check backend tests migrations
+# All checks passed
+```
+
+### 遗留问题
+
+- 当前没有真实 LLM client，不统计真实 token、成本或 latency。
+- 真实 provider 密钥注入和模型调用安全边界仍需后续补。
+- 前端报告详情还没有突出展示“LLM / deterministic / fallback”来源。
+- Prompt 目前在代码中维护，后续如果版本增多，可以迁移到独立 prompt template 文件。
+
+### 下一步
+
+Day37 进入 Playwright E2E 主链路，把中文控制台、任务、报告、证据链和 retry 入口纳入真实浏览器回归。
+
 ## 30 天后优化记录
 
 30 天之后不再按 Day 编号推进，改用优化主题记录。

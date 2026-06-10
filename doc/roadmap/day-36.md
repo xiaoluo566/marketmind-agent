@@ -6,6 +6,50 @@ Day 36 的目标是把报告生成从确定性模板推进到真实 LLM report p
 
 这一天的核心不是“让模型随便写报告”，而是建立 prompt version、结构化输出校验、失败自愈和 fallback 的完整链路。
 
+## SDD 规格
+
+### 用户故事
+
+**P1 - 运营用户获得更自然但仍有证据约束的报告**
+
+作为运营用户，我希望报告可以由 LLM 组织语言，但每个结论仍然必须绑定输入 evidence refs，这样报告更可读，同时不会变成没有来源的 AI 文案。
+
+验收标准：
+
+- prompt 中明确列出 allowed evidence refs。
+- prompt 明确要求不要编造证据 ID。
+- LLM 输出必须匹配 `StructuredReport(report.v1)`。
+- section 引用不存在 evidence ref 时校验失败。
+
+**P1 - 开发者能处理坏 JSON 和模型漂移**
+
+作为开发者，我希望 LLM 输出坏 JSON 时能进入 self-heal，repair 失败时 fallback 到确定性报告生成器。
+
+验收标准：
+
+- bad JSON 会触发 `StructuredOutputGuardrail` repair。
+- repair 成功时记录 `validation_error_count` 和 `self_heal_count`。
+- repair 失败时 fallback deterministic generator。
+- fallback report metadata 记录 `fallback_used` 和 `fallback_reason`。
+
+**P2 - 无证据时不调用 LLM**
+
+作为维护者，我希望没有 evidence snippets 时直接输出 `insufficient_evidence`，避免模型凭空生成结论。
+
+验收标准：
+
+- 无 evidence snippets 时不调用 LLM client。
+- 报告状态为 `insufficient_evidence`。
+- metadata 记录 `llm_skipped_reason=NO_EVIDENCE_SNIPPETS`。
+
+### 非目标
+
+- 不在单元测试中调用真实 LLM。
+- 不把真实模型 token / cost 写成已验证指标。
+- 不改变 `StructuredReport` schema。
+- 不改变报告入库表结构。
+- 不做前端报告详情改造，前端展示放到 Day37 / Day38 / Day40 后续联调。
+
 ## 前置依赖
 
 - `day-12.md`：Pydantic guardrails 和 self-heal。
@@ -35,6 +79,14 @@ Day 36 的目标是把报告生成从确定性模板推进到真实 LLM report p
   - evidence_ids。
   - fallback_used。
 - 不允许生成没有证据引用的结论。
+- 新增 `backend/app/reporting/llm_prompt.py`：
+  - `REPORT_PROMPT_VERSION`
+  - `LLMReportClient`
+  - `ReportPromptBundle`
+  - `LLMStructuredReportGenerator`
+  - `LLMReportGenerationResult`
+  - `build_report_prompt_bundle()`
+- 新增 `tests/test_llm_report_prompt_contract.py`。
 
 ## 实施步骤
 
@@ -76,6 +128,34 @@ cd frontend
 npm run lint
 npm run build
 ```
+
+## 实际完成
+
+Day36 按 SDD + TDD 完成 LLM report prompt 契约层。
+
+实现选择：
+
+- 新增 `backend/app/reporting/llm_prompt.py`，把真实 LLM 报告能力作为可注入 client，而不是在报告生成器里硬编码外部 SDK。
+- `build_report_prompt_bundle()` 生成 system / developer / evidence / output contract 四段 prompt。
+- prompt version 固定为 `report.evidence_chain.v1`。
+- `LLMStructuredReportGenerator` 使用 `StructuredOutputGuardrail` 解析 LLM 输出为 `StructuredReport`。
+- bad JSON 会调用 client repair；repair 成功记录 self-heal。
+- repair 失败或 evidence ref 校验失败后 fallback 到 `StructuredReportGenerator`。
+- 无 evidence snippets 时跳过 LLM，直接输出 deterministic `insufficient_evidence`。
+- report metadata 记录 `prompt_version`、`model_provider`、`model_name`、`fallback_used`、`fallback_reason` 或 `llm_skipped_reason`。
+
+关键文件：
+
+- `backend/app/reporting/llm_prompt.py`
+- `backend/app/reporting/__init__.py`
+- `tests/test_llm_report_prompt_contract.py`
+
+## 当前验证结果
+
+- RED：`uv run pytest tests\test_llm_report_prompt_contract.py` 最初失败，原因是 `app.reporting.llm_prompt` 不存在。
+- GREEN：`uv run pytest tests\test_llm_report_prompt_contract.py`：4 passed。
+- 报告链路回归：`uv run pytest tests\test_llm_report_prompt_contract.py tests\test_report_generation.py tests\test_structured_output_guardrails.py tests\test_report_evidence_chain.py tests\test_report_scoring.py`：26 passed。
+- `uv run ruff check backend tests migrations`：All checks passed。
 
 ## 验收标准
 

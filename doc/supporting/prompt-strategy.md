@@ -109,6 +109,34 @@ StructuredReport(report.v1)
 
 Day 16 的确定性生成器可以视为未来 LLM report prompt 的 golden baseline：LLM 可以写得更自然，但不能降低证据引用约束。
 
+## Day 36 LLM report prompt 契约
+
+Day36 新增 `backend/app/reporting/llm_prompt.py`，把真实 LLM 报告 prompt 从文档推进到代码契约。
+
+当前 prompt version：
+
+```text
+report.evidence_chain.v1
+```
+
+Prompt bundle 分为四段：
+
+- `system_prompt`：限定模型角色，只能根据评论证据生成报告。
+- `developer_prompt`：写入 task、product、requested focus、allowed evidence refs。
+- `evidence_context`：列出每条 evidence snippet 的 ref、rating、similarity、source 和 content。
+- `output_contract`：要求只返回 JSON，并匹配 `StructuredReport(report.v1)`。
+
+Day36 的关键约束：
+
+- Prompt 明确写入“不要编造证据 ID”。
+- 每个 section 的 `evidence_refs` 必须来自 allowed evidence refs。
+- LLM 输出必须经过 `StructuredOutputGuardrail`。
+- bad JSON 可以走 self-heal repair。
+- repair 失败后 fallback 到 deterministic report generator。
+- 没有 evidence snippets 时不调用 LLM，直接输出 `insufficient_evidence`。
+
+当前仍不在单元测试中调用真实模型。`LLMReportClient` 是协议接口，测试使用 fake client 模拟好 JSON、坏 JSON、repair 和 fallback。
+
 ## Day 18 scoring prompt 边界
 
 Day 18 的风险与机会评分先采用确定性规则 `deterministic.scorecard.v1`，不调用大模型。

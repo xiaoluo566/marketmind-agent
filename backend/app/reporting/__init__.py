@@ -11,6 +11,13 @@ from app.reporting.generator import (
     ReportGenerationInput,
     StructuredReportGenerator,
 )
+from app.reporting.llm_prompt import (
+    LLMReportClient,
+    LLMReportGenerationResult,
+    LLMStructuredReportGenerator,
+    ReportPromptBundle,
+    build_report_prompt_bundle,
+)
 from app.reporting.schemas import ReportFinding, StructuredReport
 from app.reporting.scoring import (
     AnalysisScorecard,
@@ -29,9 +36,13 @@ __all__ = [
     "EvidenceRef",
     "EvidenceSnippet",
     "EvidenceSource",
+    "LLMReportClient",
+    "LLMReportGenerationResult",
+    "LLMStructuredReportGenerator",
     "ReportFinding",
     "ReportGenerationInput",
     "ReportRecord",
+    "ReportPromptBundle",
     "SQLAlchemyEvidenceChainStore",
     "SQLAlchemyReportStore",
     "ScorecardInput",
@@ -39,5 +50,6 @@ __all__ = [
     "StructuredReportGenerator",
     "attach_evidence_chain",
     "attach_scorecard_to_report",
+    "build_report_prompt_bundle",
     "parse_evidence_ref",
 ]

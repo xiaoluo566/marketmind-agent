@@ -771,6 +771,34 @@ pip-audit: No known vulnerabilities found
 
 这组测试的定位是防回归和证明评估方法，不是证明线上 RAG 准确率。
 
+## Day 36 LLM Report Prompt 测试边界
+
+Day36 新增 `tests/test_llm_report_prompt_contract.py`，用于验证真实 LLM 报告生成 prompt 的工程契约。
+
+这组测试覆盖：
+
+- `build_report_prompt_bundle()` 必须包含 prompt version、StructuredReport、allowed evidence refs 和“不要编造证据 ID”。
+- bad JSON 输出会触发 self-heal repair。
+- repair 成功后 report metadata 记录 `prompt_version`、`model_name`、`model_provider` 和 `fallback_used=false`。
+- repair 失败或 evidence ref 校验失败时 fallback deterministic generator。
+- fallback report metadata 记录 `fallback_used=true` 和 `fallback_reason=structured_output_guardrail_failed`。
+- 无 evidence snippets 时跳过 LLM，输出 `insufficient_evidence`，并记录 `llm_skipped_reason=NO_EVIDENCE_SNIPPETS`。
+
+这组测试不覆盖：
+
+- 真实 LLM 网络请求。
+- 真实 token / cost / latency。
+- 多 prompt version 文件管理。
+- 前端报告详情展示。
+
+当前验证：
+
+```text
+tests/test_llm_report_prompt_contract.py: 4 passed
+Day36 report chain targeted regression: 26 passed
+ruff: passed
+```
+
 ## 与其他文档关系
 
 - 数据样例见 `data-contract-examples.md`

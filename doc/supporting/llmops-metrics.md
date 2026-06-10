@@ -183,6 +183,36 @@ Day35 fixture 覆盖 5 个中文 query：
 - 当前没有写入数据库表，Day39 面板需要时再决定是否持久化。
 - 当前 RAG 命中率是 fixture baseline，只能用于防回归和演示评估方法。
 
+## Day 36 Report LLM Prompt 指标
+
+Day36 新增 LLM report prompt 契约层，但仍不在测试中调用真实模型。
+
+当前可记录字段：
+
+- `prompt_version`：当前为 `report.evidence_chain.v1`。
+- `model_provider`
+- `model_name`
+- `validation_error_count`
+- `self_heal_count`
+- `fallback_used`
+- `fallback_reason`
+- `llm_skipped_reason`
+
+当前已验证场景：
+
+- bad JSON 触发 repair，并记录 `validation_error_count=1`、`self_heal_count=1`。
+- repair 失败或 evidence ref 校验失败时 fallback deterministic generator。
+- 无 evidence snippets 时跳过 LLM，记录 `llm_skipped_reason=NO_EVIDENCE_SNIPPETS`。
+
+当前还不能统计：
+
+- 真实 prompt token。
+- 真实 completion token。
+- 真实模型成本。
+- 真实模型 latency。
+
+这些指标需要等真实 provider client 接入并完成安全密钥管理后再统计。
+
 ## 简历可用数据
 
 - 平均任务耗时

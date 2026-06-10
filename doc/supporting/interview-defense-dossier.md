@@ -2062,6 +2062,34 @@ Day34 开发中还修了一个全量回归暴露的问题：
 
 讲法重点：
 
+> Day 36 我把报告生成推进到真实 LLM prompt，但没有让模型自由写。模型必须通过 `StructuredReport` 和 `StructuredOutputGuardrail`，并且 prompt 里明确写了 allowed evidence refs，不能编造证据 ID。坏 JSON 会走 repair，repair 失败就 fallback 到 deterministic generator；没有 evidence snippets 时直接跳过 LLM。
+
+可强调的思考：
+
+- prompt version 需要固定，不然报告行为会漂移。
+- evidence refs 是硬约束，不是自然语言建议。
+- 无 evidence 直接降级，避免模型对着空上下文乱写。
+- fake client 测试能覆盖 bad JSON、repair、fallback，不需要真实网络。
+
+实际完成后可以补充：
+
+- 我新增了 `backend/app/reporting/llm_prompt.py`，把 prompt 分成 system、developer、evidence context 和 output contract 四段。
+- `LLMReportClient` 只是协议接口，测试使用 fake client，不把真实模型调用混进单元测试。
+- `LLMStructuredReportGenerator` 在有 evidence 时走 LLM + guardrail，在无 evidence 时直接走 deterministic fallback。
+- report metadata 记录 `prompt_version`、`model_provider`、`model_name`、`fallback_used` 和 `fallback_reason`，后续 Day39 可以直接进 LLMOps 统计。
+
+如果面试官追问“怎么防止模型胡编报告”，可以回答：
+
+> 我先把证据约束写进 prompt，再用 `StructuredReport` 校验 section 引用的 evidence refs 是否都存在。如果模型输出坏 JSON，就先 repair；repair 失败就回退到 deterministic report generator。也就是说，我不会把模型自由文本直接当业务结论，而是把它锁在结构化 schema 和证据引用里。
+
+如果面试官追问“为什么无证据时不让模型尝试”，可以回答：
+
+> 因为这类场景的风险不是文案不好看，而是证据不足时模型会凭空推断。项目的目标是证据链报告，不是让模型补全常识。所以没有证据就应该明示 `insufficient_evidence`，这比强行生成一段看似专业的结论更可信。
+
+### Day 36：真实 LLM 报告生成 Prompt
+
+讲法重点：
+
 > Day 36 我把报告生成接入真实 LLM prompt，但输出必须经过 `StructuredReport`、`evidence_refs` 和 Pydantic 校验，坏 JSON 走 self-correction，失败后 fallback。
 
 可强调的思考：
