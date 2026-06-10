@@ -206,6 +206,23 @@ export async function getReportEvidence(reportId: string) {
   return payload.sources.map((source) => mapBackendEvidenceSource(source, payload.task_id));
 }
 
+export function getReportMarkdownExportUrl(report: Report, reportEvidence: Evidence[]) {
+  if (USE_MOCKS) {
+    return buildDataUrl("text/markdown", buildMockReportMarkdown(report, reportEvidence));
+  }
+  return `${API_BASE_URL}/api/reports/${encodeURIComponent(report.report_id)}/export/markdown`;
+}
+
+export function getReportEvidencePackageUrl(report: Report, reportEvidence: Evidence[]) {
+  if (USE_MOCKS) {
+    return buildDataUrl(
+      "application/json",
+      JSON.stringify(buildMockEvidencePackage(report, reportEvidence), null, 2),
+    );
+  }
+  return `${API_BASE_URL}/api/reports/${encodeURIComponent(report.report_id)}/evidence-package`;
+}
+
 export async function listEvidence() {
   if (USE_MOCKS) {
     return evidence;
@@ -563,4 +580,80 @@ function durationMs(startedAt?: string | null, finishedAt?: string | null) {
     return undefined;
   }
   return end - start;
+}
+
+function buildDataUrl(mediaType: "text/markdown" | "application/json", content: string) {
+  return `data:${mediaType};charset=utf-8,${encodeURIComponent(content)}`;
+}
+
+function buildMockReportMarkdown(report: Report, reportEvidence: Evidence[]) {
+  const sections = report.sections
+    .map((section) =>
+      [
+        `## ${section.title}`,
+        "",
+        section.body,
+        "",
+        `证据引用：${section.evidence_ids.map((id) => `\`${id}\``).join(", ") || "证据不足"}`,
+        "",
+      ].join("\n"),
+    )
+    .join("\n");
+  const evidenceLines = reportEvidence
+    .map((item) =>
+      [
+        `### ${item.evidence_id}`,
+        "",
+        item.content,
+        "",
+        `- 来源：${item.source_url}`,
+        `- 相似度：${Math.round(item.similarity * 100)}%`,
+        item.rating ? `- 评分：${item.rating}/5` : null,
+        "",
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    )
+    .join("\n");
+
+  return [
+    `# ${report.title}`,
+    "",
+    report.summary,
+    "",
+    `- report_id：\`${report.report_id}\``,
+    `- task_id：\`${report.task_id}\``,
+    `- 风险评分：\`${report.risk_score}\``,
+    "",
+    sections,
+    "## 证据摘录",
+    "",
+    evidenceLines || "证据不足",
+    "",
+  ].join("\n");
+}
+
+function buildMockEvidencePackage(report: Report, reportEvidence: Evidence[]) {
+  return {
+    package_version: "evidence_package.v1",
+    report_id: report.report_id,
+    task_id: report.task_id,
+    title: report.title,
+    summary: report.summary,
+    generated_at: new Date().toISOString(),
+    evidence_refs: Array.from(
+      new Set(report.sections.flatMap((section) => section.evidence_ids)),
+    ),
+    sources: reportEvidence.map((item) => ({
+      evidence_ref: item.evidence_id,
+      source_type: item.source_type,
+      task_id: item.task_id,
+      available: true,
+      content_preview: item.content,
+      source_url: item.source_url,
+      similarity: item.similarity,
+      rating: item.rating,
+      metadata: item.metadata,
+    })),
+  };
 }

@@ -2152,6 +2152,21 @@ Playwright 生成的 HTML report 目录被 ESLint 当源码扫描，导致 lint 
 - 先做 Markdown 和 JSON 证据包，暂不做 PDF，避免排版复杂度抢走核心价值。
 - 导出内容必须脱敏，不泄露内部配置。
 
+实际完成后可以补充：
+
+- 我新增了 `GET /api/reports/{report_id}/export/markdown`，它只读取已经入库的 `content_markdown`，不重新触发 LLM 或 RAG。
+- 我新增了 `GET /api/reports/{report_id}/evidence-package`，复用 evidence chain，把 `evidence_refs`、来源 URL、评论预览、缺失原因和安全 metadata 打包出来。
+- 我做了导出脱敏：`api_key`、`token`、`secret`、`password`、`authorization` 这类字段不会进入证据包。
+- 前端报告详情增加了 `导出 Markdown` 和 `下载证据包`，mock 模式走 data URL，真实 API 模式走 FastAPI 导出接口。
+
+如果面试官追问“为什么导出接口不重新生成报告”，可以回答：
+
+> 导出应该是对报告快照的读取，而不是重新跑一次生成链路。否则同一份报告每次下载都可能因为模型、RAG 或外部数据变化而不一致。项目里报告是证据链快照，导出只是把这个快照交付出去。
+
+如果面试官追问“怎么防止证据包泄露内部信息”，可以回答：
+
+> 我在 evidence package 构建层做递归 metadata 过滤，敏感 key 直接删除，疑似 secret value 替换为 `[REDACTED]`。另外 Agent step 类型证据仍只导出 tool input/output 的 key 列表，不导出完整参数和结果。
+
 ### Day 39：LLMOps 运营指标面板
 
 讲法重点：

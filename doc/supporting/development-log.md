@@ -2829,3 +2829,59 @@ Day38 进入报告导出与 evidence package，把报告从页面展示推进到
 - 是否有未解决问题进入 `open-questions.md`
 - 是否有高风险变更进入 `change-management.md`
 - 是否需要更新 `README.md` 或 supporting 索引
+
+## Day 38 实际开发记录
+
+### 背景
+
+Day16 已经有结构化报告和 Markdown 渲染，Day17 已经有证据链回查，Day37 已经补齐浏览器主链路。Day38 的目标是把报告从控制台展示推进到可交付文件，让运营用户可以下载报告和证据包。
+
+### 当天为什么这样选
+
+今天先做 Markdown 和 JSON evidence package，而不是 PDF。原因是 PDF 的价值主要在排版，而当前项目更需要证明报告内容可追溯、可测试、可分享。Markdown 和 JSON 可以复用现有报告结构和 evidence chain，开发成本低，也更适合后续接入自动评估和面试演示。
+
+今天也没有重新生成报告，而是只读取已入库报告。导出应该是读模型，不应该触发 LLM、RAG 或 Agent 重新执行，否则用户下载同一份报告时可能拿到不同结果。
+
+### 实际改动
+
+- 新增 `backend/app/reporting/export.py`
+- 新增 `GET /api/reports/{report_id}/export/markdown`
+- 新增 `GET /api/reports/{report_id}/evidence-package`
+- evidence package 复用 `SQLAlchemyEvidenceChainStore`
+- evidence package 过滤敏感 metadata key 和疑似 secret value
+- 新增 `tests/test_report_export.py`
+- 前端 `api.ts` 新增导出 URL helper
+- `ReportViewer` 新增 `导出 Markdown` 和 `下载证据包`
+- Playwright 主链路增加导出按钮断言
+
+### 当前验证
+
+```powershell
+uv run pytest tests\test_report_export.py tests\test_frontend_history_contract.py tests\test_report_generation.py tests\test_report_evidence_chain.py
+# 19 passed
+
+uv run ruff check backend tests migrations
+# All checks passed
+
+cd frontend
+npm run lint
+# passed
+
+npm run build
+# passed
+
+npm run test:e2e
+# 1 passed
+```
+
+### 问题记录
+
+- 并行运行 `npm run build` 和 `npm run test:e2e` 时，Next.js dev server 在 Windows `.next` 写入时出现 `EPERM rename` 日志。
+- 处理方式：顺序重跑 `npm run test:e2e`，验证结果干净通过。后续前端验证尽量避免 build 和 dev server 同时写 `.next`。
+
+### 遗留问题
+
+- 暂不做 PDF。
+- 暂不导出完整二进制 artifact。
+- 暂不验证浏览器真实下载后的本地文件内容。
+- 真实 API 下载需要后端服务运行；mock 模式只用于本地演示。

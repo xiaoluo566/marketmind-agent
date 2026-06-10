@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { Download, FileJson } from "lucide-react";
 
+import { getReportEvidencePackageUrl, getReportMarkdownExportUrl } from "@/lib/api";
 import type { Evidence, Report } from "@/lib/types";
 
 import { EvidenceList } from "./evidence-list";
@@ -9,6 +11,8 @@ export function ReportViewer({ report, evidence }: { report: Report; evidence: E
   const linkedEvidence = evidence.filter((item) =>
     report.sections.some((section) => section.evidence_ids.includes(item.evidence_id)),
   );
+  const markdownExportUrl = getReportMarkdownExportUrl(report, linkedEvidence);
+  const evidencePackageUrl = getReportEvidencePackageUrl(report, linkedEvidence);
 
   return (
     <div className="space-y-6">
@@ -28,6 +32,24 @@ export function ReportViewer({ report, evidence }: { report: Report; evidence: E
             </p>
             <p className="text-xs text-slate-500">风险评分</p>
           </div>
+        </div>
+        <div className="mt-5 flex flex-wrap gap-3">
+          <a
+            className="inline-flex h-9 items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 text-sm font-semibold text-blue-700 hover:bg-blue-100"
+            href={markdownExportUrl}
+            download={`marketmind-report-${report.report_id}.md`}
+          >
+            <Download className="h-4 w-4" aria-hidden="true" />
+            导出 Markdown
+          </a>
+          <a
+            className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            href={evidencePackageUrl}
+            download={`marketmind-evidence-${report.report_id}.json`}
+          >
+            <FileJson className="h-4 w-4" aria-hidden="true" />
+            下载证据包
+          </a>
         </div>
       </section>
 

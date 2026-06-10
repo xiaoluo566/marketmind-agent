@@ -33,6 +33,8 @@ test.describe("MarketMind 中文控制台主链路", () => {
     await page.getByRole("link", { name: /台灯差评分析/ }).click();
     await expect(page.getByText("报告详情")).toBeVisible();
     await expect(page.getByRole("heading", { name: "台灯差评分析" }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: "导出 Markdown" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "下载证据包" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "证据引用" })).toBeVisible();
 
     await page.getByRole("link", { name: "证据链" }).click();

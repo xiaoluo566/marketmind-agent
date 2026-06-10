@@ -50,12 +50,12 @@ flowchart TD
 - Day28 失败任务 retry：`POST /api/tasks/{task_id}/retry`、`waiting_retry` 状态流和 Worker recovery resume 事件。
 - Day34 可配置 embedding provider 架构：默认 fake provider 保证测试稳定，显式配置可接 OpenAI-compatible embedding，并包含缺 key、限流、超时和 bad response 错误分类。
 - Day35 RAG 质量评估和 provider metrics baseline：5 个中文 query fixture、expected evidence 命中检查、空召回统计、fallback 和 provider 错误指标。
+- Day38 报告交付物：Markdown 导出、JSON evidence package、前端下载入口和导出 metadata 脱敏。
 
 尚未完成：
 
 - 全局 `GET /api/evidence`。
 - 真实 embedding provider 付费调用、大规模人工标注召回质量评估和 pgvector 原生排序。
-- 真实 LLM report prompt。
 - 真实 `docker compose build` / `docker compose up` 联调。
 - Playwright mock E2E 已接入；真实 Compose E2E 和 GitHub branch protection 待补。
 
@@ -160,7 +160,7 @@ Day30 相关材料：
 - 指标汇总：[doc/supporting/day30-metrics-summary.md](doc/supporting/day30-metrics-summary.md)
 - 缺口与 bug 汇总：[doc/supporting/day30-bug-summary.md](doc/supporting/day30-bug-summary.md)
 
-当前仍需如实说明：真实 `docker compose build/up`、真实 embedding provider 付费调用和真实线上召回质量评估尚未完成；真实 LLM report prompt 契约已完成但未调用付费 provider；Playwright 已完成 mock E2E，尚未完成真实 Compose E2E。
+当前仍需如实说明：真实 `docker compose build/up`、真实 embedding provider 付费调用和真实线上召回质量评估尚未完成；真实 LLM report prompt 契约已完成但未调用付费 provider；Playwright 已完成 mock E2E，尚未完成真实 Compose E2E；Markdown/JSON 证据包已完成，PDF 导出尚未完成。
 
 ## 已知边界
 

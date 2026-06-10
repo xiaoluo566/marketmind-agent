@@ -381,3 +381,20 @@ Day 22 实现范围：
 - 表结构见 `data-model.md`
 - 前端消费方式见 `ui-console-spec.md`
 - 错误日志见 `observability.md`
+
+## Day38 导出接口补充
+
+### `GET /api/reports/{report_id}/export/markdown`
+
+- 返回 `text/markdown; charset=utf-8`
+- `Content-Disposition` 文件名格式：`marketmind-report-{report_id}.md`
+- 只导出已入库报告，不重新生成报告
+- 缺失报告返回统一 `REPORT_NOT_FOUND`
+
+### `GET /api/reports/{report_id}/evidence-package`
+
+- 返回统一 success envelope
+- `Content-Disposition` 文件名格式：`marketmind-evidence-{report_id}.json`
+- 包含 `package_version`、`report_id`、`task_id`、`schema_version`、`title`、`summary`、`generated_at`、`evidence_refs`、`missing_refs`、`sources`
+- `sources` 里的 `metadata` 会过滤 `api_key`、`apikey`、`token`、`secret`、`password`、`authorization`
+- 疑似 secret value 会替换为 `[REDACTED]`

@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, Request, status
+from fastapi.responses import JSONResponse, Response
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -14,6 +15,11 @@ from app.api.schemas.reports import (
 from app.core.exceptions import AppError
 from app.core.responses import success_response
 from app.reporting.evidence import SQLAlchemyEvidenceChainStore
+from app.reporting.export import (
+    build_evidence_package,
+    build_report_markdown_export,
+    export_filename,
+)
 from app.storage.database import get_db_session
 from app.storage.models import Report, Task
 
@@ -85,6 +91,46 @@ def read_report(
     )
 
 
+@router.get("/reports/{report_id}/export/markdown")
+def export_report_markdown(
+    report_id: str,
+    session: Annotated[Session, Depends(get_db_session)],
+) -> Response:
+    report = session.get(Report, report_id)
+    if report is None:
+        raise _report_not_found(report_id)
+
+    filename = export_filename("marketmind-report", report.id, "md")
+    return Response(
+        content=build_report_markdown_export(report),
+        media_type="text/markdown; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/reports/{report_id}/evidence-package")
+def export_report_evidence_package(
+    report_id: str,
+    request: Request,
+    session: Annotated[Session, Depends(get_db_session)],
+) -> JSONResponse:
+    report = session.get(Report, report_id)
+    if report is None:
+        raise _report_not_found(report_id)
+
+    store = _build_evidence_chain_store(session)
+    chain = store.resolve(task_id=report.task_id, evidence_refs=list(report.evidence_refs or []))
+    filename = export_filename("marketmind-evidence", report.id, "json")
+    return JSONResponse(
+        content=success_response(
+            data=build_evidence_package(report, chain),
+            message="ok",
+            trace_id=request.state.trace_id,
+        ),
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
 @router.get("/reports/{report_id}/evidence")
 def read_report_evidence(
     report_id: str,
@@ -95,14 +141,7 @@ def read_report_evidence(
     if report is None:
         raise _report_not_found(report_id)
 
-    store = SQLAlchemyEvidenceChainStore(
-        session_factory=sessionmaker(
-            bind=session.get_bind(),
-            autoflush=False,
-            autocommit=False,
-            expire_on_commit=False,
-        )
-    )
+    store = _build_evidence_chain_store(session)
     chain = store.resolve(task_id=report.task_id, evidence_refs=list(report.evidence_refs or []))
     return success_response(
         data={
@@ -111,6 +150,17 @@ def read_report_evidence(
         },
         message="ok",
         trace_id=request.state.trace_id,
+    )
+
+
+def _build_evidence_chain_store(session: Session) -> SQLAlchemyEvidenceChainStore:
+    return SQLAlchemyEvidenceChainStore(
+        session_factory=sessionmaker(
+            bind=session.get_bind(),
+            autoflush=False,
+            autocommit=False,
+            expire_on_commit=False,
+        )
     )
 
 

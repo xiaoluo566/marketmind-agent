@@ -98,7 +98,7 @@
 
 ## 第三阶段方向
 
-- 报告导出 Markdown / PDF。
+- 报告导出 PDF，以及真实浏览器下载文件内容校验。Markdown / JSON evidence package 已在 Day38 完成。
 - Prompt 版本回放。
 - 更完整的 LLMOps 面板。
 - 多数据源适配。

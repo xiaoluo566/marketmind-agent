@@ -73,3 +73,27 @@ Day34 把真实 embedding provider 接入层做成了显式配置，但安全边
 - API 输入见 `api-contract.md`
 - prompt 边界见 `prompt-strategy.md`
 - 上传数据见 `ui-console-spec.md`
+
+## Day38 导出脱敏边界
+
+Day38 新增 Markdown 报告导出和 JSON evidence package。导出属于“把系统内部数据交付给用户”的边界，因此需要比页面展示更明确的脱敏规则。
+
+当前实现：
+
+- Markdown 导出只读取 `reports.content_markdown` 或最小 fallback，不重新执行 Agent、RAG 或 LLM。
+- Evidence package 复用 evidence chain，但会对 `metadata` 做递归过滤。
+- 以下 metadata key 不允许导出：
+  - `api_key`
+  - `apikey`
+  - `token`
+  - `secret`
+  - `password`
+  - `authorization`
+- 疑似 secret value 会替换为 `[REDACTED]`
+- `agent_step` 类型仍只导出 `tool_input_keys`、`tool_output_keys` 和摘要字段，不导出完整 tool input/output
+
+当前不做：
+
+- 不导出完整 HTML artifact 或 screenshot 二进制内容
+- 不导出环境变量、请求 header、provider 原始响应
+- 不导出原始异常 stack

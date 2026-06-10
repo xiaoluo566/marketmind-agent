@@ -839,3 +839,34 @@ frontend npm audit --audit-level=high: passed
 - 数据样例见 `data-contract-examples.md`
 - 状态机见 `agent-state-machine.md`
 - 发版门槛见 `release-checklist.md`
+
+## Day 38 报告导出与证据包测试边界
+
+Day38 新增 `tests/test_report_export.py`，用于验证报告导出和证据包导出的后端契约。
+
+这组测试覆盖：
+
+- `GET /api/reports/{report_id}/export/markdown` 返回 `text/markdown`
+- Markdown 导出包含正确 `Content-Disposition` 文件名
+- Markdown 内容包含报告标题和 evidence ref
+- `GET /api/reports/{report_id}/evidence-package` 返回统一 success envelope
+- evidence package 包含 `package_version`、`report_id`、`task_id`、`evidence_refs` 和 sources
+- 缺失 evidence ref 保留 `available=false` 和 `missing_reason=EVIDENCE_NOT_FOUND`
+- 导出内容不会包含 `api_key`、`authorization`、`provider_token` 等敏感 metadata
+- 缺失报告返回 `REPORT_NOT_FOUND` envelope
+
+Day38 同时更新 `tests/test_frontend_history_contract.py`：
+
+- 前端 API client 必须提供 Markdown 和 evidence package 下载 URL helper
+- 真实 API 模式必须指向 `/export/markdown` 和 `/evidence-package`
+- mock 模式必须能生成 data URL
+- 报告详情组件必须展示 `导出 Markdown` 和 `下载证据包`
+
+当前验证：
+
+```text
+tests/test_report_export.py + frontend/report regression: 19 passed
+ruff: passed
+frontend lint/build: passed
+frontend Playwright E2E: 1 passed
+```
