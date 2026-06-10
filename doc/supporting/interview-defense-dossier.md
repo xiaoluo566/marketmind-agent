@@ -2284,3 +2284,17 @@ Spec Kit SDD -> tdd-workflow -> 代码实现 -> verification-loop -> 开发日�
 如果让你说下一步：
 
 > 下一步我会继续第二阶段深化。前端中文化、前端 retry、可配置 embedding provider 架构、真实 LLM prompt 契约和 mock 模式 Playwright E2E 已经推进；接下来重点是补真实 compose build/up、真实 provider 调用、真实 API E2E、导出和 LLMOps 指标面板。第二阶段的重点不是继续堆新名词，而是提升系统的可用性、数据可信度和真实联调深度。
+
+## Day 40 第二阶段验收
+
+Day 40 我做的是 Phase 2 RC 收口，而不是继续加新功能。这里最重要的思考是：工程化项目需要能说清楚“哪些已经验证，哪些只是设计，哪些仍然受环境限制”。
+
+本次验收里发现一个真实工程问题：前端 `layout.tsx` 使用 `next/font/google`，`npm run build` 会在构建时访问 Google Fonts。受限网络下构建失败，这说明项目的发布门禁仍有外部网络依赖。处理方式是移除 `next/font/google`，改为系统字体栈，并把这个约束写进前端本地化契约测试。
+
+面试可以这样说：
+
+> Day 40 我没有把第二阶段包装成生产版，而是做成 `v0.2-phase2-rc1`。我审计了 Day31-Day39 的能力，补齐 release candidate、bug summary 和 metrics summary，并修复了前端构建依赖 Google Fonts 的问题。这个阶段能证明中文控制台、retry、provider 边界、RAG 评估方法、LLM prompt 契约、E2E、导出和 LLMOps 面板都已推进，但我不会声明真实 Docker build/up、真实 provider 成本或真实多容器 E2E 已完成。
+
+如果被问“下一阶段做什么”，回答：
+
+> 我不会继续堆 Agent 名词，而是补真实应用闭环：CSV/JSON 评论导入、低风险真实站点适配器、评论分析质量评估、真实 LLM evidence-bound 报告，以及前端把结论、引用证据和原始评论串起来。这些比继续加一个新 Agent 更能证明项目有实际使用价值。

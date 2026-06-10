@@ -2955,3 +2955,84 @@ npm run test:e2e
 - provider metrics 仍未持久化，当前返回 `not_persisted`。
 - 没有真实 provider token / cost / latency，不写成真实运营指标。
 - Day39 只做摘要面板，不做趋势图和日报聚合。
+
+## Day 40 实际开发记录
+
+### 背景
+
+Day40 的任务是把 Day31-Day39 收口成 Phase 2 RC。这个阶段不继续堆功能，而是做发布候选审计：文档是否同步、测试是否覆盖、指标是否诚实、缺口是否记录、main 是否可以合并。
+
+### SDD 与 TDD 过程
+
+- 先在 `day-40.md` 补充内嵌 SDD 规格，明确用户故事、功能需求、非目标和验收场景。
+- 新增 `tests/test_day40_phase2_release_candidate.py`。
+- RED 阶段确认缺口：
+  - `day-40.md` 缺少 SDD 规格。
+  - `phase-2-release-candidate.md`、`phase-2-bug-summary.md`、`phase-2-metrics-summary.md` 不存在。
+  - README、release checklist、future iterations、testing strategy 和 interview dossier 未同步 Phase 2 RC。
+- GREEN 阶段补齐以上文档，并把 Day41-Day50 真实应用闭环写进后续迭代。
+
+### 真实问题与修复
+
+Day40 verification 过程中，`npm run build` 先因 Windows `.next` 文件锁失败。清理 ignored 构建目录后重跑，继续暴露出 `next/font/google` 访问 Google Fonts 失败。
+
+这不是业务代码 bug，但属于工程化发布门禁缺口：生产构建不能依赖外部字体下载。修复方式：
+
+- `frontend/src/app/layout.tsx` 移除 `next/font/google`。
+- `frontend/src/app/globals.css` 改为系统字体栈。
+- `tests/test_frontend_localization_contract.py` 增加回归测试，禁止重新引入 `next/font/google`。
+
+### 当前验证
+
+```powershell
+uv run pytest tests\test_day40_phase2_release_candidate.py
+# 5 passed
+
+uv run pytest tests\test_frontend_localization_contract.py tests\test_frontend_llmops_contract.py
+# 10 passed
+
+uv run pytest
+# 222 passed
+
+uv run pytest --cov=backend --cov-report=term-missing
+# 222 passed, backend coverage 90.58%
+
+uv run ruff check backend tests migrations
+# All checks passed
+
+uv run alembic heads
+# 0002_task_queue_id (head)
+
+docker compose config
+# passed
+
+cd frontend
+npm run lint
+# passed
+
+npm run build
+# passed
+
+npm run test:e2e
+# 1 passed
+
+npm audit --audit-level=high
+# found 0 vulnerabilities
+
+uvx pip-audit
+# No known vulnerabilities found
+```
+
+安全扫描补充：`rg -n "sk-|OPENAI_API_KEY|API_KEY|SECRET|PASSWORD|TOKEN=" ...` 只命中 `.env.example` 占位、compose 本地默认密码、测试假 key 和文档字段，没有发现真实密钥。
+
+### 下一阶段判断
+
+Day40 之后，下一阶段优先补真实应用闭环：
+
+- CSV/JSON 评论导入。
+- 低风险真实站点适配器。
+- 评论分析质量评估。
+- 真实 LLM evidence-bound 报告。
+- 前端证据链报告展示。
+
+这些内容进入 Day41-Day50，而不是写进 Phase 2 RC 的完成范围。

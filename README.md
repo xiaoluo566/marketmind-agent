@@ -162,6 +162,18 @@ Day30 相关材料：
 
 当前仍需如实说明：真实 `docker compose build/up`、真实 embedding provider 付费调用和真实线上召回质量评估尚未完成；真实 LLM report prompt 契约已完成但未调用付费 provider；Playwright 已完成 mock E2E，尚未完成真实 Compose E2E；Markdown/JSON 证据包已完成，PDF 导出尚未完成。
 
+## Day 40 Phase 2 RC
+
+截至 Day 40，项目完成第二阶段第一轮深化收口，建议候选 tag 为 `v0.2-phase2-rc1`。它仍然不是 v1.0，也不声明真实生产数据。
+
+Phase 2 RC 材料：
+
+- 第二阶段发布候选边界：[doc/supporting/phase-2-release-candidate.md](doc/supporting/phase-2-release-candidate.md)
+- 第二阶段缺口与修复：[doc/supporting/phase-2-bug-summary.md](doc/supporting/phase-2-bug-summary.md)
+- 第二阶段指标汇总：[doc/supporting/phase-2-metrics-summary.md](doc/supporting/phase-2-metrics-summary.md)
+
+Day40 已修复前端生产构建依赖 `next/font/google` 拉取外网字体的问题，改为系统字体栈并加入回归测试。下一阶段优先补真实应用闭环：CSV/JSON 评论导入、低风险真实站点适配器、评论分析质量评估、真实 LLM 证据链报告和前端证据链报告展示。
+
 ## 已知边界
 
 这些边界需要在 README、面试和演示中如实说明：

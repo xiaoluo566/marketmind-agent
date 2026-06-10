@@ -75,6 +75,9 @@ Day 1-30 完成后，第二阶段从“可展示 RC”推进到“更实用的�
 3. `supporting/frontend-localization-contract.md`
 4. `supporting/phase-2-practicality-plan.md`
 5. `supporting/phase-2-acceptance-and-risk.md`
+6. `supporting/phase-2-release-candidate.md`
+7. `supporting/phase-2-bug-summary.md`
+8. `supporting/phase-2-metrics-summary.md`
 
 第二阶段继续保持先文档后开发。中文界面、前端 retry 按钮、真实 provider、真实 compose build/up、Playwright E2E 和 branch protection 都必须在这些文档约束下推进。
 

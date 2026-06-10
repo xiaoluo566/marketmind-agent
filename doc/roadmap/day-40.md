@@ -6,6 +6,40 @@ Day 40 的目标是把 Day31-Day39 的第二阶段成果收口成 Phase 2 RC。�
 
 这一天的关键词是：Phase 2 RC、阶段验收、release candidate、回归门禁、诚实边界。
 
+## SDD 规格
+
+用户故事：
+
+- 作为项目开发者，我希望 Day40 能把 Day31-Day39 的第二阶段成果整理成一个可审计的 Phase 2 RC，这样我可以判断哪些能力能合并到 `main`，哪些能力仍然需要进入下一阶段。
+- 作为面试讲述者，我希望 Phase 2 RC 明确区分代码已完成、测试已覆盖、文档已规划和真实环境未补验的内容，这样我不会把 mock、fixture、未持久化指标或未启动的 Docker 环境包装成生产能力。
+- 作为后续开发者，我希望 Day40 把下一阶段真实应用闭环写清楚，包括 CSV/JSON 评论导入、低风险真实站点适配器、评论分析质量评估、真实 LLM 证据链报告和前端证据链展示，这样 Day41+ 不会继续盲目堆 Agent 概念。
+
+功能需求：
+
+- 新增 `doc/supporting/phase-2-release-candidate.md`，记录 `v0.2-phase2-rc1` 的范围、边界、main 合并判断和回退方案。
+- 新增 `doc/supporting/phase-2-bug-summary.md`，记录第二阶段仍未完成或未补验的缺口。
+- 新增 `doc/supporting/phase-2-metrics-summary.md`，只写本次实际验证过的测试、lint、build、audit 和指标来源。
+- 更新 README、release checklist、future iterations、testing strategy、development log 和 interview dossier。
+- 修复 Day40 验收中发现的前端离线构建问题：`next/font/google` 会在 `npm run build` 时访问 Google Fonts，当前改为系统字体栈。
+- Day40 不继续实现 Day41+ 的真实应用闭环功能，只把它作为下一阶段优先级最高的开发方向沉淀到文档。
+
+非目标：
+
+- 不声明项目已经是 v1.0 或生产可商用版本。
+- 不声明 Docker Compose 真实 build/up 已通过，除非 Docker daemon 可用后实际执行。
+- 不声明真实 provider 成本、真实线上 RAG 准确率或真实多容器 E2E 已完成。
+- 不在 Day40 新增业务数据库表。
+- 不把 CSV/JSON 评论导入、低风险真实站点适配器和真实 LLM 报告一次性塞进本日交付。
+
+验收场景：
+
+- `tests/test_day40_phase2_release_candidate.py` 先失败，提示缺少 Phase 2 RC 文档和 Day40 SDD。
+- 补齐文档后，Day40 契约测试通过。
+- 前端本地化契约测试覆盖 `next/font/google` 不再出现，防止生产构建依赖外网字体。
+- `npm run build` 在清理 `.next` 后单独执行通过。
+- release candidate 文档明确写出 `v0.2-phase2-rc1`、不声明 v1.0、不声明真实生产数据。
+- 下一阶段真实应用闭环在 `future-iterations.md` 中有 Day41-Day50 方向，不和当前 Phase 2 RC 混淆。
+
 ## 前置依赖
 
 - `day-31.md`：中文界面基线。
@@ -102,6 +136,73 @@ gh run watch <run_id> --exit-status
 - CI 通过后才允许推 main。
 - 不把 Phase 2 RC 包装成最终生产版。
 - 如果创建 tag，tag 名建议 `v0.2-phase2-rc1`。
+
+## 实际完成
+
+Day40 实际完成内容：
+
+- 新增 `tests/test_day40_phase2_release_candidate.py`，按 TDD 先确认 Phase 2 RC 文档、README、测试策略、面试文档和开发日志缺口。
+- 新增 `doc/supporting/phase-2-release-candidate.md`。
+- 新增 `doc/supporting/phase-2-bug-summary.md`。
+- 新增 `doc/supporting/phase-2-metrics-summary.md`。
+- 更新 README、release checklist、future iterations、testing strategy、development log 和 interview dossier。
+- 修复前端生产构建依赖外网字体的问题：移除 `frontend/src/app/layout.tsx` 中的 `next/font/google`，在 `frontend/src/app/globals.css` 中改用系统字体栈。
+- 在 `tests/test_frontend_localization_contract.py` 中加入回归测试，要求根布局不能再引入 `next/font/google`。
+
+Day40 明确不把以下内容写成已完成：
+
+- Docker Compose 真实 build/up。
+- 真实 provider 成本统计。
+- 真实多容器 E2E。
+- branch protection 自动配置。
+- CSV/JSON 评论导入。
+- 低风险真实站点适配器。
+- 真实业务样本上的 RAG 质量评估。
+
+这些内容进入 Day41-Day50 的真实应用闭环规划。
+
+## 当前验证结果
+
+```powershell
+uv run pytest tests\test_day40_phase2_release_candidate.py
+# 5 passed
+
+uv run pytest tests\test_frontend_localization_contract.py tests\test_frontend_llmops_contract.py
+# 10 passed
+
+uv run pytest
+# 222 passed
+
+uv run pytest --cov=backend --cov-report=term-missing
+# 222 passed, backend coverage 90.58%
+
+uv run ruff check backend tests migrations
+# All checks passed
+
+uv run alembic heads
+# 0002_task_queue_id (head)
+
+docker compose config
+# passed
+
+cd frontend
+npm run lint
+# passed
+
+npm run build
+# passed
+
+npm run test:e2e
+# 1 passed
+
+npm audit --audit-level=high
+# found 0 vulnerabilities
+
+uvx pip-audit
+# No known vulnerabilities found
+```
+
+说明：本次 `npm run build` 首次失败不是代码逻辑错误，而是 `next/font/google` 在受限网络下无法拉取 Google Fonts。Day40 已把它修复为系统字体栈，并用前端本地化契约测试覆盖。后续 build / E2E 过程中 Windows 对 ignored 产物 `.next` 和 `test-results` 出现短暂文件锁，已通过路径校验后清理生成目录并顺序重跑验证通过。
 
 ## 风险与回退
 

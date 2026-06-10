@@ -38,6 +38,9 @@ Day 30 release candidate 之后，新增这些第二阶段文档：
 - `frontend-localization-contract.md`：前端中文界面术语、范围、非目标和测试契约。
 - `phase-2-practicality-plan.md`：用户可用性、工程深度和数据可信度的深化路线。
 - `phase-2-acceptance-and-risk.md`：第二阶段验收门槛、风险、Docker daemon 不可用时的处理和回退策略。
+- `phase-2-release-candidate.md`：Day40 第二阶段发布候选边界、main 合并判断和回退方案。
+- `phase-2-bug-summary.md`：Phase 2 RC 仍未完成或未补验的缺口，以及 Day40 已修复问题。
+- `phase-2-metrics-summary.md`：Phase 2 RC 已验证命令、指标来源和不能夸大的真实数据边界。
 
 这些文档和 `future-iterations.md`、`day30-bug-summary.md`、`testing-strategy.md`、`development-log.md` 共同决定第二阶段的开发顺序。后续不能绕开它们直接写功能。
 

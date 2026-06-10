@@ -927,3 +927,24 @@ frontend Playwright E2E: 1 passed
 ```
 
 这组指标可以用于演示工程化观测口径，但不能直接写成真实生产 LLMOps 数据，除非后续接入真实 provider 并完成持久化采样。
+
+## Day 40 Phase 2 RC 测试边界
+
+Day40 新增 `tests/test_day40_phase2_release_candidate.py`，用于验证第二阶段发布候选文档、缺口汇总、指标汇总和后续真实应用闭环规划是否同步。
+
+这组测试覆盖：
+
+- `doc/roadmap/day-40.md` 必须包含内嵌 SDD 规格、`v0.2-phase2-rc1`、不声明 v1.0、Day31-Day39 和真实应用闭环。
+- `doc/supporting/phase-2-release-candidate.md` 必须记录 Phase 2 RC 范围、main 合并判断、Docker Compose 真实 build/up 边界和真实 provider 成本边界。
+- `doc/supporting/phase-2-bug-summary.md` 必须记录未完成项，包括真实多容器 E2E、branch protection、CSV/JSON 评论导入和低风险真实站点适配器。
+- `doc/supporting/phase-2-metrics-summary.md` 必须只写已验证命令和真实来源边界，不写真实线上成本。
+- README、release checklist、future iterations、interview dossier 和 development log 必须引用 Day40 Phase 2 RC。
+
+Day40 同时更新 `tests/test_frontend_localization_contract.py`，禁止根布局继续使用 `next/font/google`。这是因为生产构建依赖外网字体会让 `npm run build` 在受限网络下失败，属于发布门禁问题。
+
+这组测试不覆盖：
+
+- Docker daemon 下真实 `docker compose up --build`。
+- 真实 provider 调用和真实账单成本。
+- 真实业务数据上的召回质量。
+- Day41-Day50 的 CSV/JSON 导入和站点适配器实现。
