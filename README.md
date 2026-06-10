@@ -1,67 +1,52 @@
 # MarketMind Agent
 
-MarketMind Agent 是一个面向电商运营场景的评论洞察与证据链报告系统。
+MarketMind Agent 是一个面向电商运营场景的评论洞察与证据链报告系统。项目重点不是“爬到页面后让大模型总结几句”，而是把评论数据导入、采集、清洗、检索、报告生成、证据回查和长任务追踪做成可验证的工程闭环。
 
-它不是普通爬虫脚本，也不是只会把评论丢给大模型总结的套壳 demo。项目重点解决三个问题：
+## 项目定位
 
-- 评论分析是长任务，需要异步队列、状态持久化和失败恢复。
-- 运营报告必须有证据链，不能只给一段看起来合理的 AI 文案。
-- Agent 执行过程需要可追踪、可测试、可复盘，方便调试和面试展示。
+系统面向以下问题：
 
-截至 Day 30，仓库已经完成 Day 1-30 的第一阶段 release candidate：核心工程链路、自动化测试、CI、benchmark、失败任务 retry、演示材料、指标汇总、缺口复盘和 RC tag 均已收口。
+- 评论分析往往是长任务，需要异步队列、状态持久化、失败恢复和可观测事件。
+- 运营报告必须能回查证据，不能只输出一段看起来合理的 AI 文案。
+- Agent 的每一步工具调用、观察结果和报告引用需要可追踪、可测试、可复盘。
+- 真实业务数据不一定来自爬虫，CSV/JSON 评论导入比强依赖反爬更稳定、更合法，也更适合演示实际价值。
 
-## 架构图
+## 核心能力
+
+- FastAPI 业务网关，统一 API envelope、trace ID 和错误响应。
+- Celery + Redis 异步任务队列，支持长任务提交、状态快照和事件流。
+- PostgreSQL + SQLAlchemy 持久化任务、事件、商品、评论、RAG 切片、Agent step、报告和错误日志。
+- CSV/JSON 评论导入接口：`POST /api/imports/reviews`。
+- 低风险 JSON-LD `Product.review` 页面适配器，面向公开独立站、Shopify 风格页面和本地 fixture。
+- 评论清洗、切片、embedding 抽象、相似评论检索和 RAG 质量评估。
+- evidence-bound 结构化报告生成，约束 LLM 只能引用已提供的 evidence refs。
+- 报告证据链 API，支持从结论回查到评论 chunk、原始 review、artifact 和 Agent step。
+- Next.js 中文控制台，包含任务、报告、证据链和评论导入工作台。
+- LLMOps / observability 摘要、结构化错误日志、导出 Markdown 和 JSON evidence package。
+
+## 架构
 
 ```mermaid
 flowchart TD
-    UI[Next.js 控制台] --> API[FastAPI API Gateway]
+    UI[Next.js 中文控制台] --> API[FastAPI API Gateway]
     API --> Queue[Celery + Redis Queue]
-    Queue --> Worker[Worker 主链路]
-    Worker --> Crawler[Playwright 采集]
+    Queue --> Worker[Worker 长任务执行]
+    Worker --> Crawler[Playwright / JSON-LD 采集适配]
+    Worker --> Importer[CSV/JSON 评论导入]
     Worker --> Agent[ReAct Agent 状态机]
     Agent --> Tools[工具层: crawl_product_tool / search_reviews_tool]
-    Tools --> RAG[评论清洗 切片 Embedding 检索]
+    Importer --> PG[(PostgreSQL + pgvector)]
+    Crawler --> PG
+    Tools --> RAG[评论清洗 / 切片 / Embedding / 检索]
     RAG --> Report[结构化报告与证据链]
-    API --> PG[(PostgreSQL + pgvector)]
-    Worker --> PG
     Report --> PG
-    Queue --> Redis[(Redis 状态与事件缓存)]
-    API --> Redis
+    API --> Redis[(Redis 状态与事件缓存)]
+    Queue --> Redis
 ```
-
-## 当前能力
-
-已完成：
-
-- FastAPI 统一 API envelope、trace ID middleware 和错误封装。
-- Celery + Redis 长任务分发，API 立即返回 `task_id`。
-- Redis 状态快照、Redis 事件流、PostgreSQL 任务和事件持久化。
-- Playwright 最小采集链路、HTML artifact 保存和采集失败分类。
-- SQLAlchemy 数据模型：任务、事件、Agent runs/steps、商品、页面、评论、review chunks、报告、error logs。
-- Agent 工具 schema、工具注册、工具执行 envelope 和最小 ReAct 状态机。
-- Pydantic Guardrails、结构化输出修复和 self-heal 指标入口。
-- 短期记忆滑动窗口、评论清洗切片、deterministic embedding 和 review chunk 检索原型。
-- `search_reviews_tool`、结构化报告生成、证据链回查和风险机会评分。
-- Next.js 控制台：任务提交、任务详情轮询、Agent step 摘要、历史任务、历史报告、报告详情和 evidence chain。
-- 结构化错误日志、`error_logs` 持久化和观测错误查询 API。
-- Docker Compose 拓扑、后端/前端 Dockerfile、迁移服务和 compose 契约测试。
-- GitHub Actions CI、PR 模板、发布检查清单和回退运行手册。
-- Day27 fixture benchmark：20 个样例任务，成功率 95.00%，平均 338 ms，P95 391 ms。
-- Day28 失败任务 retry：`POST /api/tasks/{task_id}/retry`、`waiting_retry` 状态流和 Worker recovery resume 事件。
-- Day34 可配置 embedding provider 架构：默认 fake provider 保证测试稳定，显式配置可接 OpenAI-compatible embedding，并包含缺 key、限流、超时和 bad response 错误分类。
-- Day35 RAG 质量评估和 provider metrics baseline：5 个中文 query fixture、expected evidence 命中检查、空召回统计、fallback 和 provider 错误指标。
-- Day38 报告交付物：Markdown 导出、JSON evidence package、前端下载入口和导出 metadata 脱敏。
-
-尚未完成：
-
-- 全局 `GET /api/evidence`。
-- 真实 embedding provider 付费调用、大规模人工标注召回质量评估和 pgvector 原生排序。
-- 真实 `docker compose build` / `docker compose up` 联调。
-- Playwright mock E2E 已接入；真实 Compose E2E 和 GitHub branch protection 待补。
 
 ## 快速启动
 
-### 1. 后端本地开发
+后端本地开发：
 
 ```powershell
 uv sync
@@ -69,13 +54,7 @@ uv run alembic upgrade head
 uv run uvicorn app.main:create_app --factory --app-dir backend --reload
 ```
 
-默认 API：
-
-```text
-http://localhost:8000/api/health
-```
-
-### 2. 前端本地开发
+前端本地开发：
 
 ```powershell
 cd frontend
@@ -83,22 +62,20 @@ npm install
 npm run dev
 ```
 
-默认前端：
+默认访问地址：
 
 ```text
-http://localhost:3000
+API: http://localhost:8000/api/health
+Frontend: http://localhost:3000
+Review Import: http://localhost:3000/imports
 ```
 
-### 3. Docker Compose
-
-当前已经验证 `docker compose config`，但还没有在本机完成真实镜像 build / compose up。Docker Desktop Linux engine 可用后再执行：
+Docker Compose 配置已经有契约校验；真实 `docker compose up --build` 需要在 Docker Desktop Linux engine 可用后执行：
 
 ```powershell
 Copy-Item .env.example .env
 docker compose up --build
 ```
-
-详细步骤见 [docker-compose-runbook.md](doc/supporting/docker-compose-runbook.md)。
 
 ## 常用验证
 
@@ -118,86 +95,54 @@ cd ..
 uvx pip-audit
 ```
 
-最新 Day35 本地完整门禁：
+当前质量门禁覆盖后端单元/集成测试、RAG 评估、报告证据链、前端契约、Next.js lint/build、依赖审计和安全边界检查。
 
-- `uv run pytest tests\test_rag_quality_metrics.py`：2 passed。
-- Day35 RAG/provider 回归：16 passed。
-- `uv run pytest`：200 passed。
-- coverage：90.31%。
-- ruff、alembic heads、compose config：通过。
-- frontend lint / build / audit：通过。
-- `uvx pip-audit`：No known vulnerabilities found。
+## 真实应用闭环
 
-## 演示路径
+当前重点能力已经从单纯的 Agent 演示推进到真实应用闭环：
 
-推荐按 5-8 分钟演示：
+```text
+CSV/JSON 评论导入
+-> 数据清洗、错误行报告、去重、入库
+-> RAG 评论切片和质量评估
+-> evidence-bound LLM 报告
+-> 前端展示结论、引用证据、原始评论
+```
 
-1. 打开 Next.js 控制台，说明系统定位是“评论洞察与证据链报告”。
-2. 提交一个 fixture / public URL 任务，展示 API 返回 `task_id`。
-3. 打开任务详情页，展示状态、事件流和 Agent step 摘要。
-4. 打开历史任务和历史报告，说明任务不是一次性脚本，结果可复盘。
-5. 打开报告详情和 evidence chain，说明报告结论如何回查到评论 chunk / artifact / Agent step。
-6. 展示 Day27 benchmark artifact，说明性能指标不是口头估计。
-7. 展示 Day28 retry API 和 recovery event，说明失败任务如何进入恢复链路。
-8. 最后展示 GitHub Actions 通过记录和开发日志。
+相关入口：
 
-完整演示脚本见 [doc/supporting/demo-script.md](doc/supporting/demo-script.md)。
+- [真实应用闭环说明](doc/supporting/real-application-loop.md)
+- [API 契约](doc/supporting/api-contract.md)
+- [爬虫与低风险适配策略](doc/supporting/crawler-strategy.md)
+- [RAG 与记忆系统](doc/supporting/rag-memory.md)
+- [Prompt 与结构化报告策略](doc/supporting/prompt-strategy.md)
+- [前端控制台规格](doc/supporting/ui-console-spec.md)
 
-## 简历与面试材料
+## 文档入口
 
-- 简历 bullet：见 [doc/supporting/resume-story.md](doc/supporting/resume-story.md)。
-- 2 分钟项目讲述：见 [doc/supporting/interview-story.md](doc/supporting/interview-story.md)。
-- 深度追问防守：见 [doc/supporting/interview-defense-dossier.md](doc/supporting/interview-defense-dossier.md)。
-- 开发过程复盘：见 [doc/supporting/development-log.md](doc/supporting/development-log.md)。
-
-## Day 30 Release Candidate
-
-截至 Day 30，项目进入第一阶段 release candidate 收口。建议候选 tag 为 `v0.1-day30-rc1`，但它不是 v1.0。
-
-Day30 相关材料：
-
-- 发布候选边界：[doc/supporting/day30-release-candidate.md](doc/supporting/day30-release-candidate.md)
-- 指标汇总：[doc/supporting/day30-metrics-summary.md](doc/supporting/day30-metrics-summary.md)
-- 缺口与 bug 汇总：[doc/supporting/day30-bug-summary.md](doc/supporting/day30-bug-summary.md)
-
-当前仍需如实说明：真实 `docker compose build/up`、真实 embedding provider 付费调用和真实线上召回质量评估尚未完成；真实 LLM report prompt 契约已完成但未调用付费 provider；Playwright 已完成 mock E2E，尚未完成真实 Compose E2E；Markdown/JSON 证据包已完成，PDF 导出尚未完成。
-
-## Day 40 Phase 2 RC
-
-截至 Day 40，项目完成第二阶段第一轮深化收口，建议候选 tag 为 `v0.2-phase2-rc1`。它仍然不是 v1.0，也不声明真实生产数据。
-
-Phase 2 RC 材料：
-
-- 第二阶段发布候选边界：[doc/supporting/phase-2-release-candidate.md](doc/supporting/phase-2-release-candidate.md)
-- 第二阶段缺口与修复：[doc/supporting/phase-2-bug-summary.md](doc/supporting/phase-2-bug-summary.md)
-- 第二阶段指标汇总：[doc/supporting/phase-2-metrics-summary.md](doc/supporting/phase-2-metrics-summary.md)
-
-Day40 已修复前端生产构建依赖 `next/font/google` 拉取外网字体的问题，改为系统字体栈并加入回归测试。下一阶段优先补真实应用闭环：CSV/JSON 评论导入、低风险真实站点适配器、评论分析质量评估、真实 LLM 证据链报告和前端证据链报告展示。
+- [项目文档索引](doc/README.md)
+- [架构说明](doc/supporting/architecture.md)
+- [数据模型](doc/supporting/data-model.md)
+- [开发流程](doc/supporting/dev-workflow.md)
+- [测试策略](doc/supporting/testing-strategy.md)
+- [部署说明](doc/supporting/deployment.md)
+- [发布检查清单](doc/supporting/release-checklist.md)
+- [开发日志](doc/supporting/development-log.md)
+- [面试防御手册](doc/supporting/interview-defense-dossier.md)
+- [演示脚本](doc/supporting/demo-script.md)
+- [简历表达素材](doc/supporting/resume-story.md)
+- [短版面试讲述](doc/supporting/interview-story.md)
 
 ## 已知边界
 
-这些边界需要在 README、面试和演示中如实说明：
-
-- Day27 benchmark 是 fixture benchmark，不代表真实外部网站吞吐。
-- 当前模型调用和 token 成本统计仍为 0，因为还没有跑真实 LLM / embedding provider 付费调用。
-- Day28 retry 是任务级恢复，不是精确到 Agent Thought / Action / Observation 的完整 replay。
-- `backoff_seconds` 当前只是 metadata，尚未接 Celery countdown。
-- Docker Compose 目前只验证了配置解析，真实容器 build/up 需要 Docker Desktop daemon 可用后补验。
 - 项目不承诺替代成熟卖家工具，也不承诺全网稳定采集或销量预测。
-
-## 阅读顺序
-
-1. [doc/README.md](doc/README.md)
-2. [doc/supporting/project-charter.md](doc/supporting/project-charter.md)
-3. [doc/supporting/architecture.md](doc/supporting/architecture.md)
-4. [doc/supporting/api-contract.md](doc/supporting/api-contract.md)
-5. [doc/supporting/testing-strategy.md](doc/supporting/testing-strategy.md)
-6. [doc/supporting/demo-script.md](doc/supporting/demo-script.md)
-7. [doc/supporting/resume-story.md](doc/supporting/resume-story.md)
-8. [doc/supporting/interview-story.md](doc/supporting/interview-story.md)
+- JSON-LD 适配器只处理公开页面结构，不绕过登录、验证码、付费墙或安全策略。
+- 当前真实 provider 成本和真实线上召回质量需要接入真实 provider 与业务样本后再记录。
+- Docker Compose 真实 build/up、多容器 E2E 和 GitHub branch protection 需要在对应环境可用后补验。
+- 当前失败恢复是任务级恢复，尚不是精确到每个 Agent Thought / Action / Observation 的完整 replay。
 
 ## 分支策略
 
 - `main`：稳定演示和可回退版本。
 - `dev`：日常开发分支。
-- commit 使用中文 Conventional Commit，例如 `feat: 增加 Day 28 失败重试和恢复策略`。
+- commit 使用中文 Conventional Commit，例如：`feat: 增加评论导入闭环`。

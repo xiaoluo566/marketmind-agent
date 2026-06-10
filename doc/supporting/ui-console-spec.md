@@ -161,3 +161,12 @@ Day 21 已把历史任务和历史报告从 mock fallback 推进到真实 API：
 ## Stitch 交接
 
 Stitch 相关前端生成和交接要求见 `stitch-frontend-handoff.md`。
+
+## 真实应用闭环页面补充
+
+新增 `/imports` 评论导入工作台：
+
+- 使用中文文案展示 CSV/JSON 评论导入。
+- 调用 `importReviews()`，对应后端 `POST /api/imports/reviews`。
+- 展示 `task_id`、`product_id`、`imported_count`、`duplicate_count`、`error_count` 和 `review_external_ids`。
+- 当前只负责导入，不在同一页直接生成报告；后续再补“一键索引并生成报告”。

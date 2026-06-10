@@ -12,7 +12,7 @@ Day 40 的目标是把 Day31-Day39 的第二阶段成果收口成 Phase 2 RC。�
 
 - 作为项目开发者，我希望 Day40 能把 Day31-Day39 的第二阶段成果整理成一个可审计的 Phase 2 RC，这样我可以判断哪些能力能合并到 `main`，哪些能力仍然需要进入下一阶段。
 - 作为面试讲述者，我希望 Phase 2 RC 明确区分代码已完成、测试已覆盖、文档已规划和真实环境未补验的内容，这样我不会把 mock、fixture、未持久化指标或未启动的 Docker 环境包装成生产能力。
-- 作为后续开发者，我希望 Day40 把下一阶段真实应用闭环写清楚，包括 CSV/JSON 评论导入、低风险真实站点适配器、评论分析质量评估、真实 LLM 证据链报告和前端证据链展示，这样 Day41+ 不会继续盲目堆 Agent 概念。
+- 作为后续开发者，我希望 Day40 把下一阶段真实应用闭环写清楚，包括 CSV/JSON 评论导入、低风险真实站点适配器、评论分析质量评估、真实 LLM 证据链报告和前端证据链展示，这样后续不会继续盲目堆 Agent 概念。
 
 功能需求：
 
@@ -21,7 +21,7 @@ Day 40 的目标是把 Day31-Day39 的第二阶段成果收口成 Phase 2 RC。�
 - 新增 `doc/supporting/phase-2-metrics-summary.md`，只写本次实际验证过的测试、lint、build、audit 和指标来源。
 - 更新 README、release checklist、future iterations、testing strategy、development log 和 interview dossier。
 - 修复 Day40 验收中发现的前端离线构建问题：`next/font/google` 会在 `npm run build` 时访问 Google Fonts，当前改为系统字体栈。
-- Day40 不继续实现 Day41+ 的真实应用闭环功能，只把它作为下一阶段优先级最高的开发方向沉淀到文档。
+- Day40 不继续实现真实应用闭环功能，只把它作为下一阶段优先级最高的开发方向沉淀到文档。
 
 非目标：
 
@@ -38,7 +38,7 @@ Day 40 的目标是把 Day31-Day39 的第二阶段成果收口成 Phase 2 RC。�
 - 前端本地化契约测试覆盖 `next/font/google` 不再出现，防止生产构建依赖外网字体。
 - `npm run build` 在清理 `.next` 后单独执行通过。
 - release candidate 文档明确写出 `v0.2-phase2-rc1`、不声明 v1.0、不声明真实生产数据。
-- 下一阶段真实应用闭环在 `future-iterations.md` 中有 Day41-Day50 方向，不和当前 Phase 2 RC 混淆。
+- 下一阶段真实应用闭环在 `future-iterations.md` 中有 backlog 方向，不和当前 Phase 2 RC 混淆。
 
 ## 前置依赖
 
@@ -159,7 +159,7 @@ Day40 明确不把以下内容写成已完成：
 - 低风险真实站点适配器。
 - 真实业务样本上的 RAG 质量评估。
 
-这些内容进入 Day41-Day50 的真实应用闭环规划。
+这些内容进入后续真实应用闭环 backlog。
 
 ## 当前验证结果
 

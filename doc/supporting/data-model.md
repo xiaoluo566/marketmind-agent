@@ -380,3 +380,14 @@ GET /api/observability/errors?task_id=tsk_xxx
 - 状态流转见 `agent-state-machine.md`
 - API 示例见 `data-contract-examples.md`
 - 指标采集见 `llmops-metrics.md`
+
+## 真实应用闭环数据补充
+
+CSV/JSON 评论导入不新增表，复用现有模型：
+
+- `tasks`: 创建 `source_type=manual_upload`、`status=completed` 的导入任务。
+- `products`: 每次导入创建一个商品记录，记录 `product_title` 和 `source_url`。
+- `reviews`: 写入有效评论，`author` 持久化为 `author_hash`，原始行进入 `raw_payload`。
+- `review_chunks`: 后续由 RAG 索引流程根据导入 task 生成。
+
+低风险 JSON-LD 适配器输出仍然落到 `CrawlResult.reviews`，后续持久化路径与 generic crawler reviews 一致。

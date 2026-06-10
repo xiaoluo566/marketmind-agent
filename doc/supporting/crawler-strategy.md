@@ -110,3 +110,14 @@ Day 9 实现状态：
 - 数据源冻结见 `model-and-data-decisions.md`
 - 失败处理见 `risk-register.md`
 - RAG 消费采集结果见 `rag-memory.md`
+
+## 真实应用闭环适配器补充
+
+当前低风险真实站点适配选择 JSON-LD `Product.review`：
+
+- 只读取公开 HTML 中的 `application/ld+json`。
+- 支持从 `reviewBody`、`reviewRating.ratingValue`、`url` 中提取评论正文、评分和来源。
+- 适用于公开独立站、Shopify 风格商品页和本地 HTML fixture。
+- 不绕过登录、验证码、付费墙或安全策略。
+
+该适配器的定位是“真实公开页面结构支持”，不是强反爬突破。若页面没有 JSON-LD 评论，系统仍回退到 generic HTML review 容器抽取或手动 CSV/JSON 导入。

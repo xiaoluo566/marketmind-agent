@@ -4,6 +4,8 @@ import type {
   Evidence,
   LLMOpsSummary,
   Report,
+  ReviewImportInput,
+  ReviewImportResult,
   Task,
   TaskAccepted,
   TaskCreateInput,
@@ -110,6 +112,25 @@ export async function createTask(payload: TaskCreateInput) {
     };
   }
   return request<TaskAccepted>("/api/tasks", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function importReviews(payload: ReviewImportInput) {
+  if (USE_MOCKS) {
+    return {
+      format: payload.format,
+      task_id: "tsk_mock_review_import",
+      product_id: "prd_mock_review_import",
+      imported_count: 2,
+      duplicate_count: 0,
+      error_count: 0,
+      errors: [],
+      review_external_ids: ["mock-review-1", "mock-review-2"],
+    } satisfies ReviewImportResult;
+  }
+  return request<ReviewImportResult>("/api/imports/reviews", {
     method: "POST",
     body: JSON.stringify(payload),
   });

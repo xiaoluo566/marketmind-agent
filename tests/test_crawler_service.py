@@ -57,6 +57,54 @@ def test_crawl_product_page_extracts_structured_reviews() -> None:
     assert result.reviews[0].rating == 1.0
 
 
+def test_crawl_product_page_extracts_low_risk_json_ld_reviews() -> None:
+    request = CrawlRequest(
+        url="https://shop.example/products/desk-lamp",
+        source_type="html_fixture",
+        html="""
+            <html>
+              <head>
+                <script type="application/ld+json">
+                  {
+                    "@type": "Product",
+                    "name": "Adjustable Desk Lamp",
+                    "review": [
+                      {
+                        "@type": "Review",
+                        "author": {"name": "buyer-a"},
+                        "reviewRating": {"ratingValue": "1"},
+                        "reviewBody": "The hinge loosened after two days.",
+                        "url": "https://shop.example/products/desk-lamp#review-1"
+                      },
+                      {
+                        "@type": "Review",
+                        "author": "buyer-b",
+                        "reviewRating": {"ratingValue": 2},
+                        "reviewBody": "Shipping was slow and support never replied."
+                      }
+                    ]
+                  }
+                </script>
+              </head>
+              <body>
+                <h1>Adjustable Desk Lamp</h1>
+                <p>$29.99</p>
+              </body>
+            </html>
+        """,
+    )
+
+    result = asyncio.run(crawl_product_page(request))
+
+    assert result.title == "Adjustable Desk Lamp"
+    assert len(result.reviews) == 2
+    assert result.reviews[0].content == "The hinge loosened after two days."
+    assert result.reviews[0].rating == 1.0
+    assert result.reviews[0].source_url == "https://shop.example/products/desk-lamp#review-1"
+    assert result.reviews[0].metadata["extractor"] == "json_ld_product_review"
+    assert result.metadata["extractor"] == "json_ld_product"
+
+
 def test_crawl_product_page_rejects_blocked_pages() -> None:
     request = CrawlRequest(
         url="https://example.com/product/blocked",

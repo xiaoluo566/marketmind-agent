@@ -11,7 +11,7 @@ def read_project_file(relative_path: str) -> str:
     return path.read_text(encoding="utf-8")
 
 
-def test_day40_roadmap_contains_embedded_sdd_and_actual_gate_results() -> None:
+def test_phase2_roadmap_contains_sdd_and_actual_gate_results() -> None:
     roadmap = read_project_file("doc/roadmap/day-40.md")
 
     assert "## SDD 规格" in roadmap
@@ -72,7 +72,7 @@ def test_phase2_metrics_summary_uses_verified_commands_only() -> None:
     assert "database_snapshot" in metrics
 
 
-def test_supporting_docs_and_readme_reference_phase2_release_candidate() -> None:
+def test_supporting_docs_and_readme_reference_current_project_entrypoint() -> None:
     readme = read_project_file("README.md")
     release_checklist = read_project_file("doc/supporting/release-checklist.md")
     future_iterations = read_project_file("doc/supporting/future-iterations.md")
@@ -80,9 +80,10 @@ def test_supporting_docs_and_readme_reference_phase2_release_candidate() -> None
     interview = read_project_file("doc/supporting/interview-defense-dossier.md")
     development_log = read_project_file("doc/supporting/development-log.md")
 
-    assert "phase-2-release-candidate.md" in readme
+    assert "doc/supporting/real-application-loop.md" in readme
+    assert "phase-2-release-candidate.md" not in readme
     assert "Day 40 Phase 2 RC" in release_checklist
-    assert "Day 41-Day50" in future_iterations
+    assert "真实应用闭环优先级" in future_iterations
     assert "真实应用闭环" in future_iterations
     assert "Day 40 Phase 2 RC 测试边界" in testing_strategy
     assert "Day 40 第二阶段验收" in interview

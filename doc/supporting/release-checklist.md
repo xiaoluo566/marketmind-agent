@@ -64,7 +64,7 @@ v0.2-phase2-rc1
 - 可以声明 Day31-Day39 的代码、测试和文档收口进入 Phase 2 RC。
 - 不声明真实生产数据。
 - 不声明 Docker Compose 真实 build/up、真实 provider 成本、真实多容器 E2E 和 branch protection 已完成。
-- Day41-Day50 应优先补 CSV/JSON 评论导入、低风险真实站点适配器、评论分析质量评估、真实 LLM evidence-bound 报告和前端证据链报告闭环。
+- Day40 之后应优先补真实应用闭环；当前已落地 CSV/JSON 评论导入、低风险 JSON-LD 适配器和前端导入页，真实 provider 成本、多容器 E2E 和 branch protection 仍不得夸大。
 
 ## 发布时
 

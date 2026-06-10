@@ -1,62 +1,20 @@
-# 30 天开发路线
+# 路线文档归档
 
-这一组文档是逐日执行手册。每一天都围绕一个明确交付物，不把不确定性堆到后面。
+本目录保存项目早期和阶段性开发执行文档。它的作用是追溯历史决策、复盘开发过程和说明能力演进，不再作为项目当前主入口。
 
-## 每日文档结构
+当前项目主入口请阅读：
 
-每个 `day-xx.md` 都包含：
+- [根 README](../../README.md)
+- [文档索引](../README.md)
+- [真实应用闭环说明](../supporting/real-application-loop.md)
+- [开发流程](../supporting/dev-workflow.md)
+- [测试策略](../supporting/testing-strategy.md)
+- [开发日志](../supporting/development-log.md)
+- [面试防御手册](../supporting/interview-defense-dossier.md)
 
-- 当天目标
-- 前置依赖
-- 当天交付物
-- 实施步骤
-- 验收标准
-- 风险与回退
-- 关联文档
-- 建议提交
+## 使用原则
 
-这样的结构是为了让后续开发时可以直接照着执行，而不是每天重新规划。
-
-## 周期划分
-
-- 第 1 周：项目骨架、数据库、任务系统、爬虫基础
-- 第 2 周：Agent 状态机、工具调用、结构化校验
-- 第 3 周：记忆系统、RAG、报告生成、证据链
-- 第 4 周：前端、可观测性、测试、部署、回退、发布
-
-## 使用方式
-
-1. 每天先读当天文档
-2. 再读当天文档里列出的 `前置依赖`
-3. 按 `实施步骤` 执行
-4. 用 `验收标准` 判断是否完成
-5. 把实际完成内容写入 `../supporting/development-log.md`
-6. 把超出范围的问题写入 `../supporting/open-questions.md`
-
-## 不允许跳过的主线
-
-- API 和 Worker 必须解耦
-- Agent step 必须落库
-- 采集数据必须有来源
-- 报告必须有证据链
-- 失败必须可追踪和可恢复
-
-## 第二阶段路线
-
-Day 30 之后不再继续扩写“30 天计划”，而是进入第二阶段：
-
-- `phase-2-master-plan.md`：第二阶段总计划。
-- `day-31.md`：中文界面与术语统一。
-- `day-32.md`：前端失败任务重试闭环。
-- `day-33.md`：重试链路联调与恢复事件验收。
-- `day-34.md`：真实 embedding provider 接入设计。
-- `day-35.md`：RAG 检索质量与 provider 指标。
-- `day-36.md`：真实 LLM 报告生成 Prompt。
-- `day-37.md`：Playwright E2E 主链路。
-- `day-38.md`：报告导出与证据包。
-- `day-39.md`：LLMOps 运营指标面板。
-- `day-40.md`：第二阶段阶段验收与发布候选。
-
-第二阶段仍然按“前一天检查 -> 当天开发 -> 文档同步 -> 测试验证 -> 提交推送”的节奏执行。第一批重点是中文界面、前端 retry 按钮、真实 compose build/up、真实 embedding provider、真实 LLM report prompt、Playwright E2E 和 branch protection。
-
-Day32-Day40 已经提前写成执行文档。后续开发不要跳过这些文档，也不要只写代码不更新开发日志、测试策略和面试材料。
+- 历史路线文档只用于回溯，不用于证明当前功能已经生产可用。
+- 当前功能是否完成，以代码、测试结果、支持文档和验证记录为准。
+- 新功能优先使用 Spec Kit SDD、TDD、verification-loop 和 supporting 文档回填。
+- 不再在 README 中继续扩写日程式路线图。

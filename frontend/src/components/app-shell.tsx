@@ -9,6 +9,7 @@ import {
   RefreshCw,
   Search,
   Settings,
+  Upload,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -18,6 +19,7 @@ import { getApiBaseUrl, getApiModeLabel, isRealApiEnabled } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 const navItems = [
+  { href: "/imports", label: "评论导入", icon: Upload },
   { href: "/", label: "工作台", icon: LayoutDashboard },
   { href: "/research/new", label: "新建调研", icon: PlusCircle },
   { href: "/tasks", label: "任务", icon: ListChecks },

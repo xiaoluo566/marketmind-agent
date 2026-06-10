@@ -157,3 +157,27 @@ export type TaskAccepted = {
   trace_id: string;
   queue_task_id: string | null;
 };
+
+export type ReviewImportInput = {
+  format: "csv" | "json";
+  content: string;
+  product_title: string;
+  source_url?: string;
+};
+
+export type ReviewImportRowError = {
+  row_number: number;
+  field: string;
+  message: string;
+};
+
+export type ReviewImportResult = {
+  format: "csv" | "json";
+  task_id: string;
+  product_id: string;
+  imported_count: number;
+  duplicate_count: number;
+  error_count: number;
+  errors: ReviewImportRowError[];
+  review_external_ids: string[];
+};

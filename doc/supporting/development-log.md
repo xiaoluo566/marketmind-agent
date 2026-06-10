@@ -2970,7 +2970,7 @@ Day40 的任务是把 Day31-Day39 收口成 Phase 2 RC。这个阶段不继续�
   - `day-40.md` 缺少 SDD 规格。
   - `phase-2-release-candidate.md`、`phase-2-bug-summary.md`、`phase-2-metrics-summary.md` 不存在。
   - README、release checklist、future iterations、testing strategy 和 interview dossier 未同步 Phase 2 RC。
-- GREEN 阶段补齐以上文档，并把 Day41-Day50 真实应用闭环写进后续迭代。
+- GREEN 阶段补齐以上文档，并把真实应用闭环写进后续迭代。
 
 ### 真实问题与修复
 
@@ -3035,4 +3035,17 @@ Day40 之后，下一阶段优先补真实应用闭环：
 - 真实 LLM evidence-bound 报告。
 - 前端证据链报告展示。
 
-这些内容进入 Day41-Day50，而不是写进 Phase 2 RC 的完成范围。
+这些内容进入后续真实应用闭环 backlog，而不是写进 Phase 2 RC 的完成范围。
+
+## 真实应用闭环落地记录
+
+Day40 之后停止继续扩写日程式路线图，改为直接补真实应用闭环。原因是项目已经具备异步任务、RAG、证据链报告和前端看板，继续堆 Agent 名词的边际收益低；真正影响可展示价值的是用户能否把评论数据导入进来，并看到“结论 -> 引用证据 -> 原始评论”的闭环。
+
+本次落地内容：
+
+- 新增 `POST /api/imports/reviews`，支持 CSV/JSON 评论导入。
+- 导入时创建 `manual_upload` 的 completed task，并写入 `products`、`reviews`。
+- 导入结果返回 `imported_count`、`duplicate_count`、`error_count`、错误行明细和 `review_external_ids`。
+- 爬虫补低风险 JSON-LD Product.review 适配，适用于公开独立站、Shopify 风格页面或本地 fixture。
+- 前端新增 `/imports` 评论导入工作台，用中文展示导入输入和结果。
+- 现有 RAG 质量评估、evidence-bound LLM prompt、报告证据链 API 和前端报告证据组件继续复用同一批 `reviews` / `review_chunks` 数据。

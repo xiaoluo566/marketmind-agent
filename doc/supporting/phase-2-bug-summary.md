@@ -19,11 +19,11 @@
 | 真实 provider 成本 | 只有配置边界和 `agent_runs.total_cost` 字段；没有真实账单采样 | 不能写真实线上成本 | 接真实 provider 后持久化 token、latency、cost |
 | 真实多容器 E2E | Day37 是 mock dev server E2E | 不能证明 Docker/API/Redis/Celery/provider 全链路 | 真实 compose 可用后新增 Playwright + API E2E |
 | branch protection | 已有 CI 和 PR 模板；未自动配置 required checks | main 保护仍依赖人工纪律 | 在 GitHub 仓库手动开启 required checks，并截图或记录配置 |
-| CSV/JSON 评论导入 | 尚未实现 | 用户无法直接导入店铺后台或第三方工具导出的评论 | Day41 优先设计导入 schema、校验、去重和入库链路 |
-| 低风险真实站点适配器 | 尚未实现 | 项目仍偏 fixture/demo，真实应用说服力不足 | 选择公开 demo / Shopify / Amazon 静态样例等低风险来源 |
+| CSV/JSON 评论导入 | 已在真实应用闭环中补齐基础能力 | 用户可以直接导入店铺后台或第三方工具导出的评论 | 后续补大文件异步导入和导入后自动索引 |
+| 低风险真实站点适配器 | 已补 JSON-LD Product.review 适配 | 项目具备公开独立站 / Shopify 风格页面的低风险评论抽取入口 | 后续增加更多公开页面 fixture 和适配器选择策略 |
 | 真实业务样本 RAG 质量评估 | 当前是 fixture 评估集 | 不能证明真实评论召回质量 | 建立小型人工标注集，记录 query、expected evidence 和 recall |
 | 真实 LLM evidence-bound 报告 | Prompt 契约已完成，但未跑真实 provider | 不能声明真实模型报告质量 | 接 provider 后继续强制 evidence refs 校验和 JSON repair |
-| 前端证据链报告闭环 | 已有报告详情和 evidence chain；缺少导入样本到报告的完整演示 | 用户还不能从导入数据一路看到结论和原始评论 | Day41-Day50 打通导入 -> 分析 -> 报告 -> 证据回查 |
+| 前端证据链报告闭环 | 已有报告详情和 evidence chain；新增评论导入页，但缺少“一键索引并生成报告” | 用户仍需要通过后端/RAG流程衔接导入数据到报告 | 下一步打通导入 -> 自动索引 -> 报告 -> 证据回查 |
 
 ## 不作为 Phase 2 RC 阻塞项的原因
 

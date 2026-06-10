@@ -398,6 +398,41 @@ Day 22 实现范围：
 - 包含 `package_version`、`report_id`、`task_id`、`schema_version`、`title`、`summary`、`generated_at`、`evidence_refs`、`missing_refs`、`sources`
 - `sources` 里的 `metadata` 会过滤 `api_key`、`apikey`、`token`、`secret`、`password`、`authorization`
 - 疑似 secret value 会替换为 `[REDACTED]`
+## 真实应用闭环接口补充
+
+### `POST /api/imports/reviews`
+
+职责：接收用户提交的 CSV/JSON 评论内容，创建 `manual_upload` 任务，并把有效评论写入 `products` 和 `reviews`，供后续 RAG 索引和证据链报告复用。
+
+请求字段：
+
+- `format`: `csv` 或 `json`
+- `content`: CSV/JSON 原始文本
+- `product_title`: 商品名称
+- `source_url`: 可选，导入文件或数据来源地址
+
+返回字段：
+
+- `format`
+- `task_id`
+- `product_id`
+- `imported_count`
+- `duplicate_count`
+- `error_count`
+- `errors`
+- `review_external_ids`
+
+错误：
+
+- `REVIEW_IMPORT_INVALID_PAYLOAD`: JSON 不是合法对象、数组或缺少 `reviews` 数组。
+- `VALIDATION_FAILED`: 请求字段缺失或格式不符合 Pydantic schema。
+
+边界：
+
+- 单行 `content` 为空时进入 `errors`，不阻断整批导入。
+- 重复 `review_id` 进入 `duplicate_count`，不重复写入。
+- `author` 不直接明文入库，持久化为 `author_hash`。
+
 ## Day39 LLMOps 指标接口补充
 
 ### `GET /api/observability/llmops-summary`

@@ -107,24 +107,19 @@
 - 历史报告对比和趋势图。
 - 任务取消、暂停和恢复。
 
-## Day 41-Day50：真实应用闭环优先级
+## 真实应用闭环优先级
 
-Day 40 Phase 2 RC 后，下一阶段不要继续盲目堆 Agent 能力，而是先补真实应用闭环。目标是让用户可以把真实或半真实评论数据导入系统，得到带证据链的报告，并能回查到原始评论。
+Day 40 Phase 2 RC 后，下一阶段不要继续盲目堆 Agent 能力，而是先补真实应用闭环。当前已经落地 CSV/JSON 评论导入、低风险 JSON-LD Product.review 适配器和前端评论导入工作台。
 
-| 天数 | 主题 | 交付物 | 关联文档 |
-| --- | --- | --- | --- |
-| Day 41 | CSV/JSON 评论导入 SDD | 导入 schema、字段映射、错误报告、样例数据 | `data-model.md`、`api-contract.md` |
-| Day 42 | 评论导入后端实现 | upload/import API、Pydantic 校验、去重、入库测试 | `testing-strategy.md` |
-| Day 43 | 前端导入入口 | 中文上传页、导入预览、错误行展示 | `frontend-localization-contract.md` |
-| Day 44 | 低风险真实站点适配器 | Shopify/public demo/Amazon 静态样例适配器之一 | `crawler-strategy.md` |
-| Day 45 | 评论分析质量评估集 | query、expected evidence、recall/precision baseline | `rag-memory.md` |
-| Day 46 | 真实 LLM evidence-bound 报告联调 | provider 配置、成本记录、JSON repair、evidence refs 校验 | `prompt-strategy.md` |
-| Day 47 | 前端证据链报告增强 | 结论 -> 引用证据 -> 原始评论跳转 | `ui-console-spec.md` |
-| Day 48 | 导入到报告的端到端回归 | CSV/JSON -> RAG -> report -> evidence chain 测试 | `testing-strategy.md` |
-| Day 49 | 真实应用演示脚本 | 面向电商运营的 5-8 分钟演示材料 | `demo-script.md` |
-| Day 50 | 第三阶段 RC 审计 | 指标、缺口、面试口径、main 合并判断 | `release-checklist.md` |
+后续 backlog 按真实价值排序：
 
-这十天的重点是“可用性”和“证据链可信度”，不是新增更多模型名词。任何真实 provider、真实站点或真实数据指标，都必须继续区分 mock、fixture、database_snapshot 和 real。
+1. 导入后自动触发 RAG indexing。
+2. 导入后生成默认 RAG 评估集。
+3. 从导入 task 一键生成 evidence-bound report。
+4. 报告详情页将 evidence ref 锚点跳转到对应原始评论。
+5. 为 CSV/JSON 大文件导入增加异步任务和进度事件。
+
+这些工作的重点是“可用性”和“证据链可信度”，不是新增更多模型名词。任何真实 provider、真实站点或真实数据指标，都必须继续区分 mock、fixture、database_snapshot 和 real。
 
 ## 不建议过早做
 

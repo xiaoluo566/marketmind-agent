@@ -947,4 +947,21 @@ Day40 同时更新 `tests/test_frontend_localization_contract.py`，禁止根布
 - Docker daemon 下真实 `docker compose up --build`。
 - 真实 provider 调用和真实账单成本。
 - 真实业务数据上的召回质量。
-- Day41-Day50 的 CSV/JSON 导入和站点适配器实现。
+- 真实 provider 调用和真实业务数据上的完整召回质量。
+
+## 真实应用闭环测试边界
+
+本次不再新增日程式文档契约测试，改为直接用功能测试锁定闭环能力。
+
+新增测试：
+
+- `tests/test_review_import_contract.py`：覆盖 CSV/JSON 导入、错误行报告、去重、`manual_upload` task、`products` / `reviews` 入库，以及导入后 RAG chunk 索引。
+- `tests/test_crawler_service.py::test_crawl_product_page_extracts_low_risk_json_ld_reviews`：覆盖低风险 JSON-LD Product.review 页面适配。
+- `tests/test_frontend_review_import_contract.py`：覆盖 `/imports` 前端页面、中文导入文案、`importReviews()` API client 和导入结果字段展示。
+
+仍需继续保留的回归测试：
+
+- `tests/test_rag_quality_metrics.py`
+- `tests/test_llm_report_prompt_contract.py`
+- `tests/test_report_evidence_chain.py`
+- `tests/test_day24_integration_flow.py`
