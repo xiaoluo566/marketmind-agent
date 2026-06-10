@@ -298,3 +298,43 @@ Day33 尚未统计真实恢复成功率，因为 Docker daemon 不可用，真�
 - 数据字段见 `data-model.md`
 - Agent 步骤见 `agent-state-machine.md`
 - 简历表达见 `resume-story.md`
+## Day39 LLMOps Summary 实现口径
+
+Day39 已经把 LLMOps 从文档指标推进为可查询 API 和前端面板，但仍坚持“来源优先”的原则。
+
+### 已落地接口
+
+- `GET /api/observability/llmops-summary`
+- 后端实现：`backend/app/observability/llmops_summary.py`
+- 前端消费：`frontend/src/lib/api.ts#getLLMOpsSummary`
+- 前端展示：首页 `LLMOps 指标` 区域
+
+### 当前统计来源
+
+| 指标组 | 来源 | 可信边界 |
+| --- | --- | --- |
+| `task_metrics` | `tasks` 表 | 可代表当前数据库快照下的任务状态 |
+| `model_usage` | `agent_runs` 表 | 只代表已记录字段，不等同于 provider 账单 |
+| `guardrail_metrics` | `agent_runs` 表 | 可用于说明结构化解析失败和 self-heal 修复次数 |
+| `recovery_metrics` | `task_events` + `tasks.options.recovery` | 可说明任务级 retry/recovery 事件，不等于完整 Agent step replay |
+| `provider_metrics` | 当前未持久化 | 必须标记 `not_persisted` |
+
+### 必须保留的警告
+
+- `暂无真实 provider 成本数据`
+- `provider metrics 尚未持久化，Day35 指标仅代表 fixture/in-memory baseline`
+
+### 可以在面试中说
+
+- 已经有 LLMOps summary API。
+- 已经能汇总任务成功率、失败率、平均耗时、模型调用数、token 记录、结构化解析失败、自愈成功率和 retry 恢复成功率。
+- 指标面板会区分 database / mock / fixture / not persisted，不把演示数据包装成真实生产数据。
+
+### 不能写成真实指标
+
+- 真实 provider 平均 latency。
+- 真实 token 成本。
+- 真实线上任务成功率。
+- 真实生产 retry 恢复成功率。
+
+这些指标必须等真实 provider 和真实运行数据接入后再写进简历或报告。

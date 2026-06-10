@@ -94,6 +94,55 @@ export type SystemService = {
   detail: string;
 };
 
+export type LLMOpsSummary = {
+  summary_version: string;
+  generated_at: string;
+  data_freshness: string;
+  data_sources: string[];
+  task_metrics: {
+    total_tasks: number;
+    completed_tasks: number;
+    failed_tasks: number;
+    success_rate: number;
+    failure_rate: number;
+    average_duration_ms: number;
+    data_source: string;
+  };
+  model_usage: {
+    agent_run_count: number;
+    model_call_count: number;
+    input_tokens: number;
+    output_tokens: number;
+    total_tokens: number;
+    reported_cost: number;
+    cost_source: string;
+    cost_confidence: string;
+    data_source: string;
+  };
+  guardrail_metrics: {
+    validation_error_count: number;
+    self_heal_count: number;
+    self_heal_success_rate: number;
+    data_source: string;
+  };
+  recovery_metrics: {
+    retry_requested_count: number;
+    retry_requeued_count: number;
+    recovery_resumed_count: number;
+    retry_queue_unavailable_count: number;
+    recovery_success_count: number;
+    recovery_success_rate: number;
+    data_source: string;
+  };
+  provider_metrics: {
+    embedding_provider_calls: number;
+    average_latency_ms: number;
+    data_source: string;
+    note: string;
+  };
+  warnings: string[];
+};
+
 export type TaskCreateInput = {
   target: string;
   mode: string;

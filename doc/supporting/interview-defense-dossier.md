@@ -2178,6 +2178,24 @@ Playwright 生成的 HTML report 目录被 ESLint 当源码扫描，导致 lint 
 - 指标必须标注来源：fixture、mock 还是 real provider。
 - 没有真实 token 数据时，不估算成本。
 
+实际完成后可以补充：
+
+- 我新增了 `GET /api/observability/llmops-summary`，把 `tasks`、`agent_runs` 和 `task_events` 的数据汇总成统一 success envelope。
+- `task_metrics` 负责成功率、失败率和平均耗时。
+- `model_usage` 负责模型调用数、token 记录和已记录成本，但 `cost_confidence` 会说明它不是自动等于真实 provider 账单。
+- `guardrail_metrics` 负责结构化解析失败和 self-heal 成功率。
+- `recovery_metrics` 负责 retry 请求、重新入队、recovery resumed 和恢复成功率。
+- `provider_metrics` 当前明确标记为 `not_persisted`，因为 Day35 的 provider metrics 仍是 fixture/in-memory baseline。
+- 前端首页新增中文 `LLMOps 指标` 区域，展示“模型调用”“Token 总量”“自愈成功率”“恢复成功率”和“数据来源”。
+
+如果面试官追问“你这个 LLMOps 有没有真实成本”，可以回答：
+
+> 目前不能把它说成真实 provider 成本。我的 API 里保留了 `cost_source`、`cost_confidence` 和 warnings。即使 `agent_runs.total_cost` 有值，也只能说明系统记录了成本字段；只有真实 provider 返回 token 或计费信息，并完成持久化后，才能把它说成真实成本。
+
+如果面试官追问“为什么不直接加 metrics 表”，可以回答：
+
+> Day39 是第一版汇总面板，现有 `tasks`、`agent_runs`、`task_events` 已经能覆盖核心口径。先做查询汇总能快速验证字段和前端展示是否合理。等真实 provider metrics、趋势分析和日报汇总稳定后，再拆独立 metrics 表更合适。
+
 ### Day 40：第二阶段阶段验收与发布候选
 
 讲法重点：

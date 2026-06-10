@@ -179,8 +179,12 @@ def test_frontend_date_formatter_uses_chinese_locale() -> None:
 
 def test_root_layout_uses_chinese_document_metadata() -> None:
     layout = read_frontend("app/layout.tsx")
+    globals_css = read_frontend("app/globals.css")
 
     assert '<html lang="en"' not in layout
     assert '<html lang="zh-CN"' in layout
     assert "E-commerce review intelligence" not in layout
     assert "电商评论洞察" in layout
+    assert "next/font/google" not in layout
+    assert "--font-sans: system-ui" in globals_css
+    assert "--font-mono: \"JetBrains Mono\"" in globals_css

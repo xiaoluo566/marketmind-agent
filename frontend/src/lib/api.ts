@@ -1,5 +1,14 @@
-import { agentSteps, evidence, reports, services, taskEvents, tasks } from "./mock-data";
-import type { AgentStep, Evidence, Report, Task, TaskAccepted, TaskCreateInput, TaskEvent } from "./types";
+import { agentSteps, evidence, llmopsSummary, reports, services, taskEvents, tasks } from "./mock-data";
+import type {
+  AgentStep,
+  Evidence,
+  LLMOpsSummary,
+  Report,
+  Task,
+  TaskAccepted,
+  TaskCreateInput,
+  TaskEvent,
+} from "./types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 const USE_MOCKS = process.env.NEXT_PUBLIC_USE_MOCKS === "true";
@@ -240,6 +249,13 @@ export async function listServices() {
         }
       : service,
   );
+}
+
+export async function getLLMOpsSummary() {
+  if (USE_MOCKS) {
+    return llmopsSummary;
+  }
+  return request<LLMOpsSummary>("/api/observability/llmops-summary");
 }
 
 type BackendTaskStatus = {

@@ -86,12 +86,26 @@ MarketMind Agent 是一个面向电商运营评论洞察的工程化 Agent 系�
 - 已完成精确 Agent step 断点续跑。
 - 已替代成熟卖家工具。
 - 将 Pydantic 解析失败率降低到 1% 以下，除非后续真实统计支持。
+- 已经得到真实 LLM provider 成本、latency 和 token 账单统计。
+- 已经完成生产级 LLMOps 运营面板。
 
 原因：
 
 - 这些能力当前没有真实验证。
 - 面试官追问时容易被反证。
 - 这个项目真正强的地方是工程链路，不是夸大业务覆盖。
+
+## Day39 LLMOps 简历口径
+
+可以写：
+
+- 设计并实现 LLMOps summary API，汇总任务成功率、失败率、平均耗时、模型调用记录、结构化解析失败、自愈成功率和 retry 恢复事件，并在 Next.js 中文控制台展示指标来源。
+
+必须加限定：
+
+- 当前 LLMOps 指标来自数据库快照和 mock/fixture baseline。
+- provider metrics 尚未持久化。
+- 真实 provider 成本、latency 和 token 账单暂不写入简历，除非后续真实接入并跑出可验证数据。
 
 ## 不同岗位的强调方式
 

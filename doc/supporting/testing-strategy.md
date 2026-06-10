@@ -870,3 +870,60 @@ ruff: passed
 frontend lint/build: passed
 frontend Playwright E2E: 1 passed
 ```
+
+## Day 39 LLMOps Summary 测试边界
+
+Day39 新增 `tests/test_llmops_summary.py`，用于验证 LLMOps 运营指标汇总的后端 API 契约和前端展示契约。
+
+这组测试覆盖：
+
+- `GET /api/observability/llmops-summary` 返回统一 success envelope。
+- API 从 `tasks` 表统计：
+  - `total_tasks`
+  - `completed_tasks`
+  - `failed_tasks`
+  - `success_rate`
+  - `failure_rate`
+  - `average_duration_ms`
+- API 从 `agent_runs` 表统计：
+  - `agent_run_count`
+  - `model_call_count`
+  - `input_tokens`
+  - `output_tokens`
+  - `total_tokens`
+  - `reported_cost`
+  - `validation_error_count`
+  - `self_heal_count`
+  - `self_heal_success_rate`
+- API 从 `task_events` 和 `tasks.options.recovery` 统计：
+  - `retry_requested_count`
+  - `retry_requeued_count`
+  - `recovery_resumed_count`
+  - `retry_queue_unavailable_count`
+  - `recovery_success_count`
+  - `recovery_success_rate`
+- 空数据库返回 0 baseline，不抛异常。
+- provider metrics 当前标记为 `not_persisted`。
+- warnings 必须包含“暂无真实 provider 成本数据”。
+- 前端必须存在 `LLMOpsSummary` 类型、`getLLMOpsSummary()` helper、mock `llmopsSummary` 和首页中文 LLMOps 文案。
+
+这组测试不覆盖：
+
+- 真实 provider token / cost / latency。
+- provider metrics 持久化。
+- 趋势图、日报聚合和跨时间窗口查询。
+- 真实 Docker Compose 下的多 Worker 运营数据。
+
+当前验证：
+
+```text
+tests/test_llmops_summary.py: 3 passed
+Day39 targeted regression: 38 passed
+ruff: passed
+frontend lint: passed
+frontend build: passed
+frontend audit: found 0 vulnerabilities
+frontend Playwright E2E: 1 passed
+```
+
+这组指标可以用于演示工程化观测口径，但不能直接写成真实生产 LLMOps 数据，除非后续接入真实 provider 并完成持久化采样。

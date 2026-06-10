@@ -2885,3 +2885,73 @@ npm run test:e2e
 - 暂不导出完整二进制 artifact。
 - 暂不验证浏览器真实下载后的本地文件内容。
 - 真实 API 下载需要后端服务运行；mock 模式只用于本地演示。
+
+## Day 39 实际开发记录
+
+### 背景
+
+Day39 进入 LLMOps 运营指标面板。前面已经有 `tasks`、`agent_runs`、`task_events`、Day27 fixture benchmark、Day35 provider metrics baseline 和 Day38 可交付报告，但这些信息分散在不同表、测试和文档里。今天的目标是先形成统一 summary 入口，让前端和面试讲述都能围绕同一套指标口径展开。
+
+### 当天为什么这样选
+
+今天没有新增 metrics 表，而是先做查询汇总。原因是现有 `tasks`、`agent_runs` 和 `task_events` 已经能覆盖任务成功率、模型调用量、token 记录、结构化解析失败、自愈次数和 retry/recovery 事件。过早建独立 metrics 表会增加迁移成本，而且真实 provider metrics 还没有持久化来源，容易把 fixture 数据包装成“线上指标”。
+
+今天也没有估算真实成本。`agent_runs.total_cost` 可以作为已记录成本字段，但如果没有真实 provider 返回的 token/计费信息，就必须继续显示“暂无真实 provider 成本数据”。这个约束让项目在面试时更可信：能展示工程指标面板，但不会夸大真实运营数据。
+
+### SDD 与 TDD 过程
+
+- 先在 `day-39.md` 补充内嵌 SDD 规划，包括用户故事、功能需求、非目标、接口契约、数据来源约束和验收场景。
+- 新增 `tests/test_llmops_summary.py` 和 `tests/test_frontend_llmops_contract.py`。
+- RED 阶段：
+  - `/api/observability/llmops-summary` 返回 404。
+  - 前端缺少 `LLMOpsSummary`、`getLLMOpsSummary()`、`llmopsSummary` mock 或首页中文 LLMOps 文案。
+- GREEN 阶段：
+  - 新增 `backend/app/observability/llmops_summary.py`。
+  - 新增 `GET /api/observability/llmops-summary`。
+  - 前端新增同构 `LLMOpsSummary` 类型、mock summary、API helper 和首页中文指标区。
+
+### 实际改动
+
+- `backend/app/observability/llmops_summary.py`：汇总任务、模型、guardrail、recovery 和 provider 指标。
+- `backend/app/api/routes/observability.py`：新增 LLMOps summary API。
+- `tests/test_llmops_summary.py`：覆盖数据库指标聚合、空数据 baseline 和 API envelope。
+- `tests/test_frontend_llmops_contract.py`：覆盖前端类型、API helper、mock summary 和首页中文展示契约。
+- `frontend/src/lib/types.ts`：新增 `LLMOpsSummary`。
+- `frontend/src/lib/mock-data.ts`：新增 `llmopsSummary`，明确来源为 mock / not persisted。
+- `frontend/src/lib/api.ts`：新增 `getLLMOpsSummary()`。
+- `frontend/src/app/page.tsx`：首页新增中文 LLMOps 指标区域。
+
+### 当前验证
+
+```powershell
+uv run pytest tests\test_llmops_summary.py tests\test_frontend_llmops_contract.py
+# 5 passed
+
+uv run pytest tests\test_llmops_summary.py tests\test_frontend_llmops_contract.py tests\test_phase2_day32_40_docs.py tests\test_frontend_localization_contract.py
+# 16 passed
+
+uv run pytest tests\test_day27_benchmarking.py tests\test_day28_recovery.py tests\test_rag_quality_metrics.py tests\test_llm_report_prompt_contract.py tests\test_report_export.py tests\test_observability.py
+# 27 passed
+
+uv run ruff check backend tests migrations
+# All checks passed
+
+cd frontend
+npm run lint
+# passed
+
+npm run build
+# passed
+
+npm audit --audit-level=high
+# found 0 vulnerabilities
+
+npm run test:e2e
+# 1 passed
+```
+
+### 遗留问题
+
+- provider metrics 仍未持久化，当前返回 `not_persisted`。
+- 没有真实 provider token / cost / latency，不写成真实运营指标。
+- Day39 只做摘要面板，不做趋势图和日报聚合。

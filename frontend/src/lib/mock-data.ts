@@ -1,4 +1,12 @@
-import type { AgentStep, Evidence, Report, SystemService, Task, TaskEvent } from "./types";
+import type {
+  AgentStep,
+  Evidence,
+  LLMOpsSummary,
+  Report,
+  SystemService,
+  Task,
+  TaskEvent,
+} from "./types";
 
 export const tasks: Task[] = [
   {
@@ -290,3 +298,56 @@ export const services: SystemService[] = [
   { name: "Crawler", status: "mock", detail: "Stitch 参考稿可用" },
   { name: "Agent", status: "mock", detail: "状态机已接入" },
 ];
+export const llmopsSummary: LLMOpsSummary = {
+  summary_version: "llmops.summary.v1",
+  generated_at: "2026-05-29T10:00:00+08:00",
+  data_freshness: "mock_snapshot",
+  data_sources: [
+    "mock:tasks",
+    "mock:agent_runs",
+    "mock:task_events",
+    "not_persisted:provider_metrics",
+  ],
+  task_metrics: {
+    total_tasks: 5,
+    completed_tasks: 2,
+    failed_tasks: 1,
+    success_rate: 0.4,
+    failure_rate: 0.2,
+    average_duration_ms: 207000,
+    data_source: "mock:tasks",
+  },
+  model_usage: {
+    agent_run_count: 3,
+    model_call_count: 0,
+    input_tokens: 0,
+    output_tokens: 0,
+    total_tokens: 0,
+    reported_cost: 0,
+    cost_source: "not_available",
+    cost_confidence: "not_available",
+    data_source: "mock:agent_runs",
+  },
+  guardrail_metrics: {
+    validation_error_count: 3,
+    self_heal_count: 2,
+    self_heal_success_rate: 0.6667,
+    data_source: "mock:agent_runs",
+  },
+  recovery_metrics: {
+    retry_requested_count: 0,
+    retry_requeued_count: 0,
+    recovery_resumed_count: 0,
+    retry_queue_unavailable_count: 0,
+    recovery_success_count: 0,
+    recovery_success_rate: 0,
+    data_source: "mock:task_events+tasks",
+  },
+  provider_metrics: {
+    embedding_provider_calls: 0,
+    average_latency_ms: 0,
+    data_source: "not_persisted",
+    note: "Day35 provider metrics 仍是 fixture/in-memory baseline，尚未持久化。",
+  },
+  warnings: ["暂无真实 provider 成本数据", "provider metrics 尚未持久化"],
+};

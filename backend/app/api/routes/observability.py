@@ -1,11 +1,14 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Query, Request, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
 
 from app.core.exceptions import AppError
 from app.core.responses import success_response
 from app.observability.error_store import ErrorLogData, ErrorLogStore
+from app.observability.llmops_summary import summarize_llmops
+from app.storage.database import get_db_session
 
 router = APIRouter(prefix="/observability")
 
@@ -52,6 +55,18 @@ def list_error_logs(
     )
     return success_response(
         data=data.model_dump(mode="json"),
+        message="ok",
+        trace_id=request.state.trace_id,
+    )
+
+
+@router.get("/llmops-summary")
+def read_llmops_summary(
+    request: Request,
+    session: Annotated[Session, Depends(get_db_session)],
+) -> dict:
+    return success_response(
+        data=summarize_llmops(session),
         message="ok",
         trace_id=request.state.trace_id,
     )

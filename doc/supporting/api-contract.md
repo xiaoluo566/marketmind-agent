@@ -398,3 +398,28 @@ Day 22 实现范围：
 - 包含 `package_version`、`report_id`、`task_id`、`schema_version`、`title`、`summary`、`generated_at`、`evidence_refs`、`missing_refs`、`sources`
 - `sources` 里的 `metadata` 会过滤 `api_key`、`apikey`、`token`、`secret`、`password`、`authorization`
 - 疑似 secret value 会替换为 `[REDACTED]`
+## Day39 LLMOps 指标接口补充
+
+### `GET /api/observability/llmops-summary`
+
+职责：汇总当前数据库快照下的任务、模型、Guardrails、retry/recovery 和 provider 指标，为前端 LLMOps 面板提供统一数据源。
+
+返回：统一 success envelope。
+
+核心字段：
+
+- `summary_version`：当前为 `llmops.summary.v1`
+- `data_freshness`：当前为 `database_snapshot`
+- `data_sources`：指标来源清单
+- `task_metrics`：`total_tasks`、`completed_tasks`、`failed_tasks`、`success_rate`、`failure_rate`、`average_duration_ms`、`data_source`
+- `model_usage`：`agent_run_count`、`model_call_count`、`input_tokens`、`output_tokens`、`total_tokens`、`reported_cost`、`cost_source`、`cost_confidence`、`data_source`
+- `guardrail_metrics`：`validation_error_count`、`self_heal_count`、`self_heal_success_rate`、`data_source`
+- `recovery_metrics`：`retry_requested_count`、`retry_requeued_count`、`recovery_resumed_count`、`retry_queue_unavailable_count`、`recovery_success_count`、`recovery_success_rate`、`data_source`
+- `provider_metrics`：`embedding_provider_calls`、`average_latency_ms`、`data_source`、`note`
+- `warnings`
+
+边界：
+
+- 当前不新增 metrics 表。
+- 当前 provider metrics 返回 `not_persisted`。
+- 当前 warnings 必须保留“暂无真实 provider 成本数据”，避免把 mock / fixture / 手工记录成本说成真实 provider 账单。
