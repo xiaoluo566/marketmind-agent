@@ -143,6 +143,30 @@ Day34 错误码：
 
 Day35 可以基于这些错误码继续补 provider metrics、latency 和 RAG 质量评估，不需要再重写 provider 接口。
 
+## Day 35 RAG 评估集与召回质量
+
+Day35 新增 `backend/app/rag/quality.py`，把“RAG 能不能检索”推进到“RAG 是否按预期召回证据”的可测基线。
+
+当前评估方式：
+
+1. 准备固定评论 fixture。
+2. 为每个业务 query 标注 expected review external id。
+3. 调用 `SQLAlchemyReviewChunkStore.search_similar_reviews()`。
+4. 比较返回的 `review_external_id` 是否覆盖 expected ids。
+5. 输出命中率、空召回数量、top similarity 和 latency。
+
+Day35 fixture query：
+
+- `质量差`
+- `退货`
+- `物流慢`
+- `客服差`
+- `续航短`
+
+这组评估的作用是防回归和展示 RAG 评估方法，不代表真实线上准确率。原因是当前默认仍使用 deterministic fake provider，真实 embedding provider 和更大规模人工标注集还没完成。
+
+Provider metrics 使用 `InstrumentedEmbeddingProvider` 包装原 provider，不改变 provider 接口，也不改变 `search_reviews_tool` 输出。后续 Day39 可以复用这些 metrics 做 LLMOps 面板。
+
 ## Day 15 Agent 检索工具
 
 Day 15 新增 `search_reviews_tool`，把 Day 14 的检索能力包装成 Agent 工具。

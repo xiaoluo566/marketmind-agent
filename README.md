@@ -49,11 +49,12 @@ flowchart TD
 - Day27 fixture benchmark：20 个样例任务，成功率 95.00%，平均 338 ms，P95 391 ms。
 - Day28 失败任务 retry：`POST /api/tasks/{task_id}/retry`、`waiting_retry` 状态流和 Worker recovery resume 事件。
 - Day34 可配置 embedding provider 架构：默认 fake provider 保证测试稳定，显式配置可接 OpenAI-compatible embedding，并包含缺 key、限流、超时和 bad response 错误分类。
+- Day35 RAG 质量评估和 provider metrics baseline：5 个中文 query fixture、expected evidence 命中检查、空召回统计、fallback 和 provider 错误指标。
 
 尚未完成：
 
 - 全局 `GET /api/evidence`。
-- 真实 embedding provider 付费调用、召回质量评估和 pgvector 原生排序。
+- 真实 embedding provider 付费调用、大规模人工标注召回质量评估和 pgvector 原生排序。
 - 真实 LLM report prompt。
 - 真实 `docker compose build` / `docker compose up` 联调。
 - Playwright E2E 和 GitHub branch protection。
@@ -117,10 +118,12 @@ cd ..
 uvx pip-audit
 ```
 
-最新 Day34 本地完整门禁：
+最新 Day35 本地完整门禁：
 
-- `uv run pytest`：198 passed。
-- coverage：90.13%。
+- `uv run pytest tests\test_rag_quality_metrics.py`：2 passed。
+- Day35 RAG/provider 回归：16 passed。
+- `uv run pytest`：200 passed。
+- coverage：90.31%。
 - ruff、alembic heads、compose config：通过。
 - frontend lint / build / audit：通过。
 - `uvx pip-audit`：No known vulnerabilities found。

@@ -110,6 +110,79 @@ Day34 已经把 embedding provider 接入层做成可配置架构，但还没有
 - `fake` provider 的结果只能用于测试、演示和 baseline，不代表真实语义效果。
 - `EMBEDDING_PROVIDER_UNCONFIGURED` 应计入配置错误，而不是模型失败。
 
+## Day 35 RAG 质量与 provider metrics baseline
+
+Day35 新增 `backend/app/rag/quality.py`，把 RAG 评估和 provider metrics 从文档推进到代码。当前仍是 fixture baseline，不代表线上准确率。
+
+### RAG 质量指标
+
+当前评估 case 字段：
+
+- `query`
+- `expected_review_external_ids`
+- `top_k`
+- `min_similarity`
+- `reason`
+
+当前评估 result 字段：
+
+- `returned_review_external_ids`
+- `hit_count`
+- `expected_count`
+- `hit_rate`
+- `top_similarity`
+- `latency_ms`
+- `empty_recall`
+- `matched`
+
+当前 summary 字段：
+
+- `total_cases`
+- `passed_cases`
+- `empty_recall_count`
+- `micro_hit_rate`
+- `average_case_hit_rate`
+- `average_latency_ms`
+
+Day35 fixture 覆盖 5 个中文 query：
+
+- `质量差`
+- `退货`
+- `物流慢`
+- `客服差`
+- `续航短`
+
+### Provider metrics 字段
+
+`InstrumentedEmbeddingProvider` 会为每次 `embed_texts()` 记录：
+
+- `provider_name`
+- `model_name`
+- `operation`
+- `input_count`
+- `input_characters`
+- `latency_ms`
+- `success`
+- `error_code`
+- `fallback_used`
+
+`ProviderMetricsSummary` 会聚合：
+
+- `total_calls`
+- `success_count`
+- `failure_count`
+- `fallback_count`
+- `total_input_characters`
+- `average_latency_ms`
+- `error_counts`
+
+### 当前验证边界
+
+- 当前 metrics 覆盖 fake provider 成功、模拟 provider timeout 失败和 fallback 标记。
+- 当前没有统计真实 token 和真实成本。
+- 当前没有写入数据库表，Day39 面板需要时再决定是否持久化。
+- 当前 RAG 命中率是 fixture baseline，只能用于防回归和演示评估方法。
+
 ## 简历可用数据
 
 - 平均任务耗时

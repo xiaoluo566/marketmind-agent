@@ -730,6 +730,47 @@ pip-audit: No known vulnerabilities found
 
 Day35 需要在这个基础上补 RAG 评估集和 provider 指标测试，不能把 Day34 的架构测试误写成真实召回质量验证。
 
+## Day 35 RAG 质量与 Provider Metrics 测试边界
+
+Day35 新增 `tests/test_rag_quality_metrics.py`，用于验证 RAG 评估和 provider metrics baseline。
+
+这组测试覆盖：
+
+- 5 个中文业务 query：
+  - `质量差`
+  - `退货`
+  - `物流慢`
+  - `客服差`
+  - `续航短`
+- 每个 query 都有 expected review external id。
+- `evaluate_rag_quality()` 能输出 total cases、passed cases、empty recall、micro hit rate 和 per-case result。
+- `InstrumentedEmbeddingProvider` 能记录 provider name、model、输入字符数、latency、success、error code 和 fallback。
+- `summarize_provider_metrics()` 能聚合成功、失败、fallback 和错误码。
+- 模拟 timeout provider 失败时，metrics 保留 `EMBEDDING_PROVIDER_TIMEOUT`。
+
+这组测试不覆盖：
+
+- 真实 embedding provider 网络请求。
+- 真实 token / cost。
+- 大规模人工标注评估集。
+- pgvector 原生排序。
+- provider metrics 持久化。
+
+当前验证：
+
+```text
+tests/test_rag_quality_metrics.py: 2 passed
+Day35 RAG/provider targeted regression: 16 passed
+Day35 + Phase2 docs targeted regression: 19 passed
+Full pytest: 200 passed
+Coverage gate: backend coverage 90.31%
+ruff / alembic heads / docker compose config: passed
+frontend lint / build / audit: passed
+pip-audit: No known vulnerabilities found
+```
+
+这组测试的定位是防回归和证明评估方法，不是证明线上 RAG 准确率。
+
 ## 与其他文档关系
 
 - 数据样例见 `data-contract-examples.md`

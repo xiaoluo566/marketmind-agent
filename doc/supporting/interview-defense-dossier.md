@@ -2041,6 +2041,23 @@ Day34 开发中还修了一个全量回归暴露的问题：
 - 小型评估集是 fixture baseline，不是线上准确率。
 - RAG 项目不能只说“用了向量数据库”，还要说明怎么评估召回质量。
 
+实际完成后可以补充：
+
+- 我新增了 `backend/app/rag/quality.py`，没有改 `search_reviews_tool` 的输出契约。
+- `RAGEvaluationCase` 明确每个 query 的 expected review external ids 和 reason。
+- `evaluate_rag_quality()` 输出 per-case hit rate、empty recall、latency 和 summary。
+- `InstrumentedEmbeddingProvider` 包装原 provider，记录 provider name、model、输入字符数、latency、success、error code 和 fallback_used。
+- 测试里覆盖了 `质量差`、`退货`、`物流慢`、`客服差`、`续航短` 5 个中文 query。
+- provider metrics 同时覆盖成功调用、模拟 timeout 失败和 fallback 标记。
+
+如果面试官问“这个 RAG 命中率能不能写成真实准确率”，可以回答：
+
+> 不能。Day35 是 fixture baseline，用来验证评估框架和防止回归。它的价值是证明我知道 RAG 需要 expected evidence、empty recall、latency 和 provider failure 指标，而不是只说“用了向量数据库”。真实准确率需要更大样本、人工标注和真实 provider。
+
+如果面试官问“为什么不先建 provider_metrics 表”，可以回答：
+
+> 因为 Day35 还在确定指标口径。先用内存 dataclass 和 summary 函数能快速验证字段是否够用，等 Day39 做 LLMOps 面板时再决定是否持久化，避免过早迁移造成返工。
+
 ### Day 36：真实 LLM 报告生成 Prompt
 
 讲法重点：

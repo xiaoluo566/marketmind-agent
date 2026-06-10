@@ -6,6 +6,75 @@ Day 35 的目标是让 RAG 不只“能检索”，还要开始能衡量检索�
 
 这一天要建立一个小型 RAG 评估集、记录召回质量、provider_metrics，并把这些指标接到 LLMOps 文档和后续面板设计中。
 
+## SDD 规格
+
+### 用户故事
+
+**P1 - 开发者验证 RAG 召回没有退化**
+
+作为开发者，我希望有一组固定的评论检索评估样例，这样后续修改 embedding provider、切片策略或检索逻辑时，可以知道“质量差、退货、物流慢、客服差、续航短”这些业务 query 是否还能召回预期证据。
+
+验收标准：
+
+- 至少 5 个中文业务 query。
+- 每个 query 都有 expected review external id。
+- 评估结果输出命中数、命中率、top similarity、latency 和 empty recall。
+- 评估集使用 fixture，不依赖真实 provider 或外部网络。
+
+**P1 - 工程侧能观测 provider 调用**
+
+作为维护者，我希望 embedding provider 调用能留下结构化指标，这样后续接真实 provider 后能统计调用次数、输入规模、耗时、失败原因和 fallback 使用情况。
+
+验收标准：
+
+- provider metric 包含 provider name、model、operation、input_count、input_characters、latency_ms、success、error_code、fallback_used。
+- 成功和失败调用都能记录。
+- `EmbeddingProviderError.code` 能进入 metrics。
+- 指标聚合能输出 success_count、failure_count、fallback_count、error_counts。
+
+**P2 - 面试和演示中不夸大 fixture baseline**
+
+作为项目作者，我希望文档明确说明 Day35 指标是 fixture baseline，不是线上准确率。
+
+验收标准：
+
+- `llmops-metrics.md`、`rag-memory.md`、`development-log.md`、`interview-defense-dossier.md` 和 `testing-strategy.md` 都说明当前指标边界。
+- README 和面试材料不能把 fake provider 命中率写成真实线上效果。
+
+### 非目标
+
+- 不建 `provider_metrics` 数据表。
+- 不接真实付费 embedding API。
+- 不做 pgvector 原生 `<=>` 排序。
+- 不做 Day36 的真实 LLM 报告 prompt。
+- 不把 fixture 命中率写成真实业务准确率。
+
+### 数据契约
+
+评估 case：
+
+```text
+query
+expected_review_external_ids
+top_k
+min_similarity
+reason
+```
+
+provider metric：
+
+```text
+provider_name
+model_name
+operation
+input_count
+input_characters
+latency_ms
+success
+error_code
+fallback_used
+```
+
 ## 前置依赖
 
 - `day-14.md`：review chunk 入库和 top_k 检索。
@@ -31,6 +100,16 @@ Day 35 的目标是让 RAG 不只“能检索”，还要开始能衡量检索�
 - 新增指标汇总函数或测试 fixture。
 - 更新 `llmops-metrics.md`，说明 embedding 侧指标和 report LLM 侧指标的区别。
 - 明确当前指标是 fixture baseline，不包装成真实线上数据。
+- 新增 `backend/app/rag/quality.py`：
+  - `RAGEvaluationCase`
+  - `RAGEvaluationResult`
+  - `RAGEvaluationSummary`
+  - `ProviderMetric`
+  - `ProviderMetricsSummary`
+  - `InstrumentedEmbeddingProvider`
+  - `evaluate_rag_quality()`
+  - `summarize_provider_metrics()`
+- 新增 `tests/test_rag_quality_metrics.py`，覆盖 5 个中文 query 和 provider metrics 成功/失败/fallback。
 
 ## 实施步骤
 
@@ -69,6 +148,47 @@ uv run ruff check backend tests migrations
 ```powershell
 uv run pytest tests\test_embedding_provider_config.py
 ```
+
+## 实际完成
+
+Day35 按 SDD + TDD 完成第一版 RAG 评估和 provider metrics 基线。
+
+实现选择：
+
+- 新增 `backend/app/rag/quality.py`，不修改 `search_reviews_tool` 输出契约。
+- 使用 `InstrumentedEmbeddingProvider` 包装任何 `EmbeddingProvider`，把成功、失败、fallback、输入字符数和耗时记录为 metrics。
+- 使用 dataclass/schema 风格的内存结构，不新增数据库表，避免 Day35 过早引入迁移负担。
+- 评估集放在测试 fixture 内，用 5 条中文评论覆盖质量、退货、物流、客服、续航。
+- `evaluate_rag_quality()` 统计每个 query 的 expected evidence 命中情况，输出 micro hit rate、case hit rate、empty recall 和 latency。
+- `summarize_provider_metrics()` 聚合 provider metrics，作为 Day39 LLMOps 面板的输入雏形。
+
+关键文件：
+
+- `backend/app/rag/quality.py`
+- `backend/app/rag/__init__.py`
+- `tests/test_rag_quality_metrics.py`
+
+## 当前验证结果
+
+- RED：`uv run pytest tests\test_rag_quality_metrics.py` 最初失败，原因是 `app.rag.quality` 不存在。
+- GREEN：`uv run pytest tests\test_rag_quality_metrics.py`：2 passed。
+- RAG/provider 回归：`uv run pytest tests\test_rag_quality_metrics.py tests\test_review_rag_indexing.py tests\test_search_reviews_tool.py tests\test_embedding_provider_config.py`：16 passed。
+- `uv run pytest`：200 passed。
+- `uv run pytest --cov=backend --cov-report=term-missing`：200 passed，backend coverage 90.31%。
+- `uv run ruff check backend tests migrations`：All checks passed。
+- `uv run alembic heads`：`0002_task_queue_id (head)`。
+- `docker compose config`：通过。
+- `cd frontend; npm run lint`：通过。
+- `cd frontend; npm run build`：通过。
+- `cd frontend; npm audit --audit-level=high`：found 0 vulnerabilities。
+- `uvx pip-audit`：No known vulnerabilities found。
+- `git diff --check`：无输出。
+
+安全扫描说明：`rg` 只命中 `.env.example` 示例密码、文档占位 key、测试假 key 和源码路径名，没有发现真实密钥。
+- Day35 + Phase2 文档契约回归：`uv run pytest tests\test_rag_quality_metrics.py tests\test_review_rag_indexing.py tests\test_search_reviews_tool.py tests\test_embedding_provider_config.py tests\test_phase2_day32_40_docs.py`：19 passed。
+- `uv run pytest`：200 passed。
+- `uv run ruff check backend tests migrations`：All checks passed。
+- `git diff --check`：无输出。
 
 ## 验收标准
 

@@ -47,8 +47,8 @@
 | --- | --- |
 | 稳定分支 | `main` |
 | 日常开发分支 | `dev` |
-| 当前开发阶段 | Day 34 真实 embedding provider 架构接入 |
-| 当前主链路 | 文档基线、Next.js 控制台骨架、前端真实 API client、真实任务提交表单、任务详情轮询面板、历史任务列表、历史报告列表、报告详情真实读取、报告 evidence chain 真实读取、FastAPI health、任务创建 API、public_url 安全校验、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、Agent step 查询 API、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、可配置 embedding provider 架构、review chunk 入库、相似度检索原型、search_reviews_tool、结构化报告生成骨架、报告入库、证据链回查 API、风险机会评分、结构化错误日志、观测错误查询 API、主链路集成回归样例、Docker Compose 服务拓扑、数据库迁移服务、后端/前端 Dockerfile、GitHub Actions CI、PR 模板、发布检查清单、回退运行手册、Day27 benchmark harness、20 个 fixture 样例任务、性能 summary artifact、Day28 retry policy、任务 retry API、Worker recovery resume 事件、Day29 README/demo/resume/interview materials、数据库模型、Alembic 迁移 |
+| 当前开发阶段 | Day 35 RAG 检索质量与 provider 指标基线 |
+| 当前主链路 | 文档基线、Next.js 控制台骨架、前端真实 API client、真实任务提交表单、任务详情轮询面板、历史任务列表、历史报告列表、报告详情真实读取、报告 evidence chain 真实读取、FastAPI health、任务创建 API、public_url 安全校验、Celery 入队、Redis 状态快照、Redis 事件流、PostgreSQL 任务与事件持久化、Playwright 最小采集、HTML 证据 artifact、采集结果入库、Agent 工具 schema、工具注册机制、Agent Run / Step 持久化、Agent step 查询 API、最小 ReAct 状态机、结构化输出 Guardrails、自愈统计、短期记忆滑动窗口、上下文摘要压缩、评论清洗、评论切片、fake embedding、可配置 embedding provider 架构、RAG 评估集、provider metrics baseline、review chunk 入库、相似度检索原型、search_reviews_tool、结构化报告生成骨架、报告入库、证据链回查 API、风险机会评分、结构化错误日志、观测错误查询 API、主链路集成回归样例、Docker Compose 服务拓扑、数据库迁移服务、后端/前端 Dockerfile、GitHub Actions CI、PR 模板、发布检查清单、回退运行手册、Day27 benchmark harness、20 个 fixture 样例任务、性能 summary artifact、Day28 retry policy、任务 retry API、Worker recovery resume 事件、Day29 README/demo/resume/interview materials、数据库模型、Alembic 迁移 |
 | 最新开发提交 | 以 `git log -1 --oneline` 为准 |
 | 当前数据库决策 | PostgreSQL + pgvector，review chunk 使用 `vector(1536)` |
 | 当前模型决策 | 默认 `gpt-5.4-mini`，报告模型 `gpt-5.5`，embedding `text-embedding-3-small` |
@@ -2587,6 +2587,85 @@ uv run pytest tests\test_embedding_provider_config.py tests\test_config.py tests
 ### 下一步
 
 Day35 基于 Day34 provider 架构继续做 RAG 检索质量与 provider 指标。重点不是再扩 provider，而是把“query 是否命中预期 evidence”“provider 失败如何计数”“fallback 是否被标注”这些质量问题纳入测试和文档。
+
+## Day 35 实际开发记录
+
+### 背景
+
+Day34 已经完成可配置 embedding provider 架构，但如果只停在 provider 接入，就仍然无法回答“RAG 检索质量怎么证明”。Day35 的目标是建立一个小型、可复现、不会触发外部费用的 RAG 评估和 provider metrics baseline。
+
+### 当天为什么这样选
+
+今天没有先接真实 LLM 报告，是因为报告质量依赖证据召回。如果 RAG 召回没有评估，真实 LLM 报告只会把不确定性包装成更流畅的文本。先把 query、expected evidence、命中率、空召回和 provider metrics 固定下来，Day36 接真实报告时才能约束模型只引用可靠证据。
+
+今天也没有新增数据库表。provider metrics 的字段还会被 Day39 LLMOps 面板进一步验证，当前用 dataclass / summary 函数更适合快速迭代，避免过早迁移。
+
+### 实际改动
+
+- 新增 `backend/app/rag/quality.py`。
+- 新增 `InstrumentedEmbeddingProvider`，包装任何 `EmbeddingProvider`，记录每次 `embed_texts()` 的 provider name、model、operation、input count、input characters、latency、success、error code 和 fallback。
+- 新增 `RAGEvaluationCase`、`RAGEvaluationResult` 和 `RAGEvaluationSummary`。
+- 新增 `evaluate_rag_quality()`，对 query 的 returned review external ids 和 expected ids 做命中计算。
+- 新增 `summarize_provider_metrics()`，聚合成功、失败、fallback、输入字符数、平均 latency 和错误计数。
+- 新增 `tests/test_rag_quality_metrics.py`，覆盖 5 个中文 query：质量差、退货、物流慢、客服差、续航短。
+- 更新 `llmops-metrics.md`、`rag-memory.md`、`day-35.md`、本文、`testing-strategy.md` 和 `interview-defense-dossier.md`。
+
+### 当前验证
+
+```powershell
+uv run pytest tests\test_rag_quality_metrics.py
+# 2 passed
+
+uv run pytest tests\test_rag_quality_metrics.py tests\test_review_rag_indexing.py tests\test_search_reviews_tool.py tests\test_embedding_provider_config.py
+# 16 passed
+
+uv run pytest tests\test_rag_quality_metrics.py tests\test_review_rag_indexing.py tests\test_search_reviews_tool.py tests\test_embedding_provider_config.py tests\test_phase2_day32_40_docs.py
+# 19 passed
+
+uv run pytest
+# 200 passed
+
+uv run pytest --cov=backend --cov-report=term-missing
+# 200 passed, backend coverage 90.31%
+
+uv run ruff check backend tests migrations
+# All checks passed
+
+uv run alembic heads
+# 0002_task_queue_id (head)
+
+docker compose config
+# passed
+
+cd frontend
+npm run lint
+npm run build
+npm audit --audit-level=high
+# passed, found 0 vulnerabilities
+
+uvx pip-audit
+# No known vulnerabilities found
+```
+
+当前验证说明：
+
+- Day35 RED 阶段确认为 `app.rag.quality` 不存在。
+- Day35 GREEN 阶段已证明 5 个中文 query 能在 fixture 中召回 expected review external id。
+- provider metrics 已覆盖 fake provider 成功、模拟 timeout 失败和 fallback 标记。
+- `git diff --check` 无输出。
+- `rg` 安全扫描只命中示例密码、测试假 key、占位 key 和路径名，没有发现真实密钥。
+
+### 遗留问题
+
+- 当前 RAG 评估集很小，只能作为 fixture baseline。
+- 当前使用 deterministic fake provider，不代表真实 embedding 召回质量。
+- provider metrics 只在内存中聚合，尚未持久化。
+- 真实 provider latency、真实 token、真实成本仍未统计。
+- pgvector 原生 `<=>` 排序仍未接入。
+
+### 下一步
+
+Day36 可以基于 Day35 的 evidence 质量边界进入真实 LLM 报告 prompt。重点是把模型输出限制在 `StructuredReport`、`evidence_refs` 和 Pydantic Guardrails 内，不能让模型自由编造证据。
 
 ## 30 天后优化记录
 

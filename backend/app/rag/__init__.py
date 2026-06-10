@@ -9,6 +9,16 @@ from app.rag.embeddings import (
     OpenAICompatibleEmbeddingProvider,
     build_embedding_provider,
 )
+from app.rag.quality import (
+    InstrumentedEmbeddingProvider,
+    ProviderMetric,
+    ProviderMetricsSummary,
+    RAGEvaluationCase,
+    RAGEvaluationResult,
+    RAGEvaluationSummary,
+    evaluate_rag_quality,
+    summarize_provider_metrics,
+)
 from app.rag.review_index import (
     ReviewChunkIndexResult,
     ReviewSearchResult,
@@ -25,11 +35,19 @@ __all__ = [
     "EmbeddingProvider",
     "EmbeddingProviderError",
     "OpenAICompatibleEmbeddingProvider",
+    "InstrumentedEmbeddingProvider",
+    "ProviderMetric",
+    "ProviderMetricsSummary",
+    "RAGEvaluationCase",
+    "RAGEvaluationResult",
+    "RAGEvaluationSummary",
     "ReviewChunkIndexResult",
     "ReviewSearchResult",
     "ReviewTextChunk",
     "SQLAlchemyReviewChunkStore",
     "build_embedding_provider",
     "clean_review_text",
+    "evaluate_rag_quality",
     "split_review_text",
+    "summarize_provider_metrics",
 ]
