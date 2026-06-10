@@ -92,6 +92,14 @@ async function safeRequest<T>(path: string, fallback: T): Promise<T> {
 }
 
 export async function createTask(payload: TaskCreateInput) {
+  if (USE_MOCKS) {
+    return {
+      task_id: tasks[0]?.task_id ?? "tsk_mock_created",
+      status: "queued",
+      trace_id: "trc_mock_created",
+      queue_task_id: "queue_mock_created",
+    };
+  }
   return request<TaskAccepted>("/api/tasks", {
     method: "POST",
     body: JSON.stringify(payload),

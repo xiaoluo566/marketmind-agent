@@ -61,12 +61,13 @@ docker compose config
 cd frontend
 npm run lint
 npm run build
+npm run test:e2e
 npm audit --audit-level=high
 uvx pip-audit
 git diff --check
 ```
 
-如果是用户可见前端功能，还需要浏览器或 E2E 验收。没有真实验证的能力，只能记录为 mock / fixture / planned，不能写成已生产可用。
+如果是用户可见前端功能，还需要浏览器或 E2E 验收。Day37 之后，前端主链路至少要考虑 `npm run test:e2e`；如果当天改动不适合跑 E2E，必须在日志里说明原因。没有真实验证的能力，只能记录为 mock / fixture / planned，不能写成已生产可用。
 
 ### 5. 文档回填
 

@@ -57,7 +57,7 @@ flowchart TD
 - 真实 embedding provider 付费调用、大规模人工标注召回质量评估和 pgvector 原生排序。
 - 真实 LLM report prompt。
 - 真实 `docker compose build` / `docker compose up` 联调。
-- Playwright E2E 和 GitHub branch protection。
+- Playwright mock E2E 已接入；真实 Compose E2E 和 GitHub branch protection 待补。
 
 ## 快速启动
 
@@ -160,7 +160,7 @@ Day30 相关材料：
 - 指标汇总：[doc/supporting/day30-metrics-summary.md](doc/supporting/day30-metrics-summary.md)
 - 缺口与 bug 汇总：[doc/supporting/day30-bug-summary.md](doc/supporting/day30-bug-summary.md)
 
-当前仍需如实说明：真实 `docker compose build/up`、真实 embedding provider 付费调用和召回质量评估、真实 LLM report prompt、Playwright E2E 尚未完成。
+当前仍需如实说明：真实 `docker compose build/up`、真实 embedding provider 付费调用和真实线上召回质量评估尚未完成；真实 LLM report prompt 契约已完成但未调用付费 provider；Playwright 已完成 mock E2E，尚未完成真实 Compose E2E。
 
 ## 已知边界
 

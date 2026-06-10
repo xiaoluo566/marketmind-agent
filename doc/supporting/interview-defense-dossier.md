@@ -1902,7 +1902,7 @@ Day 30 的面试讲法重点是：我没有把项目硬包装成 v1.0，而是�
 这一天可以强调的工程思考：
 
 - 发布不是“代码写完就结束”，还要有 checklist、指标、缺口、tag、CI 和回退。
-- RC 不是 v1.0。真实 compose build/up、真实 embedding provider、真实 LLM report prompt、前端 retry 按钮和 Playwright E2E 没完成，就必须写成缺口。
+- RC 不是 v1.0。Day30 当时真实 compose build/up、真实 embedding provider、真实 LLM report prompt、前端 retry 按钮和 Playwright E2E 没完成，所以必须写成缺口。Day32 已补前端 retry，Day37 已补 mock 模式 Playwright E2E，但真实 compose/provider 全链路仍然不能夸大。
 - 指标只能写已验证事实，例如 `168 passed`、coverage `90.77%`、Day27 fixture benchmark 的 20 个样例、95.00% 成功率、338 ms 平均耗时和 391 ms P95。
 - 模型调用次数：0 也要如实写，因为当前还没有接真实 provider，不能把 deterministic baseline 包装成真实 LLMOps 数据。
 
@@ -1912,7 +1912,7 @@ Day 30 的面试讲法重点是：我没有把项目硬包装成 v1.0，而是�
 
 如果面试官问“这个项目现在最大缺口是什么”，可以回答：
 
-> 最大缺口不是单个模块，而是真实生产化联调还没完成。具体包括真实 compose build/up、真实 embedding provider、真实 LLM report prompt、前端 retry 按钮和 Playwright E2E。我已经把它们写进 `day30-bug-summary.md` 和 `future-iterations.md`，第二阶段优先补这些，而不是继续发散新功能。
+> 最大缺口不是单个模块，而是真实生产化联调还没完成。Day30 记录的前端 retry 和 mock 浏览器 E2E 已经在 Day32、Day37 补齐；当前仍要继续补真实 compose build/up、真实 provider 调用、真实 API E2E、Agent step-level replay 和分支保护。
 
 ## Day 31 中文界面基线怎么讲
 
@@ -2108,6 +2108,38 @@ Day34 开发中还修了一个全量回归暴露的问题：
 
 - E2E 首版先走 mock 模式，保证浏览器路径稳定。
 - 真实 API E2E 是下一层，不和 Docker / provider 稳定性混在一起。
+- 我没有用 CSS class 定位，而是用中文可见文本和 role locator，这样既贴近用户路径，也能防止中文界面合同被后续重构破坏。
+- E2E 产物目录必须从 lint 和 git 中排除。当天就遇到 `playwright-report/trace/assets` 被 ESLint 扫描的问题，修复后把 `playwright-report/**`、`test-results/**` 加入 ESLint ignore 和 `.gitignore`。
+- 当前结论要讲清楚：Day37 证明的是 mock dev server 下的浏览器主流程，不代表真实 Docker / Redis / Celery / provider 全链路已经完成。
+
+可能追问：
+
+**为什么先做 mock E2E？**
+
+因为 Day37 要证明用户路径可回归。如果同时依赖 Docker daemon、Redis、Celery、Playwright、真实采集和模型 provider，任何一层波动都会让失败不可定位。先把浏览器路径稳定下来，再做真实 API E2E，是更可维护的分层验收。
+
+**E2E 覆盖了什么？**
+
+覆盖首页、新建调研、任务详情、失败任务重试、报告详情和证据链。它不是截图验收，而是真实点击和断言：`重试任务` 后能看到 `重试任务已提交` 和 `task.retry_submitted`。
+
+**当天遇到的工程问题是什么？**
+
+Playwright 生成的 HTML report 目录被 ESLint 当源码扫描，导致 lint 失败。解决方式不是删除 lint，而是把测试产物目录纳入 ignore，同时写入 `.gitignore`，让质量门禁只检查源码。
+
+实际完成后可以补充：
+
+- 我新增了 `frontend/playwright.config.ts`，让 E2E 自动启动 Next.js dev server，并强制 `NEXT_PUBLIC_USE_MOCKS=true`。
+- 我新增了 `frontend/e2e/marketmind-main-flow.spec.ts`，用真实 Chromium 覆盖工作台、新建调研、任务详情、失败任务重试、报告详情和证据链。
+- 我补了 mock 模式下的 `createTask()`，否则新建调研表单仍会请求后端，mock 控制台无法形成闭环。
+- 我新增了 `tests/test_day37_playwright_e2e_contract.py`，用 Python 契约测试固定 E2E 脚本、Playwright 配置、失败产物和中文 locator。
+
+如果面试官追问“E2E 真的发现问题了吗”，可以回答：
+
+> 发现了。第一次跑起来后，不是代码崩了，而是测试假设和 UI 设计不一致：任务详情和报告详情页面的 H1 是业务标题，`任务详情` / `报告详情` 是 eyebrow；另外 `Agent 步骤` 和 `重试任务已提交` 有重复文本。后来我把测试改成 role locator 和 exact locator，这比普通文本匹配稳定，也更符合真实可访问性结构。
+
+如果面试官追问“为什么不直接做真实后端 E2E”，可以回答：
+
+> 因为第一层 E2E 要先锁住浏览器路径。如果把 Docker、Redis、Celery、模型 provider 和浏览器混在一条测试里，失败时定位成本很高。我的策略是分层：mock browser E2E 证明前端路径，后端集成测试证明 API 和状态机，真实 Compose E2E 放到阶段验收或后续专门补。
 
 ### Day 38：报告导出与证据包
 
@@ -2218,4 +2250,4 @@ Spec Kit SDD -> tdd-workflow -> 代码实现 -> verification-loop -> 开发日�
 
 如果让你说下一步：
 
-> 下一步我会进入第二阶段，先把前端界面中文化，统一任务、报告、证据链、重试、恢复等术语；然后补前端 retry 按钮、真实 compose build/up、真实 embedding provider、真实 LLM report prompt 和 Playwright E2E。第二阶段的重点不是继续堆新名词，而是提升系统的可用性、数据可信度和真实联调深度。
+> 下一步我会继续第二阶段深化。前端中文化、前端 retry、可配置 embedding provider 架构、真实 LLM prompt 契约和 mock 模式 Playwright E2E 已经推进；接下来重点是补真实 compose build/up、真实 provider 调用、真实 API E2E、导出和 LLMOps 指标面板。第二阶段的重点不是继续堆新名词，而是提升系统的可用性、数据可信度和真实联调深度。

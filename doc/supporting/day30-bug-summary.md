@@ -16,13 +16,13 @@
 
 | 缺口 | 当前状态 | 影响 | 第二阶段处理 |
 | --- | --- | --- | --- |
-| 前端 retry 按钮 | 后端已有 `POST /api/tasks/{task_id}/retry`，前端未接按钮 | 演示 retry 仍需通过 API 或测试说明 | 在任务详情页的 failed 状态展示 retry 按钮、loading、错误提示和恢复事件 |
+| 前端 retry 按钮 | Day30 时后端已有 `POST /api/tasks/{task_id}/retry`，前端未接按钮；Day32 已补齐前端入口和 mock recovery 刷新 | 当前不再是 Day37 阻塞项，后续仍需真实多进程 E2E | 在真实 Celery/Redis 环境验证幂等和恢复终态 |
 | 真实 compose build/up | `docker compose config` 已验证，本机 Docker Desktop daemon 不可用 | 不能声明容器真实启动和服务间联调已完成 | Docker daemon 可用后执行 `docker compose up --build`、容器 health、API 提交和 worker 消费 |
 | 真实 embedding provider | 当前使用 deterministic fake provider | RAG 召回只验证结构，不代表真实语义效果 | 接 `text-embedding-3-small` 或可配置 provider，补超时、维度、失败重试测试 |
 | 真实 LLM report prompt | 当前报告生成器是确定性 baseline | 报告结构可验证，但没有真实模型文案能力 | 接真实报告 prompt，并强制通过 `StructuredReport` schema 和 evidence refs 校验 |
 | Celery countdown | `backoff_seconds` 只写入 metadata | retry 有恢复语义，但没有真实延迟调度 | 在真实 Celery/Redis 环境接 `countdown`，补 E2E 和幂等锁 |
 | Agent step replay | 当前是任务级 retry，不是精确 Thought/Action/Observation replay | 无法从某一步工具调用后继续 | 基于 `agent_steps` 和最近 observation 实现 step-level resume |
-| Playwright E2E | 前端有契约测试和构建验证，缺少浏览器 E2E | UI 主流程没有真实点击回归 | 用 Playwright 覆盖提交任务、查看进度、打开报告、查看 evidence chain |
+| Playwright E2E | Day30 时前端有契约测试和构建验证，缺少浏览器 E2E；Day37 已补 mock dev server 主链路 | mock E2E 已覆盖 UI 主流程，但不代表真实多容器 E2E | 后续补真实 API / Docker / provider E2E，并观察 CI 稳定性 |
 | GitHub branch protection | CI 已有，但未配置 required status checks | 远程协作保护不完整 | 在 GitHub 设置 `main`/`dev` required checks 和 PR 合并策略 |
 | 真实外部采集稳定性 | 当前有 fixture/public URL 最小采集 | 不能声明稳定爬取所有电商站 | 先做 CSV/JSON 兜底，再选择 1 个站点做 adapter |
 

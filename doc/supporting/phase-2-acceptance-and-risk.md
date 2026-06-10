@@ -45,6 +45,8 @@ main 只保留稳定版本。这一点在第二阶段更重要，因为后续会
 | LLM 输出坏 JSON | 报告生成失败 | Guardrails 和 self-heal | 输出证据不足报告或结构化错误 |
 | E2E flaky | CI 不稳定 | 先本地稳定，再进入 CI | 把 E2E job 设为独立阶段 |
 
+Day37 已完成本地 mock 模式 Playwright E2E 主流程，`npm run test:e2e` 通过。当前风险从“没有浏览器 E2E”调整为“E2E 尚未作为 CI required check 且尚未覆盖真实 Docker/API/provider 全链路”。
+
 ## Docker daemon 不可用时的处理
 
 Docker daemon 不可用不是代码失败，但必须诚实记录。
@@ -128,5 +130,5 @@ Day33 仍未完成：
 - 中文界面完成。
 - retry 前端闭环完成。
 - 至少一个真实 provider 或真实 compose 补验完成。
-- Playwright E2E 覆盖主流程。
+- Playwright E2E 覆盖主流程。Day37 已完成 mock dev server 主链路，真实 API E2E 仍属于后续增强。
 - main 分支保持稳定且 CI 通过。

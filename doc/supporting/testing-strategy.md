@@ -799,6 +799,41 @@ Day36 report chain targeted regression: 26 passed
 ruff: passed
 ```
 
+## Day 37 Playwright E2E 测试边界
+
+Day37 新增 `tests/test_day37_playwright_e2e_contract.py`，用于验证 Playwright E2E 的工程契约，而不是去模拟真实浏览器行为。
+
+这组测试覆盖：
+
+- `frontend/package.json` 必须包含 `test:e2e` 脚本。
+- `frontend/package.json` 必须声明 `@playwright/test`。
+- `frontend/playwright.config.ts` 必须把 `testDir` 指向 `./e2e`。
+- Playwright 必须使用 mock dev server：
+  - `baseURL` 固定到 `http://127.0.0.1:3100`
+  - `NEXT_PUBLIC_USE_MOCKS=true`
+  - `NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000`
+- E2E 必须打开失败截图、trace 和 video。
+- 主链路 spec 必须使用中文 locator，并覆盖工作台、新建调研、任务详情、任务列表、retry、报告详情和证据链。
+- mock 提交流程必须允许 E2E 独立于后端运行。
+- `playwright-report/**` 和 `test-results/**` 必须从 ESLint 和 Git 提交中排除，避免测试产物污染质量门禁。
+
+这组测试不覆盖：
+
+- 真实 Docker Compose / FastAPI / Redis / Celery 联调。
+- 真实浏览器访问外网。
+- 移动端 viewport。
+- 真实 LLM provider。
+
+当前验证：
+
+```text
+tests/test_day37_playwright_e2e_contract.py: 4 passed
+frontend npm run test:e2e: 1 passed
+frontend npm run lint: passed
+frontend npm run build: passed
+frontend npm audit --audit-level=high: passed
+```
+
 ## 与其他文档关系
 
 - 数据样例见 `data-contract-examples.md`

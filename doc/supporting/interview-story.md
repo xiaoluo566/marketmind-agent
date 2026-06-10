@@ -101,7 +101,7 @@ Next.js：
 
 ### 项目最大的不足是什么？
 
-当前还没有真实 embedding provider、真实 LLM report prompt、真实 compose up 验证和 Playwright E2E。Day27 benchmark 是 fixture benchmark，不代表真实线上吞吐。这个边界需要诚实说明。
+当前已经补齐可配置 embedding provider 架构、真实 LLM 报告 prompt 契约和 mock 模式 Playwright E2E，但还没有真实 provider 调用、真实 compose up 验证和真实多容器 E2E。Day27 benchmark 是 fixture benchmark，不代表真实线上吞吐。这个边界需要诚实说明。
 
 ## 结尾总结
 

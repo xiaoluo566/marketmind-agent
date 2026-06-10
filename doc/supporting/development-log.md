@@ -1690,7 +1690,7 @@ Day 23 原计划是补单元测试和校验测试。但项目从 Day 4 起一直
 ### 遗留问题
 
 - 当时 `status_policy.py` 还没有接入 `SQLAlchemyTaskStatusStore` 或 retry / cancel API；Day 28 已在 retry 业务入口使用 `waiting_retry` 状态流，底层 store 级策略下沉和 cancel API 仍未实现。
-- 还没有 Playwright E2E。
+- 当时还没有 Playwright E2E；Day37 已补 mock dev server 下的浏览器主链路。
 - 还没有真实 PostgreSQL / Redis / Celery 的 Docker 集成测试。
 - 还没有 CI workflow。
 
@@ -2280,7 +2280,7 @@ Day31 按 `day-31.md` 开始前端中文界面开发，先写 `tests/test_fronte
 - 仍未做真实 `docker compose build/up`，因为真实 Docker daemon 可用性需要单独补验。
 - 仍未补前端 retry 按钮，Day32 优先处理。
 - 仍未接真实 embedding provider 和真实 LLM report prompt。
-- 仍未补 Playwright E2E 页面级验收。
+- 当时仍未补 Playwright E2E 页面级验收；Day37 已补 mock dev server 下的浏览器主链路，真实多容器 E2E 仍待后续增强。
 
 ### 下一步
 
@@ -2717,6 +2717,74 @@ uv run ruff check backend tests migrations
 ### 下一步
 
 Day37 进入 Playwright E2E 主链路，把中文控制台、任务、报告、证据链和 retry 入口纳入真实浏览器回归。
+
+## Day 37 实际开发记录
+
+### 背景
+
+Day31 已经完成中文界面基线，Day32 和 Day33 已经完成失败任务 retry 的前后端联调契约，Day36 已经完成真实 LLM report prompt 契约。但这些能力主要通过 Python 契约测试、Next.js build 和手动浏览器检查证明。Day37 的目标是建立稳定的 Playwright E2E，让用户路径变成可回归产物。
+
+### 当天为什么这样选
+
+今天先做 mock browser E2E，而不是直接做 Docker Compose + FastAPI + Redis + Celery 的真实全链路 E2E。原因是浏览器回归首先要验证前端路由、中文文案、表单、列表、详情、retry 和证据链展示是否能稳定走通；如果一开始把 Docker daemon、Celery worker、模型 provider 和浏览器都绑定在一条测试里，失败时很难判断是 UI 问题还是外部依赖问题。
+
+今天也把 `createTask()` 的 mock 分支补齐。此前 mock 模式下列表和详情能读本地数据，但新建调研提交仍然会请求后端，这会让 E2E 在没有 FastAPI 的情况下失败。这个修复让 mock 模式真正形成浏览器闭环。
+
+### 实际改动
+
+- 新增 `frontend/playwright.config.ts`。
+- 新增 `frontend/e2e/marketmind-main-flow.spec.ts`。
+- 新增 `frontend/package.json` 的 `test:e2e` 脚本。
+- 新增 `@playwright/test` 并更新 lockfile。
+- 更新 `frontend/.gitignore`，忽略 `playwright-report/` 和 `test-results/`。
+- 更新 `frontend/eslint.config.mjs`，避免 eslint 扫描 Playwright 产物。
+- 更新 `frontend/src/lib/api.ts`，使 mock 模式下 `createTask()` 直接返回 mock task。
+- 新增 `tests/test_day37_playwright_e2e_contract.py`。
+
+### TDD 过程
+
+- RED：`npm run test:e2e` 首次失败，原因是缺少 `test:e2e` 脚本。
+- GREEN 之前暴露的真实 UI 契约问题：
+  - 任务详情和报告详情的 H1 是业务标题，`任务详情` / `报告详情` 是 eyebrow。
+  - `Agent 步骤` 文本在描述和标题中重复，需要使用 heading locator。
+  - `重试任务已提交` 在提示和事件中重复，需要 exact locator。
+- verification 过程中发现 `npm run lint` 会扫描 Playwright 生成的 `playwright-report/trace/assets`。修复方式是把 `playwright-report/**`、`test-results/**` 同时加入 ESLint ignore 和 `.gitignore`。
+- GREEN：调整 locator 后，Playwright 主链路通过。
+
+### 当前验证
+
+```powershell
+cd frontend
+npm run test:e2e
+# 1 passed
+
+npm run lint
+# passed
+
+npm run build
+# passed
+
+npm audit --audit-level=high
+# found 0 vulnerabilities
+
+cd ..
+uv run pytest tests\test_day37_playwright_e2e_contract.py
+# 4 passed
+
+uv run pytest tests\test_frontend_localization_contract.py tests\test_frontend_retry_contract.py tests\test_day33_retry_linkage_contract.py
+# 17 passed
+```
+
+### 遗留问题
+
+- 当前 E2E 是 mock browser E2E，不等价于真实 Docker Compose 全链路。
+- 当前只覆盖 Chromium desktop。
+- 暂未纳入 GitHub Actions required check。
+- 报告导出和下载交互放到 Day38。
+
+### 下一步
+
+Day38 进入报告导出与 evidence package，把报告从页面展示推进到可交付 artifact。
 
 ## 30 天后优化记录
 

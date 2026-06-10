@@ -40,7 +40,8 @@ v0.1-day30-rc1
 
 - 可以声明 `docker compose config` 已验证。
 - 不声明真实 `docker compose build` / `docker compose up` 已完成，除非 Docker Desktop daemon 可用后实际执行并通过。
-- 不声明真实 embedding provider、真实 LLM report prompt、前端 retry 按钮和 Playwright E2E 已完成。
+- 不声明真实 embedding provider 调用、真实 LLM provider 调用和真实 Docker/API/provider 全链路 E2E 已完成，除非后续实际执行并通过。
+- 可以声明前端 retry 按钮已在 Day32 补齐，mock 模式 Playwright E2E 主流程已在 Day37 通过，但必须注明它不是生产环境多容器 E2E。
 
 ## 发布时
 

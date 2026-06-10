@@ -17,11 +17,11 @@
 
 第二阶段不继续盲目加技术栈，优先补 Day30 RC 中明确影响演示和工程闭环的缺口：
 
-1. 前端 retry 按钮：在 failed 任务详情页接入 `POST /api/tasks/{task_id}/retry`，展示 retry loading、失败提示、恢复事件和终态刷新。
+1. 前端 retry 按钮：Day32 已在 failed 任务详情页接入 `POST /api/tasks/{task_id}/retry`，展示 retry loading、失败提示、恢复事件和 mock 终态刷新；后续补真实多进程 E2E。
 2. 真实 compose build/up 验证：Docker Desktop daemon 可用后执行 `docker compose up --build`，验证 postgres、redis、migrate、api、worker、frontend 的 health 和容器内任务提交。
 3. 真实 embedding provider：接入 `text-embedding-3-small` 或可配置 provider，补超时、维度不匹配、重试和成本统计。
 4. 真实 LLM report prompt：保留 `StructuredReport` schema 校验和 evidence refs 约束，不允许模型输出绕过 guardrails。
-5. Playwright E2E：覆盖新建任务、查看进度、打开报告、查看 evidence chain 和 retry 入口。
+5. Playwright E2E：Day37 已覆盖 mock dev server 下的新建任务、查看进度、打开报告、查看 evidence chain 和 retry 入口；后续补真实 API / Docker / provider E2E。
 6. GitHub branch protection：把 backend/frontend quality gates 配成 required checks。
 7. Agent step replay：从任务级 retry 继续推进到基于最近 Observation 的 step-level resume。
 
@@ -41,7 +41,7 @@
 
 - 前端契约测试：failed 状态才展示 retry。
 - API client 测试：retry endpoint envelope 解析。
-- Playwright E2E：失败任务点击 retry 后状态刷新。
+- Playwright E2E：Day37 已覆盖失败任务点击 retry 后的 mock 状态刷新；真实 Redis/Celery 环境仍需单独验收。
 
 ### 2. 真实 Compose 联调
 
